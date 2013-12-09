@@ -504,7 +504,7 @@ private[autopipe] class AutoPipe {
          case "SmartFusion" =>
             RawFileGenerator.emitFile(dir, "smartfusion.v")
          case "Simulation" =>
-            RawFileGenerator.emitFile(dir, "sim.v")
+            RawFileGenerator.emitFile(dir, "int.v")
          case _ => Error.raise("Unknown FPGA type: " + fpga)
       }
 
