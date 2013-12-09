@@ -25,7 +25,7 @@ private[autopipe] class SimulationResourceGenerator(
 
       val blocks = ap.blocks.filter(_.device == device)
       val btypes = blocks.map(_.blockType).toSet
-      val base = "sim.v fp.v sim.v fpga_x.v fpga_wrap.v"
+      val base = "sim.v fp.v int.v fpga_x.v fpga_wrap.v"
       val bstr = btypes.foldLeft(base) { (s, b) =>
          s + " " ++ b.name + "-dir/" + b.name + ".v"
       }

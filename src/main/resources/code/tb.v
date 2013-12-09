@@ -1,6 +1,6 @@
 
 `include "fp.v"
-`include "sim.v"
+`include "int.v"
 
 module tb;
 
