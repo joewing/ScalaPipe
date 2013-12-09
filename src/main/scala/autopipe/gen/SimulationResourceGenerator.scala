@@ -25,9 +25,11 @@ private[autopipe] class SimulationResourceGenerator(
 
       val blocks = ap.blocks.filter(_.device == device)
       val btypes = blocks.map(_.blockType).toSet
+      val funcs = ap.functions.filter(_.platform == device.platform)
+      val names = funcs.map(_.name) ++ btypes.map(_.name)
       val base = "sim.v fp.v int.v fpga_x.v fpga_wrap.v"
-      val bstr = btypes.foldLeft(base) { (s, b) =>
-         s + " " ++ b.name + "-dir/" + b.name + ".v"
+      val bstr = names.foldLeft(base) { (s, name) =>
+         s + " " ++ name + "-dir/" + name + ".v"
       }
 
       write("SIM_BLOCKS =" + bstr)
