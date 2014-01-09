@@ -4,11 +4,11 @@ package autopipe.gen
 import autopipe._
 
 private[autopipe] abstract class ObjectGenerator(val co: CodeObject)
-      extends Generator {
+        extends Generator {
 
-   def emitModule: String
+    def emitModule: String
 
-   def emitCall(op: String, args: Seq[BaseSymbol]): String
+    def emitCall(op: String, args: Seq[BaseSymbol]): String
 
 }
 

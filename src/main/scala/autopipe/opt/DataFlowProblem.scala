@@ -9,85 +9,85 @@ import scala.collection.mutable.HashSet
 
 abstract class DataFlowProblem {
 
-   type T
-   type Result = HashMap[Int, Set[T]]
+    type T
+    type Result = HashMap[Int, Set[T]]
 
-   def forward: Boolean
+    def forward: Boolean
 
-   def init(co: CodeObject, graph: IRGraph): Set[T]
+    def init(co: CodeObject, graph: IRGraph): Set[T]
 
-   def gen(sb: StateBlock, in: Set[T]): Set[T]
+    def gen(sb: StateBlock, in: Set[T]): Set[T]
 
-   def kill(sb: StateBlock, in: Set[T]): Set[T]
+    def kill(sb: StateBlock, in: Set[T]): Set[T]
 
-   def meet(a: Set[T], b: Set[T]): Set[T]
+    def meet(a: Set[T], b: Set[T]): Set[T]
 
-   final def transfer(sb: StateBlock, in: Set[T]): Set[T] = {
-      val k = kill(sb, in)
-      val g = gen(sb, in)
-      (in -- k) ++ g
-   }
+    final def transfer(sb: StateBlock, in: Set[T]): Set[T] = {
+        val k = kill(sb, in)
+        val g = gen(sb, in)
+        (in -- k) ++ g
+    }
 
-   protected def isPort(s: BaseSymbol): Boolean = s.isInstanceOf[PortSymbol]
+    protected def isPort(s: BaseSymbol): Boolean = s.isInstanceOf[PortSymbol]
 
-   protected def isVariable(s: BaseSymbol): Boolean = s match {
-      case t: TempSymbol      => true
-      case s: StateSymbol     => true 
-      case _                  => false
-   }
+    protected def isVariable(s: BaseSymbol): Boolean = s match {
+        case t: TempSymbol        => true
+        case s: StateSymbol      => true 
+        case _                        => false
+    }
 
-   private def inputs(sb: StateBlock, graph: IRGraph): List[StateBlock] = {
-      if (forward) {
-         graph.inLinks(sb)
-      } else {
-         graph.links(sb)
-      }
-   }
+    private def inputs(sb: StateBlock, graph: IRGraph): List[StateBlock] = {
+        if (forward) {
+            graph.inLinks(sb)
+        } else {
+            graph.links(sb)
+        }
+    }
 
-   private def outputs(sb: StateBlock, graph: IRGraph): List[StateBlock] = {
-      if (forward) {
-         graph.links(sb)
-      } else {
-         graph.inLinks(sb)
-      }
-   }
+    private def outputs(sb: StateBlock, graph: IRGraph): List[StateBlock] = {
+        if (forward) {
+            graph.links(sb)
+        } else {
+            graph.inLinks(sb)
+        }
+    }
 
-   final def solve(co: CodeObject, graph: IRGraph): Result = {
+    final def solve(co: CodeObject, graph: IRGraph): Result = {
 
-      val before = new Result
-      val after = new Result
-      val work = new HashSet[StateBlock]
-      val top = init(co, graph)
+        val before = new Result
+        val after = new Result
+        val work = new HashSet[StateBlock]
+        val top = init(co, graph)
 
-      graph.blocks.foreach { block =>
-         before += ((block.label, top))
-         after += ((block.label, top))
-         work += block
-      }
+        graph.blocks.foreach { block =>
+            before += ((block.label, top))
+            after += ((block.label, top))
+            work += block
+        }
 
-      while (!work.isEmpty) {
-         val block = work.head
-         work.remove(block)
-         val in = inputs(block, graph)
-         val temp = if (!in.isEmpty) {
-            in.tail.foldLeft(after(in.head.label)) { (a, b) =>
-               meet(a, after(b.label))
+        while (!work.isEmpty) {
+            val block = work.head
+            work.remove(block)
+            val in = inputs(block, graph)
+            val temp = if (!in.isEmpty) {
+                in.tail.foldLeft(after(in.head.label)) { (a, b) =>
+                    meet(a, after(b.label))
+                }
+            } else {
+                before(block.label)
             }
-         } else {
-            before(block.label)
-         }
-         val tempSet = temp.toSet
-         val updated = transfer(block, tempSet)
-         if (after(block.label) != updated) {
-            before(block.label) = tempSet
-            after(block.label) = updated
-            work ++= outputs(block, graph)
-         }
-      }
+            val tempSet = temp.toSet
+            val updated = transfer(block, tempSet)
+            if (after(block.label) != updated) {
+                before(block.label) = tempSet
+                after(block.label) = updated
+                work ++= outputs(block, graph)
+            }
+        }
 
-      if (forward) before else after
+        if (forward) before else after
 
-   }
+    }
 
 }
 

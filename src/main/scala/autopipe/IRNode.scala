@@ -5,384 +5,384 @@ import scala.collection.immutable.TreeMap
 
 private object IRNodeCounter {
 
-   private var count = 0
+    private var count = 0
 
-   def getId: Int = {
-      count += 1;
-      count
-   }
+    def getId: Int = {
+        count += 1;
+        count
+    }
 
 }
 
 private[autopipe] trait IRNode {
 
-   val op: NodeType.Value = NodeType.invalid
+    val op: NodeType.Value = NodeType.invalid
 
-   def links      = List[Int]()
-   def srcs       = List[BaseSymbol]()
-   def dests      = List[BaseSymbol]()
+    def links        = List[Int]()
+    def srcs         = List[BaseSymbol]()
+    def dests        = List[BaseSymbol]()
 
-   final def symbols = dests ++ srcs
+    final def symbols = dests ++ srcs
 
-   def replaceLink(o: Int, n: Int): IRNode = this
+    def replaceLink(o: Int, n: Int): IRNode = this
 
-   final def replace(o: BaseSymbol, n: BaseSymbol): IRNode =
-      replaceSources(o, n).replaceDest(o, n)
+    final def replace(o: BaseSymbol, n: BaseSymbol): IRNode =
+        replaceSources(o, n).replaceDest(o, n)
 
-   def replaceSources(o: BaseSymbol, n: BaseSymbol): IRNode = this
+    def replaceSources(o: BaseSymbol, n: BaseSymbol): IRNode = this
 
-   def replaceDest(o: BaseSymbol, n: BaseSymbol): IRNode = this
+    def replaceDest(o: BaseSymbol, n: BaseSymbol): IRNode = this
 
-   final def setDest(n: BaseSymbol): IRNode =
-      if (!dests.isEmpty) replaceDest(dests.head, n) else this
+    final def setDest(n: BaseSymbol): IRNode =
+        if (!dests.isEmpty) replaceDest(dests.head, n) else this
 
-   final def equivalent(o: Any): Boolean = o.toString == toString
+    final def equivalent(o: Any): Boolean = o.toString == toString
 
 }
 
 private[autopipe] case class IRStart(
-      val next:   Int = -1,
-      val id:     Int = IRNodeCounter.getId
-   ) extends IRNode {
+        val next:    Int = -1,
+        val id:      Int = IRNodeCounter.getId
+    ) extends IRNode {
 
-   override def links = List(next)
+    override def links = List(next)
 
-   override def replaceLink(o: Int, n: Int): IRNode = {
-      if (next == o) {
-         copy(next = n)
-      } else {
-         this
-      }
-   }
+    override def replaceLink(o: Int, n: Int): IRNode = {
+        if (next == o) {
+            copy(next = n)
+        } else {
+            this
+        }
+    }
 
-   override def toString   = "start " + next
+    override def toString    = "start " + next
 
 }
 
 private[autopipe] case class IRNoOp(
-      val id: Int = IRNodeCounter.getId
-   ) extends IRNode {
+        val id: Int = IRNodeCounter.getId
+    ) extends IRNode {
 
-   override def toString   = "nop"
+    override def toString    = "nop"
 
 }
 
 private[autopipe] case class IRInstruction(
-      override val op:     NodeType.Value,
-      val dest:            BaseSymbol,
-      val srca:            BaseSymbol,
-      val srcb:            BaseSymbol = null,
-      val id:              Int = IRNodeCounter.getId
-   ) extends IRNode {
+        override val op:      NodeType.Value,
+        val dest:                BaseSymbol,
+        val srca:                BaseSymbol,
+        val srcb:                BaseSymbol = null,
+        val id:                  Int = IRNodeCounter.getId
+    ) extends IRNode {
 
-   override def srcs = List(srca, srcb).filter(_ != null)
+    override def srcs = List(srca, srcb).filter(_ != null)
 
-   override def dests = List(dest)
+    override def dests = List(dest)
 
-   override def replaceSources(o: BaseSymbol, n: BaseSymbol): IRNode = {
-      val a = if (this.srca == o) this.copy(srca = n) else this
-      val b = if (   a.srcb == o)    a.copy(srcb = n) else a
-      return b
-   }
+    override def replaceSources(o: BaseSymbol, n: BaseSymbol): IRNode = {
+        val a = if (this.srca == o) this.copy(srca = n) else this
+        val b = if (    a.srcb == o)     a.copy(srcb = n) else a
+        return b
+    }
 
-   override def replaceDest(o: BaseSymbol, n: BaseSymbol): IRNode = {
-      if (dest == o) copy(dest = n) else this
-   }
+    override def replaceDest(o: BaseSymbol, n: BaseSymbol): IRNode = {
+        if (dest == o) copy(dest = n) else this
+    }
 
-   override def toString = dest.toString + " <- " +
-      (if (srcb != null) {
-         srca.toString + " " + op.toString + " " + srcb.toString
-      } else {
-         if (op != NodeType.assign) {
-            op.toString + " " + srca.toString
-         } else {
-            srca.toString
-         }
-      })
+    override def toString = dest.toString + " <- " +
+        (if (srcb != null) {
+            srca.toString + " " + op.toString + " " + srcb.toString
+        } else {
+            if (op != NodeType.assign) {
+                op.toString + " " + srca.toString
+            } else {
+                srca.toString
+            }
+        })
 
 }
 
 private[autopipe] case class IRVectorStore(
-      val dest:   BaseSymbol,
-      val offset: BaseSymbol,
-      val src:    BaseSymbol,
-      val id:     Int = IRNodeCounter.getId
-   ) extends IRNode {
+        val dest:    BaseSymbol,
+        val offset: BaseSymbol,
+        val src:     BaseSymbol,
+        val id:      Int = IRNodeCounter.getId
+    ) extends IRNode {
 
-   val arrayType = dest.valueType.asInstanceOf[ArrayValueType]
+    val arrayType = dest.valueType.asInstanceOf[ArrayValueType]
 
-   override def dests = List(dest)
-   override def srcs = List(src, offset)
+    override def dests = List(dest)
+    override def srcs = List(src, offset)
 
-   override def replaceSources(o: BaseSymbol, n: BaseSymbol): IRNode = {
-      val a = if (this.offset == o) this.copy(offset = n) else this
-      val b = if (   a.src    == o)    a.copy(src    = n) else a
-      return b
-   }
+    override def replaceSources(o: BaseSymbol, n: BaseSymbol): IRNode = {
+        val a = if (this.offset == o) this.copy(offset = n) else this
+        val b = if (    a.src     == o)     a.copy(src     = n) else a
+        return b
+    }
 
-   override def replaceDest(o: BaseSymbol, n: BaseSymbol): IRNode = {
-      if (dest == o) copy(dest = n) else this
-   }
+    override def replaceDest(o: BaseSymbol, n: BaseSymbol): IRNode = {
+        if (dest == o) copy(dest = n) else this
+    }
 
-   override def toString = dest + "[" + offset + "] <- " + src
+    override def toString = dest + "[" + offset + "] <- " + src
 
 }
 
 private[autopipe] case class IRVectorLoad(
-      val dest:   BaseSymbol,
-      val src:    BaseSymbol,
-      val offset: BaseSymbol,
-      val id:     Int = IRNodeCounter.getId
-   ) extends IRNode {
+        val dest:    BaseSymbol,
+        val src:     BaseSymbol,
+        val offset: BaseSymbol,
+        val id:      Int = IRNodeCounter.getId
+    ) extends IRNode {
 
-   val arrayType = src.valueType.asInstanceOf[ArrayValueType]
+    val arrayType = src.valueType.asInstanceOf[ArrayValueType]
 
-   override def dests = List(dest)
-   override def srcs = List(src, offset)
+    override def dests = List(dest)
+    override def srcs = List(src, offset)
 
-   override def replaceSources(o: BaseSymbol, n: BaseSymbol): IRNode = {
-      val a = if (this.offset == o) this.copy(offset = n) else this
-      val b = if (   a.src    == o)    a.copy(src    = n) else a
-      return b
-   }
+    override def replaceSources(o: BaseSymbol, n: BaseSymbol): IRNode = {
+        val a = if (this.offset == o) this.copy(offset = n) else this
+        val b = if (    a.src     == o)     a.copy(src     = n) else a
+        return b
+    }
 
-   override def replaceDest(o: BaseSymbol, n: BaseSymbol): IRNode = {
-      if (dest == o) copy(dest = n) else this
-   }
+    override def replaceDest(o: BaseSymbol, n: BaseSymbol): IRNode = {
+        if (dest == o) copy(dest = n) else this
+    }
 
-   override def toString = dest + " <- " + src + "[" + offset + "]"
+    override def toString = dest + " <- " + src + "[" + offset + "]"
 
 }
 
 private[autopipe] case class IRArrayStore(
-      val dest:   BaseSymbol,
-      val offset: BaseSymbol,
-      val src:    BaseSymbol,
-      val id:     Int = IRNodeCounter.getId
-   ) extends IRNode {
+        val dest:    BaseSymbol,
+        val offset: BaseSymbol,
+        val src:     BaseSymbol,
+        val id:      Int = IRNodeCounter.getId
+    ) extends IRNode {
 
-   val arrayType = dest.valueType.asInstanceOf[ArrayValueType]
+    val arrayType = dest.valueType.asInstanceOf[ArrayValueType]
 
-   override def dests = List(dest)
-   override def srcs = List(src, offset)
+    override def dests = List(dest)
+    override def srcs = List(src, offset)
 
-   override def replaceSources(o: BaseSymbol, n: BaseSymbol): IRNode = {
-      val a = if (this.offset == o) this.copy(offset = n) else this
-      val b = if (   a.src    == o)    a.copy(src    = n) else a
-      return b
-   }
+    override def replaceSources(o: BaseSymbol, n: BaseSymbol): IRNode = {
+        val a = if (this.offset == o) this.copy(offset = n) else this
+        val b = if (    a.src     == o)     a.copy(src     = n) else a
+        return b
+    }
 
-   override def replaceDest(o: BaseSymbol, n: BaseSymbol): IRNode = {
-      if (dest == o) copy(dest = n) else this
-   }
+    override def replaceDest(o: BaseSymbol, n: BaseSymbol): IRNode = {
+        if (dest == o) copy(dest = n) else this
+    }
 
-   override def toString = dest + "[" + offset + "] <- " + src
+    override def toString = dest + "[" + offset + "] <- " + src
 
 }
 
 private[autopipe] case class IRArrayLoad(
-      val dest:   BaseSymbol,
-      val src:    BaseSymbol,
-      val offset: BaseSymbol,
-      val id:     Int = IRNodeCounter.getId
-   ) extends IRNode {
+        val dest:    BaseSymbol,
+        val src:     BaseSymbol,
+        val offset: BaseSymbol,
+        val id:      Int = IRNodeCounter.getId
+    ) extends IRNode {
 
-   val arrayType = src.valueType.asInstanceOf[ArrayValueType]
+    val arrayType = src.valueType.asInstanceOf[ArrayValueType]
 
-   override def dests = List(dest)
-   override def srcs = List(src, offset)
+    override def dests = List(dest)
+    override def srcs = List(src, offset)
 
-   override def replaceSources(o: BaseSymbol, n: BaseSymbol): IRNode = {
-      val a = if (this.offset == o) this.copy(offset = n) else this
-      val b = if (   a.src    == o)    a.copy(src    = n) else a
-      return b
-   }
+    override def replaceSources(o: BaseSymbol, n: BaseSymbol): IRNode = {
+        val a = if (this.offset == o) this.copy(offset = n) else this
+        val b = if (    a.src     == o)     a.copy(src     = n) else a
+        return b
+    }
 
-   override def replaceDest(o: BaseSymbol, n: BaseSymbol): IRNode = {
-      if (dest == o) copy(dest = n) else this
-   }
+    override def replaceDest(o: BaseSymbol, n: BaseSymbol): IRNode = {
+        if (dest == o) copy(dest = n) else this
+    }
 
-   override def toString = dest + " <- " + src + "[" + offset + "]"
+    override def toString = dest + " <- " + src + "[" + offset + "]"
 
 }
 
 private[autopipe] case class IRGoto(
-      val next:   Int = -1,
-      val id:     Int = IRNodeCounter.getId
-   ) extends IRNode {
+        val next:    Int = -1,
+        val id:      Int = IRNodeCounter.getId
+    ) extends IRNode {
 
-   override def links = List(next)
+    override def links = List(next)
 
-   override def replaceLink(o: Int, n: Int): IRNode = {
-      if (next == o) {
-         copy(next = n)
-      } else {
-         this
-      }
-   }
+    override def replaceLink(o: Int, n: Int): IRNode = {
+        if (next == o) {
+            copy(next = n)
+        } else {
+            this
+        }
+    }
 
-   override def toString = "goto " + next
+    override def toString = "goto " + next
 
 }
 
 private[autopipe] case class IRStop(
-      val id: Int = IRNodeCounter.getId
-   ) extends IRNode {
+        val id: Int = IRNodeCounter.getId
+    ) extends IRNode {
 
-   override def toString = "stop"
+    override def toString = "stop"
 
 }
 
 private[autopipe] case class IRReturn(
-      val result: BaseSymbol,
-      val id:     Int = IRNodeCounter.getId
-   ) extends IRNode {
+        val result: BaseSymbol,
+        val id:      Int = IRNodeCounter.getId
+    ) extends IRNode {
 
-   override def srcs = List(result)
+    override def srcs = List(result)
 
-   override def replaceSources(o: BaseSymbol, n: BaseSymbol): IRNode = {
-      if (result == o) copy(result = n) else this
-   }
+    override def replaceSources(o: BaseSymbol, n: BaseSymbol): IRNode = {
+        if (result == o) copy(result = n) else this
+    }
 
-   override def toString = {
-      if (result != null) {
-         "return " + result 
-      } else {
-         "return"
-      }
-   }
+    override def toString = {
+        if (result != null) {
+            "return " + result 
+        } else {
+            "return"
+        }
+    }
 
 }
 
 private[autopipe] case class IRConditional(
-      val test:   BaseSymbol,
-      val iTrue:  Int = -1,
-      val iFalse: Int = -1
-   ) extends IRNode {
+        val test:    BaseSymbol,
+        val iTrue:  Int = -1,
+        val iFalse: Int = -1
+    ) extends IRNode {
 
-   override def replaceSources(o: BaseSymbol, n: BaseSymbol): IRNode = {
-      if (test == o) copy(test = n) else this
-   }
+    override def replaceSources(o: BaseSymbol, n: BaseSymbol): IRNode = {
+        if (test == o) copy(test = n) else this
+    }
 
-   override def links = List(iTrue, iFalse)
+    override def links = List(iTrue, iFalse)
 
-   override def replaceLink(o: Int, n: Int): IRNode = {
-      if (iTrue == o && iFalse == o) {
-         copy(iTrue = n, iFalse = n)
-      } else if (iTrue == o) {
-         copy(iTrue = n)
-      } else if (iFalse == o) {
-         copy(iFalse = n)
-      } else {
-         this
-      }
-   }
+    override def replaceLink(o: Int, n: Int): IRNode = {
+        if (iTrue == o && iFalse == o) {
+            copy(iTrue = n, iFalse = n)
+        } else if (iTrue == o) {
+            copy(iTrue = n)
+        } else if (iFalse == o) {
+            copy(iFalse = n)
+        } else {
+            this
+        }
+    }
 
-   override def srcs = List(test)
+    override def srcs = List(test)
 
-   override def toString = "if " + test +
-      " then " + iTrue.toString +
-      " else " + iFalse.toString
+    override def toString = "if " + test +
+        " then " + iTrue.toString +
+        " else " + iFalse.toString
 
 }
 
 private[autopipe] case class IRSwitch(
-      val test:      BaseSymbol,
-      val targets:   List[(BaseSymbol, Int)]
-   ) extends IRNode {
+        val test:        BaseSymbol,
+        val targets:    List[(BaseSymbol, Int)]
+    ) extends IRNode {
 
-   override def replaceSources(o: BaseSymbol, n: BaseSymbol): IRNode = {
-      if (srcs.contains(o)) {
-         val newTest = if (test == o) copy(test = n) else this
-         val newTargets = targets.map { case (s, t) =>
-            if (s == o) (n, t) else (s, t)
-         }
-         newTest.copy(targets = newTargets)
-      } else {
-         this
-      }
-   }
+    override def replaceSources(o: BaseSymbol, n: BaseSymbol): IRNode = {
+        if (srcs.contains(o)) {
+            val newTest = if (test == o) copy(test = n) else this
+            val newTargets = targets.map { case (s, t) =>
+                if (s == o) (n, t) else (s, t)
+            }
+            newTest.copy(targets = newTargets)
+        } else {
+            this
+        }
+    }
 
-   override def links = targets.map(_._2)
+    override def links = targets.map(_._2)
 
-   override def replaceLink(o: Int, n: Int): IRNode = {
-      if (links.contains(o)) {
-         val newTargets = targets.map { case (s, l) =>
-            if (l == o) (s, n) else (s, l)
-         }
-         copy(targets = newTargets)
-      } else {
-         this
-      }
-   }
+    override def replaceLink(o: Int, n: Int): IRNode = {
+        if (links.contains(o)) {
+            val newTargets = targets.map { case (s, l) =>
+                if (l == o) (s, n) else (s, l)
+            }
+            copy(targets = newTargets)
+        } else {
+            this
+        }
+    }
 
-   override def srcs = test :: targets.filter(_._1 != null).map(_._1)
+    override def srcs = test :: targets.filter(_._1 != null).map(_._1)
 
-   override def toString = "switch " + test +
-      targets.foldLeft("") { (a, b) =>
-         if (b._1 == null) {
-            a + " default: " + b._2
-         } else {
-            a + " case " + b._1 + ": " + b._2
-         }
-      }
+    override def toString = "switch " + test +
+        targets.foldLeft("") { (a, b) =>
+            if (b._1 == null) {
+                a + " default: " + b._2
+            } else {
+                a + " case " + b._1 + ": " + b._2
+            }
+        }
 
 }
 
 private[autopipe] case class IRCall(
-      val func:   String,
-      val args:   List[BaseSymbol] = Nil,
-      val dest:   BaseSymbol = null
-   ) extends IRNode {
+        val func:    String,
+        val args:    List[BaseSymbol] = Nil,
+        val dest:    BaseSymbol = null
+    ) extends IRNode {
 
-   override def dests = List(dest)
-   override def srcs = args
+    override def dests = List(dest)
+    override def srcs = args
 
-   override def replaceSources(o: BaseSymbol, n: BaseSymbol): IRNode = {
-      if (args.contains(o)) {
-         val newArgs = args.map(a => if (a == o) n else a)
-         copy(args = newArgs)
-      } else {
-         this
-      }
-   }
+    override def replaceSources(o: BaseSymbol, n: BaseSymbol): IRNode = {
+        if (args.contains(o)) {
+            val newArgs = args.map(a => if (a == o) n else a)
+            copy(args = newArgs)
+        } else {
+            this
+        }
+    }
 
-   override def replaceDest(o: BaseSymbol, n: BaseSymbol): IRNode = {
-      if (dest == o) copy(dest = n) else this
-   }
+    override def replaceDest(o: BaseSymbol, n: BaseSymbol): IRNode = {
+        if (dest == o) copy(dest = n) else this
+    }
 
-   override def toString = func + "(" + args.mkString(", ") + ")"
+    override def toString = func + "(" + args.mkString(", ") + ")"
 
 }
 
 private[autopipe] case class IRPhi(
-      val symbol: BaseSymbol,
-      val dest:   BaseSymbol = null,
-      val inputs: TreeMap[Int, BaseSymbol] = TreeMap[Int, BaseSymbol]()
-   ) extends IRNode {
+        val symbol: BaseSymbol,
+        val dest:    BaseSymbol = null,
+        val inputs: TreeMap[Int, BaseSymbol] = TreeMap[Int, BaseSymbol]()
+    ) extends IRNode {
 
-   override def dests = List(dest)
-   override def srcs = inputs.map(_._2).toList
+    override def dests = List(dest)
+    override def srcs = inputs.map(_._2).toList
 
-   override def replaceSources(o: BaseSymbol, n: BaseSymbol): IRNode = {
-      if (srcs.contains(o)) {
-         val newInputs = inputs.map { case (k, v) =>
-            if (v == o) (k, n) else (k, v)
-         }
-         copy(inputs = newInputs)
-      } else {
-         this
-      }
-   }
+    override def replaceSources(o: BaseSymbol, n: BaseSymbol): IRNode = {
+        if (srcs.contains(o)) {
+            val newInputs = inputs.map { case (k, v) =>
+                if (v == o) (k, n) else (k, v)
+            }
+            copy(inputs = newInputs)
+        } else {
+            this
+        }
+    }
 
-   override def replaceDest(o: BaseSymbol, n: BaseSymbol): IRNode = {
-      if (dest == o) copy(dest = n) else this
-   }
+    override def replaceDest(o: BaseSymbol, n: BaseSymbol): IRNode = {
+        if (dest == o) copy(dest = n) else this
+    }
 
-   override def toString = dest + " <= phi(" +
-      inputs.foldLeft("") { (a, i) =>
-         a + (if (a.isEmpty) "" else ", ") + i._2 + "@" + i._1
-      } + ")"
+    override def toString = dest + " <= phi(" +
+        inputs.foldLeft("") { (a, i) =>
+            a + (if (a.isEmpty) "" else ", ") + i._2 + "@" + i._1
+        } + ")"
 
 }
 

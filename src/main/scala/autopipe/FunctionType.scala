@@ -9,71 +9,71 @@ import autopipe.gen.OpenCLFunctionGenerator
 import java.io.File
 
 private[autopipe] abstract class FunctionType(_ap: AutoPipe,
-                                              _name: String,
-                                              _symbols: SymbolTable,
-                                              _platform: Platforms.Value,
-                                              _loopBack: Boolean)
-      extends CodeObject(_ap, _name, _symbols, _platform, _loopBack) {
+                                                             _name: String,
+                                                             _symbols: SymbolTable,
+                                                             _platform: Platforms.Value,
+                                                             _loopBack: Boolean)
+        extends CodeObject(_ap, _name, _symbols, _platform, _loopBack) {
 
-   private[autopipe] val args = symbols.inputs
+    private[autopipe] val args = symbols.inputs
 
-   def this(ap: AutoPipe, apf: AutoPipeFunction, p: Platforms.Value) = {
-      this(ap, apf.name, new SymbolTable(apf), p, apf.loopBack)
-      apf.inputs.foreach(i => symbols.addInput(i.name, i.t.create()))
-      symbols.addOutput("output", apf.returnType)
-      apf.states.foreach { s =>
-         symbols.addState(s.name, s.t, Literal.get(s.init, apf))
-      }
-      dependencies.add(apf.dependencies)
-   }
+    def this(ap: AutoPipe, apf: AutoPipeFunction, p: Platforms.Value) = {
+        this(ap, apf.name, new SymbolTable(apf), p, apf.loopBack)
+        apf.inputs.foreach(i => symbols.addInput(i.name, i.t.create()))
+        symbols.addOutput("output", apf.returnType)
+        apf.states.foreach { s =>
+            symbols.addState(s.name, s.t, Literal.get(s.init, apf))
+        }
+        dependencies.add(apf.dependencies)
+    }
 
-   private[autopipe] def returnType = symbols.outputs.headOption match {
-      case Some(os)  => os.valueType
-      case None      => ValueType.void
-   }
+    private[autopipe] def returnType = symbols.outputs.headOption match {
+        case Some(os)  => os.valueType
+        case None        => ValueType.void
+    }
 
-   def emit(dir: File)
+    def emit(dir: File)
 
-   def internal: Boolean
+    def internal: Boolean
 
 }
 
 private[autopipe] class ExternalFunctionType(ap: AutoPipe,
-                                             apf: AutoPipeFunction,
-                                             p: Platforms.Value)
-      extends FunctionType(ap, apf, p) {
+                                                            apf: AutoPipeFunction,
+                                                            p: Platforms.Value)
+        extends FunctionType(ap, apf, p) {
 
-   override def emit(dir: File) {
-   }
+    override def emit(dir: File) {
+    }
 
-   override def internal = false
+    override def internal = false
 
 }
 
 private[autopipe] class InternalFunctionType(ap: AutoPipe,
-                                             apf: AutoPipeFunction,
-                                             p: Platforms.Value)
-      extends FunctionType(ap, apf, p) {
+                                                            apf: AutoPipeFunction,
+                                                            p: Platforms.Value)
+        extends FunctionType(ap, apf, p) {
 
-   private val root = apf.getRoot
-   private val checked = TypeChecker.check(this, root)
-   val expression = ConstantFolder.fold(this, checked)
+    private val root = apf.getRoot
+    private val checked = TypeChecker.check(this, root)
+    val expression = ConstantFolder.fold(this, checked)
 
-   override def emit(dir: File) {
-      val generator: FunctionGenerator = platform match {
-         case Platforms.C        => new CFunctionGenerator(this)
-         case Platforms.OpenCL   => new OpenCLFunctionGenerator(this)
-         case Platforms.HDL      => new HDLFunctionGenerator(this)
-         case _ => Error.raise("No function generator for " + platform)
-      }
-      generator.emit(dir)
-   }
+    override def emit(dir: File) {
+        val generator: FunctionGenerator = platform match {
+            case Platforms.C          => new CFunctionGenerator(this)
+            case Platforms.OpenCL    => new OpenCLFunctionGenerator(this)
+            case Platforms.HDL        => new HDLFunctionGenerator(this)
+            case _ => Error.raise("No function generator for " + platform)
+        }
+        generator.emit(dir)
+    }
 
-   override def functions = FunctionExtractor.functions(expression)
+    override def functions = FunctionExtractor.functions(expression)
 
-   override def objects = FunctionExtractor.objects(expression)
+    override def objects = FunctionExtractor.objects(expression)
 
-   override def internal = true
+    override def internal = true
 
 }
 

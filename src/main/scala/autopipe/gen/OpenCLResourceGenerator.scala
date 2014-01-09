@@ -5,26 +5,26 @@ import autopipe._
 import java.io.File
 
 private[autopipe] class OpenCLResourceGenerator(val ap: AutoPipe,
-                                                val device: Device)
-      extends ResourceGenerator {
+                                                                val device: Device)
+        extends ResourceGenerator {
 
-   override def getRules: String = {
-      """
+    override def getRules: String = {
+        """
 OPENCL_DIR = /usr/local/cuda
 OCLINC=-I$(OPENCL_DIR)/include
 ifeq ($(shell uname),Darwin)
-   OCLLIB=-framework OpenCl
+    OCLLIB=-framework OpenCl
 else
-   OCLLIB=-lOpenCL
+    OCLLIB=-lOpenCL
 endif
 INCS += $(OCLINC)
 LDFLAGS += $(OCLLIB)
 """
-   }
+    }
 
-   override def emit(dir: File) {
-      // Nothing to do here.
-   }
+    override def emit(dir: File) {
+        // Nothing to do here.
+    }
 
 }
 
