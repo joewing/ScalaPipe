@@ -14,5 +14,11 @@ class AutoPipeVariable private[autopipe] (val name: String,
         ASTAssignNode(symbol, value, apb)
     }
 
+    def update(index: Symbol, value: ASTNode): ASTNode = {
+        val symbol = create()
+        symbol.apply(index)
+        ASTAssignNode(symbol, value, apb)
+    }
+
 }
 

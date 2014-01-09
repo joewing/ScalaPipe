@@ -12,7 +12,7 @@ private[autopipe] object XGenerator extends Generator {
         case at: ArrayValueType     =>
             "array<" + at.baseType + ">[" + at.length + "]"
         case st: StructValueType    =>
-            sys.error("structs not yet supported")
+            "struct<" + st.fields.map(x => getTypeName(x._2)).mkString(",") + ">"
         case td: TypeDefValueType  => td.value
         case _                            => vt.baseType.toString
     }

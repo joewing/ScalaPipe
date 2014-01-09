@@ -45,7 +45,7 @@ private[gen] trait CTypeEmitter extends Generator {
                     for (f <- st.fields) {
                         val name = f._1
                         val tname = f._2.name
-                        write(tname + " " + name)
+                        write(tname + " " + name + ";")
                     }
                     leave
                     write("} " + st.name + ";")
