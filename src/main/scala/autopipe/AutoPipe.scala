@@ -35,13 +35,16 @@ private[autopipe] class AutoPipe {
 
             // Create external block types.
             b.externals.foreach { p =>
-                val hs = blockTypes.getOrElseUpdate(b.name, new HashSet[BlockType])
+                val hs = blockTypes.getOrElseUpdate(b.name,
+                                                    new HashSet[BlockType])
                 hs += new ExternalBlockType(this, b, p)
             }
 
             // Create internal block types.
-            Platforms.values.filter(p => !b.externals.contains(p)).foreach { p =>
-                val hs = blockTypes.getOrElseUpdate(b.name, new HashSet[BlockType])
+            val ps = Platforms.values.filter(p => !b.externals.contains(p))
+            ps.foreach { p =>
+                val hs = blockTypes.getOrElseUpdate(b.name,
+                                                    new HashSet[BlockType])
                 hs += new InternalBlockType(this, b, p)
             }
 
@@ -50,7 +53,8 @@ private[autopipe] class AutoPipe {
     }
 
     private def addFunctionType(f: AutoPipeFunction, p: Platforms.Value) {
-        val hs = functionTypes.getOrElseUpdate(f.name, new HashSet[FunctionType])
+        val hs = functionTypes.getOrElseUpdate(f.name,
+                                               new HashSet[FunctionType])
         if (!hs.exists(_.platform == p)) {
             if (f.externals.contains(p)) {
                 hs += new ExternalFunctionType(this, f, p)
@@ -364,7 +368,6 @@ private[autopipe] class AutoPipe {
 
             // We need exactly one platform to match.
             if (platformSet.size > 1) {
-                Error.warn("multiple device assignments possible; using default")
                 if (platformSet.contains(Platforms.C)) {
                     platformSet.clear
                     platformSet += Platforms.C
@@ -376,7 +379,7 @@ private[autopipe] class AutoPipe {
             }
             if (platformSet.size == 0) {
                 Error.raise("device assignment error: " +
-                                "no device assignments possible")
+                            "no device assignments possible")
             }
 
             // Create the default device.
@@ -401,7 +404,7 @@ private[autopipe] class AutoPipe {
                     devices += device
                 } else if (x.device != device) {
                     Error.raise("device assignment error: " +
-                                    "blocks assignd to conflicting devices")
+                                "blocks assignd to conflicting devices")
                 }
             }
 
@@ -414,12 +417,12 @@ private[autopipe] class AutoPipe {
             val platform = b.device.platform
             val bt = blockTypes(b.name).filter(_.platform == platform)
             bt.size match {
-                case 0 => Error.raise("block " + b.name + " not available on " +
-                                             platform)
+                case 0 => Error.raise("block " + b.name +
+                                      " not available on " + platform)
                 case 1 => b.blockType = bt.head
-                            b.blockType.addBlock(b)
+                          b.blockType.addBlock(b)
                 case _ => Error.raise("multiple implementations for block " +
-                                             b.name + " on " + platform)
+                                      b.name + " on " + platform)
             }
         }
     }
