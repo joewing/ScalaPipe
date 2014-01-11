@@ -6,15 +6,15 @@ import autopipe.dsl.AutoPipeBlock
 object Literal {
 
     def get(v: Any, apb: AutoPipeBlock = null): Literal = v match {
-        case b: Boolean    => new IntLiteral(ValueType.bool, if (b) 1 else 0)
-        case i: Int         => new IntLiteral(ValueType.signed32, i)
-        case l: Long        => new IntLiteral(ValueType.signed64, l)
-        case f: Float      => new FloatLiteral(ValueType.float32, f)
-        case d: Double     => new FloatLiteral(ValueType.float64, d)
-        case s: Symbol     => new SymbolLiteral(ValueType.any, s.name)
-        case s: String     => new StringLiteral(s)
-        case null            => null
-        case _                => Error.raise("invalid literal: " + v, apb)
+        case b: Boolean => new IntLiteral(ValueType.bool, if (b) 1 else 0)
+        case i: Int     => new IntLiteral(ValueType.signed32, i)
+        case l: Long    => new IntLiteral(ValueType.signed64, l)
+        case f: Float   => new FloatLiteral(ValueType.float32, f)
+        case d: Double  => new FloatLiteral(ValueType.float64, d)
+        case s: Symbol  => new SymbolLiteral(ValueType.any, s.name)
+        case s: String  => new StringLiteral(s)
+        case null       => null
+        case _          => Error.raise("invalid literal: " + v, apb)
     }
 
 }
@@ -27,8 +27,6 @@ abstract class Literal(_t: ValueType, _apb: AutoPipeBlock)
     private[autopipe] override def children = List()
 
     private[autopipe] override def isPure = true
-
-    private[autopipe] override def run(i: BlockInterface): Literal = this
 
     def long: Long = 0
 
@@ -92,28 +90,28 @@ class IntLiteral(_t: ValueType, val value: Long,
     override def isTrue: Boolean = value != 0
 
     override def eval(op: NodeType.Value, rhs: Literal): Literal = op match {
-        case NodeType.neg     => new IntLiteral(valueType, -value)
-        case NodeType.not     => new IntLiteral(value == 0)
-        case NodeType.compl  => new IntLiteral(valueType, ~value)
-        case NodeType.land    => new IntLiteral(value != 0 && rhs.long != 0)
-        case NodeType.lor     => new IntLiteral(value != 0 || rhs.long != 0)
-        case NodeType.and     => new IntLiteral(valueType, value & rhs.long)
-        case NodeType.or      => new IntLiteral(valueType, value | rhs.long)
-        case NodeType.xor     => new IntLiteral(valueType, value ^ rhs.long)
-        case NodeType.shr     => new IntLiteral(valueType, value >> rhs.long)
-        case NodeType.shl     => new IntLiteral(valueType, value << rhs.long)
-        case NodeType.add     => new IntLiteral(valueType, value + rhs.long)
-        case NodeType.sub     => new IntLiteral(valueType, value - rhs.long)
-        case NodeType.mul     => new IntLiteral(valueType, value * rhs.long)
-        case NodeType.div     => new IntLiteral(valueType, value / rhs.long)
-        case NodeType.mod     => new IntLiteral(valueType, value % rhs.long)
-        case NodeType.eq      => new IntLiteral(value == rhs.long)
-        case NodeType.ne      => new IntLiteral(value != rhs.long)
-        case NodeType.gt      => new IntLiteral(value > rhs.long)
-        case NodeType.lt      => new IntLiteral(value < rhs.long)
-        case NodeType.ge      => new IntLiteral(value >= rhs.long)
-        case NodeType.le      => new IntLiteral(value <= rhs.long)
-        case _                    => Error.raise("invalid op: " + op)
+        case NodeType.neg   => new IntLiteral(valueType, -value)
+        case NodeType.not   => new IntLiteral(value == 0)
+        case NodeType.compl => new IntLiteral(valueType, ~value)
+        case NodeType.land  => new IntLiteral(value != 0 && rhs.long != 0)
+        case NodeType.lor   => new IntLiteral(value != 0 || rhs.long != 0)
+        case NodeType.and   => new IntLiteral(valueType, value & rhs.long)
+        case NodeType.or    => new IntLiteral(valueType, value | rhs.long)
+        case NodeType.xor   => new IntLiteral(valueType, value ^ rhs.long)
+        case NodeType.shr   => new IntLiteral(valueType, value >> rhs.long)
+        case NodeType.shl   => new IntLiteral(valueType, value << rhs.long)
+        case NodeType.add   => new IntLiteral(valueType, value + rhs.long)
+        case NodeType.sub   => new IntLiteral(valueType, value - rhs.long)
+        case NodeType.mul   => new IntLiteral(valueType, value * rhs.long)
+        case NodeType.div   => new IntLiteral(valueType, value / rhs.long)
+        case NodeType.mod   => new IntLiteral(valueType, value % rhs.long)
+        case NodeType.eq    => new IntLiteral(value == rhs.long)
+        case NodeType.ne    => new IntLiteral(value != rhs.long)
+        case NodeType.gt    => new IntLiteral(value > rhs.long)
+        case NodeType.lt    => new IntLiteral(value < rhs.long)
+        case NodeType.ge    => new IntLiteral(value >= rhs.long)
+        case NodeType.le    => new IntLiteral(value <= rhs.long)
+        case _              => Error.raise("invalid op: " + op)
     }
 
     override def set(index: Literal, value: Literal): Literal =

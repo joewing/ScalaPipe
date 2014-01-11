@@ -10,11 +10,5 @@ abstract class AutoPipeObject(val name: String) {
 
     private[autopipe] def generator(co: CodeObject): ObjectGenerator
 
-    private[autopipe] def run(i: BlockInterface,
-                                      method: String,
-                                      args: Seq[ASTNode]): Literal = {
-        sys.error("not implemented")
-    }
-
 }
 

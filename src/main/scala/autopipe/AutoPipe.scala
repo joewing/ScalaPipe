@@ -23,7 +23,6 @@ private[autopipe] class AutoPipe {
     private val measures = new HashSet[EdgeMeasurement]
     private val deviceManager = new DeviceManager(parameters)
     private val resourceManager = new ResourceManager(this)
-    private val runHooks = new ListBuffer[()=>Unit]
 
     private[autopipe] def functions: Traversable[FunctionType] = {
         functionTypes.values.flatten
@@ -518,45 +517,6 @@ private[autopipe] class AutoPipe {
         emitResources(dir)
         emitMakefile(dir)
 
-    }
-
-    private[autopipe] def build(dirname: String) {
-
-        import java.lang.Process
-        import java.lang.ProcessBuilder
-
-        emit(dirname)
-
-        val pb = new ProcessBuilder("make")
-        pb.directory(new File(dirname))
-        val proc = pb.start()
-        proc.waitFor()
-
-        if (proc.exitValue() != 0) {
-            throw new Exception("Build failed")
-        }
-
-    }
-
-    private[autopipe] def run(dirname: String): java.lang.Process = {
-
-        import java.lang.ProcessBuilder
-
-        build(dirname)
-
-        for (f <- runHooks) {
-            f()
-        }
-
-        // FIXME: The process could be named something different.
-        val pb = new ProcessBuilder("./proc_localhost")
-        pb.directory(new File(dirname))
-        pb.start()
-
-    }
-
-    private[autopipe] def addRunHook(f: () => Unit) {
-        runHooks += f
     }
 
 }

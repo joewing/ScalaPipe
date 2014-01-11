@@ -9,8 +9,8 @@ import autopipe.gen.HDLBlockGenerator
 import java.io.File
 
 private[autopipe] class InternalBlockType(ap: AutoPipe,
-                                                        apb: AutoPipeBlock,
-                                                        p: Platforms.Value)
+                                          apb: AutoPipeBlock,
+                                          p: Platforms.Value)
         extends BlockType(ap, apb, p) {
 
     private val root = apb.getRoot
@@ -44,9 +44,5 @@ private[autopipe] class InternalBlockType(ap: AutoPipe,
     override def functions = FunctionExtractor.functions(expression)
 
     override def objects = FunctionExtractor.objects(expression)
-
-    override def run(i: BlockInterface) {
-        expression.run(i)
-    }
 
 }

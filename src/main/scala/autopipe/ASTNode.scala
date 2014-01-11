@@ -33,8 +33,6 @@ abstract class ASTNode(
         }
     }
 
-    private[autopipe] def run(i: BlockInterface): Literal
-
     final def :=[T <% ASTNode](o: T) = ASTAssignNode(this, o, apb)
 
     final def unary_- = ASTOpNode(NodeType.neg, this, null, apb)
@@ -145,12 +143,6 @@ private[autopipe] case class ASTOpNode(
         b.parent = this
     }
 
-    private[autopipe] override def run(i: BlockInterface): Literal = {
-        val avalue = a.run(i)
-        val bvalue: Literal = if (b != null) b.run(i) else null
-        avalue.eval(op, bvalue)
-    }
-
 }
 
 private[autopipe] case class ASTAssignNode(
@@ -163,13 +155,6 @@ private[autopipe] case class ASTAssignNode(
 
     dest.parent = this
     src.parent = this
-
-    private[autopipe] override def run(i: BlockInterface): Literal = {
-        val symbol = dest.asInstanceOf[ASTSymbolNode]
-        val index = if (symbol.index != null) symbol.index.run(i) else null
-        i.write(symbol.symbol, index, src.run(i))
-        null
-    }
 
 }
 
@@ -192,15 +177,6 @@ private[autopipe] case class ASTIfNode(
         iFalse.parent = this
     }
 
-    private[autopipe] override def run(i: BlockInterface): Literal = {
-        val cvalue = cond.run(i)
-        if (cvalue.isTrue) {
-            if (iTrue != null) iTrue.run(i) else null
-        } else {
-            if (iFalse != null) iFalse.run(i) else null
-        }
-    }
-
 }
 
 private[autopipe] case class ASTSwitchNode(
@@ -217,16 +193,6 @@ private[autopipe] case class ASTSwitchNode(
 
     cond.parent = this
 
-    private[autopipe] override def run(i: BlockInterface): Literal = {
-        val cvalue = cond.run(i)
-        for (c <- cases) {
-            if (c._1 == null || c._1.run(i).isTrue) {
-                return c._2.run(i)
-            }
-        }
-        return null
-    }
-
 }
 
 private[autopipe] case class ASTWhileNode(
@@ -240,24 +206,12 @@ private[autopipe] case class ASTWhileNode(
     cond.parent = this
     body.parent = this
 
-    private[autopipe] override def run(i: BlockInterface): Literal = {
-        while (cond.run(i).isTrue) {
-            body.run(i)
-        }
-        null
-    }
-
 }
 
 private[autopipe] case class ASTStopNode(_apb: AutoPipeBlock = null)
     extends ASTNode(NodeType.STOP, _apb) with ASTStartNode {
 
     override private[autopipe] def children = List()
-
-    private[autopipe] override def run(i: BlockInterface): Literal = {
-        i.stop()
-        null
-    }
 
 }
 
@@ -270,11 +224,6 @@ private[autopipe] case class ASTBlockNode(
 
     children.foreach { n => n.parent = this }
 
-    private[autopipe] override def run(i: BlockInterface): Literal = {
-        children.foreach { n => n.run(i) }
-        null
-    }
-
 }
 
 private[autopipe] case class ASTAvailableNode(
@@ -283,10 +232,6 @@ private[autopipe] case class ASTAvailableNode(
     extends ASTNode(NodeType.avail, _apb) {
 
     override private[autopipe] def children = List()
-
-    private[autopipe] override def run(i: BlockInterface): Literal = {
-        i.available(symbol)
-    }
 
 }
 
@@ -314,14 +259,6 @@ private[autopipe] case class ASTSymbolNode(
         this
     }
 
-    private[autopipe] override def run(i: BlockInterface): Literal = {
-        if (index != null) {
-            i.read(symbol, index.run(i))
-        } else {
-            i.read(symbol, null)
-        }
-    }
-
 }
 
 private[autopipe] case class ASTCallNode(
@@ -345,10 +282,6 @@ private[autopipe] case class ASTCallNode(
         this
     }
 
-    private[autopipe] override def run(i: BlockInterface): Literal = {
-        i.call(symbol, args.map(_.run(i)))
-    }
-
 }
 
 private[autopipe] case class ASTSpecial(
@@ -362,10 +295,6 @@ private[autopipe] case class ASTSpecial(
     override def children = args
 
     private[autopipe] override def isPure = false
-
-    private[autopipe] override def run(i: BlockInterface): Literal = {
-        obj.run(i, method, args)
-    }
 
 }
 
@@ -385,10 +314,6 @@ private[autopipe] case class ASTConvertNode(
 
     a.parent = this
 
-    private[autopipe] override def run(i: BlockInterface): Literal = {
-        TypeConverter.convert(a.run(i), valueType)
-    }
-
 }
 
 private[autopipe] case class ASTReturnNode(
@@ -400,10 +325,6 @@ private[autopipe] case class ASTReturnNode(
 
     if (a != null) {
         a.parent = this
-    }
-
-    private[autopipe] override def run(i: BlockInterface): Literal = {
-        a.run(i)
     }
 
 }

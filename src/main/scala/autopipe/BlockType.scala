@@ -7,10 +7,10 @@ import scala.collection.mutable.ListBuffer
 import autopipe.dsl._
 
 private[autopipe] abstract class BlockType(_ap: AutoPipe,
-                                                         _name: String,
-                                                         _symbols: SymbolTable,
-                                                         _platform: Platforms.Value,
-                                                         _loopBack: Boolean)
+                                           _name: String,
+                                           _symbols: SymbolTable,
+                                           _platform: Platforms.Value,
+                                           _loopBack: Boolean)
         extends CodeObject(_ap, _name, _symbols, _platform, _loopBack) {
 
     private[autopipe] val label = LabelMaker.getTypeLabel
@@ -65,8 +65,6 @@ private[autopipe] abstract class BlockType(_ap: AutoPipe,
     def outputIndex(n: String): Int = outputIndex(new StringPortName(n))
 
     private[autopipe] def emit(dir: java.io.File)
-
-    private[autopipe] def run(i: BlockInterface)
 
     private[autopipe] def internal: Boolean
 

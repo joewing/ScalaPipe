@@ -86,8 +86,9 @@ class AutoPipeBlock(val name: String) extends EmbeddedControls {
         super.__ifThenElse(cond, thenp, elsep)
     }
 
-    def __ifThenElse[A <% ASTNode, T](cond: A, thenp: => T,
-                                                 elsep: => T): ASTNode = {
+    def __ifThenElse[A <% ASTNode, T](cond: A,
+                                      thenp: => T,
+                                      elsep: => T): ASTNode = {
         scopeStack += new autopipe.Scope(this, NodeType.IF, cond)
         thenp
         scopeStack.last.handleElse
@@ -130,28 +131,6 @@ class AutoPipeBlock(val name: String) extends EmbeddedControls {
     def others[T](body: => T) {
         body
         scopeStack.last.handleWhen(null)
-    }
-
-    def If[T <% ASTNode](cond: T) {
-        scopeStack += new autopipe.Scope(this, NodeType.IF, cond)
-    }
-
-    def While[T <% ASTNode](cond: T) {
-        scopeStack += new autopipe.Scope(this, NodeType.WHILE, cond)
-    }
-
-    def Else {
-        scopeStack.last.handleElse
-    }
-
-    def ElseIf[T <% ASTNode](cond: T) {
-        scopeStack.last.handleElseIf(cond)
-    }
-
-    def End {
-        val prev = scopeStack.last
-        scopeStack.trimEnd(1)
-        scopeStack.last += prev.handleEnd
     }
 
     def stop {

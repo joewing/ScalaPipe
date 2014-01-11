@@ -14,7 +14,8 @@ class AutoPipeApp {
 
     implicit val ap = new AutoPipe
 
-    def iteratedFold(inputs: Array[Stream], combiner: AutoPipeBlock): Stream = {
+    def iteratedFold(inputs: Array[Stream],
+                     combiner: AutoPipeBlock): Stream = {
 
         val size = inputs.size
         if (size > 1) {
@@ -24,7 +25,8 @@ class AutoPipeApp {
                 val second = first + 1
                 val dest = size / 2 + i - 1
                 val block = ap.createBlock(combiner)
-                result(dest) = block((null, inputs(first)), (null, inputs(second)))
+                result(dest) = block((null, inputs(first)),
+                                     (null, inputs(second)))
             }
             for (i <- Array.range(size / 2 - 1, 0, -1)) {
                 val left = i * 2 - 1
@@ -94,12 +96,6 @@ class AutoPipeApp {
     def emit(dirname: String) {
         ap.emit(dirname)
     }
-
-    def build(dirname: String) {
-        ap.build(dirname)
-    }
-
-    def run(dirname: String): java.lang.Process = ap.run(dirname)
 
 }
 

@@ -51,13 +51,6 @@ object Averaging {
         // Declare the "Add" block for UNSIGNED32.
         val Add = new AddBlock(UNSIGNED32)
 
-        // Unit test for the add block.
-        class AddTest extends AutoPipeBlockTest(Add) {
-            input(0, 5)
-            input(1, 9)
-            output(0, 14)
-        }
-
         // Create a polymorphic "Half" block.
         class HalfBlock(t: AutoPipeType) extends AutoPipeBlock {
 
