@@ -1,4 +1,3 @@
-
 package autopipe
 
 import org.scalatest._

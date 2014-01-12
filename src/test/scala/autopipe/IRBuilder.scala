@@ -6,10 +6,10 @@ import scala.collection.mutable.HashMap
 
 /** A simple DSL for generating IRGraphs to be used for testing. */
 private[autopipe] class IRBuilder
-        extends CodeObject(new AutoPipe, "test",
-                                 new SymbolTable(null),
-                                 Platforms.HDL,
-                                 false) {
+    extends CodeObject(new AutoPipe, "test",
+                       new SymbolTable(null),
+                       Platforms.HDL,
+                       false) {
 
     private val blocks = new HashMap[Int, StateBlock]
     private var currentBlock: StateBlock = null
@@ -98,9 +98,9 @@ private[autopipe] class IRBuilder
     }
 
     def op(op: NodeType.Value,
-             dest: BaseSymbol,
-             srca: BaseSymbol,
-             srcb: BaseSymbol = null) {
+           dest: BaseSymbol,
+           srca: BaseSymbol,
+           srcb: BaseSymbol = null) {
         append(IRInstruction(op, dest, srca, srcb))
     }
 
