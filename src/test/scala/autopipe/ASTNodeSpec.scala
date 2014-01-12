@@ -3,7 +3,7 @@ package autopipe
 
 import org.scalatest._
 
-class ASTNodeSpec extends FlatSpec with Matchers {
+class ASTNodeSpec extends UnitSpec {
 
     "Adding" should "produce a new node" in {
         val left = ASTSymbolNode("a")

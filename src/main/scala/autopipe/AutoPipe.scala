@@ -269,122 +269,122 @@ private[autopipe] class AutoPipe {
 
     }
 
+    // Get a list of strongly connected blocks.
+    private def getConnectedBlocks(block: Block): Seq[Block] = {
+
+        val connected = new HashSet[Block]
+
+        def visit(b: Block) {
+            b.getOutputs.filter(_.edge == null).foreach { o =>
+                val dest = o.destBlock
+                if(!connected.contains(dest)) {
+                    connected += dest
+                    visit(dest)
+                }
+            }
+            b.getInputs.filter(_.edge == null).foreach { i =>
+                val src = i.sourceBlock
+                if (!connected.contains(src)) {
+                    connected += src
+                    visit(src)
+                }
+            }
+        }
+
+        connected += block
+        visit(block)
+        connected.toList
+
+    }
+
+    // Determine the device to use for a list of connected blocks.
+    private def getDevice(bl: Seq[Block]): Device = {
+
+
+        // Check if any of the blocks already have a device assigned.
+        for (b <- bl) {
+            if (b.device != null) {
+                return b.device
+            }
+        }
+
+        // Look for an incoming edge.
+        val inputs = bl.flatMap(_.getInputs)
+        val inEdges = inputs.filter(_.edge != null).map(_.edge)
+        if (!inEdges.isEmpty) {
+
+            // We have one or more incoming edges.
+            // Get the device from the edge and make sure all
+            // of the devices match.
+            var spec: DeviceSpec = null
+            for (e <- inEdges) {
+                if (spec != null && !spec.canCombine(e.dest)) {
+                    Error.raise("device assignment error: " +
+                                "in-edges from multiple devices (" +
+                                e.dest + " and " + spec + ")")
+                }
+                spec = e.dest.combine(spec)
+            }
+
+            return deviceManager.create(spec)
+
+        }
+
+        // No incoming edges.
+        // Check output edges.
+        val outputs = bl.flatMap(_.getOutputs)
+        val outEdges = outputs.filter(_.edge != null).map(_.edge)
+        if (!outEdges.isEmpty) {
+
+            // Get the default device and make sure they all match.
+            var spec: DeviceSpec = null
+            for (e <- outEdges) {
+                val source = e.defaultSource
+                if (spec != null && !spec.canCombine(source)) {
+                    Error.raise("device assignment error: " +
+                                "out-edges to multiple devices (" +
+                                source + " and " + spec + ")")
+                }
+                spec = source.combine(spec)
+            }
+
+            return deviceManager.create(spec)
+
+        }
+
+        // No edges in either direction.
+        // Get a list of potential block platforms.
+        val platformSet = new HashSet[Platforms.Value]
+        for (bt <- blockTypes(bl.head.name)) {
+            platformSet += bt.platform
+        }
+        for (b <- bl) {
+            val pl = blockTypes(b.name).map { _.platform }
+            platformSet.retain { pl.contains(_) }
+        }
+
+        // We need exactly one platform to match.
+        if (platformSet.size > 1) {
+            if (platformSet.contains(Platforms.C)) {
+                platformSet.clear
+                platformSet += Platforms.C
+            } else {
+                val t = platformSet.head
+                platformSet.clear
+                platformSet += t
+            }
+        }
+        if (platformSet.size == 0) {
+            Error.raise("device assignment error: " +
+                        "no device assignments possible")
+        }
+
+        // Create the default device.
+        return deviceManager.getDefault(platformSet.head)
+
+    }
+
     private def assignDevices {
-
-        // Get a list of strongly connected blocks.
-        def getConnectedBlocks(block: Block): Seq[Block] = {
-
-            val connected = new HashSet[Block]
-
-            def visit(b: Block) {
-                b.getOutputs.filter(_.edge == null).foreach { o =>
-                    val dest = o.destBlock
-                    if(!connected.contains(dest)) {
-                        connected += dest
-                        visit(dest)
-                    }
-                }
-                b.getInputs.filter(_.edge == null).foreach { i =>
-                    val src = i.sourceBlock
-                    if (!connected.contains(src)) {
-                        connected += src
-                        visit(src)
-                    }
-                }
-            }
-
-            connected += block
-            visit(block)
-            connected.toList
-
-        }
-
-        // Determine the device to use for a list of connected blocks.
-        def getDevice(bl: Seq[Block]): Device = {
-
-
-            // Check if any of the blocks already have a device assigned.
-            for (b <- bl) {
-                if (b.device != null) {
-                    return b.device
-                }
-            }
-
-            // Look for an incoming edge.
-            val inputs = bl.flatMap(_.getInputs)
-            val inEdges = inputs.filter(_.edge != null).map(_.edge)
-            if (!inEdges.isEmpty) {
-
-                // We have one or more incoming edges.
-                // Get the device from the edge and make sure all
-                // of the devices match.
-                var spec: DeviceSpec = null
-                for (e <- inEdges) {
-                    if (spec != null && !spec.canCombine(e.dest)) {
-                        Error.raise("device assignment error: " +
-                                        "in-edges from multiple devices (" +
-                                        e.dest + " and " + spec + ")")
-                    }
-                    spec = e.dest.combine(spec)
-                }
-
-                return deviceManager.create(spec)
-                
-            }
-
-            // No incoming edges.
-            // Check output edges.
-            val outputs = bl.flatMap(_.getOutputs)
-            val outEdges = outputs.filter(_.edge != null).map(_.edge)
-            if (!outEdges.isEmpty) {
-
-                // Get the default device and make sure they all match.
-                var spec: DeviceSpec = null
-                for (e <- outEdges) {
-                    val source = e.defaultSource
-                    if (spec != null && !spec.canCombine(source)) {
-                        Error.raise("device assignment error: " +
-                                        "out-edges to multiple devices (" +
-                                        source + " and " + spec + ")")
-                    }
-                    spec = source.combine(spec)
-                }
-
-                return deviceManager.create(spec)
-
-            }
-
-            // No edges in either direction.
-            // Get a list of potential block platforms.
-            val platformSet = new HashSet[Platforms.Value]
-            for (bt <- blockTypes(bl.head.name)) {
-                platformSet += bt.platform
-            }
-            for (b <- bl) {
-                val pl = blockTypes(b.name).map { _.platform }
-                platformSet.retain { pl.contains(_) }
-            }
-
-            // We need exactly one platform to match.
-            if (platformSet.size > 1) {
-                if (platformSet.contains(Platforms.C)) {
-                    platformSet.clear
-                    platformSet += Platforms.C
-                } else {
-                    val t = platformSet.head
-                    platformSet.clear
-                    platformSet += t
-                }
-            }
-            if (platformSet.size == 0) {
-                Error.raise("device assignment error: " +
-                            "no device assignments possible")
-            }
-
-            // Create the default device.
-            return deviceManager.getDefault(platformSet.head)
-
-        }
 
         // Loop over each block to assign devices.
         for (b <- blocks) {
@@ -406,9 +406,7 @@ private[autopipe] class AutoPipe {
                                 "blocks assignd to conflicting devices")
                 }
             }
-
         }
-
     }
 
     private def loadBlockTypes {

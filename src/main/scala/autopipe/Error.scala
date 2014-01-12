@@ -1,4 +1,3 @@
-
 package autopipe
 
 import autopipe.dsl.AutoPipeBlock
@@ -6,8 +5,7 @@ import autopipe.dsl.AutoPipeBlock
 private[autopipe] object Error {
 
     def raise(msg: String): Nothing = {
-        println("ERROR: " + msg)
-        sys.exit(-1)
+        sys.error(msg)
     }
 
     def raise(msg: String, node: ASTNode): Nothing = {

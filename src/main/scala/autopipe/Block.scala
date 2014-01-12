@@ -25,11 +25,8 @@ private[autopipe] class Block(ap: AutoPipe, val name: String) {
             val name = if(a._1 == null) null else a._1.name
             if(a._2.isInstanceOf[Stream]) {
                 setInput(name, a._2.asInstanceOf[Stream])
-            } else {
-                if(name != null) {
-                    setConfig(name, a._2)
-                } else {
-                }
+            } else if(name != null) {
+                setConfig(name, a._2)
             }
         }
         new StreamList(ap, this)
@@ -42,7 +39,7 @@ private[autopipe] class Block(ap: AutoPipe, val name: String) {
 
     private[autopipe] def setInput(n: String, s: Stream) {
         val portName: PortName = if(n == null) new IntPortName(inputs.size)
-                                         else new StringPortName(n)
+                                 else new StringPortName(n)
         s.setDest(this, portName)
         inputs += (portName -> s)
     }

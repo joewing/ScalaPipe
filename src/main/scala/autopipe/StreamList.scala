@@ -3,9 +3,9 @@ package autopipe
 
 import scala.collection.mutable.ListBuffer
 
-class StreamList(ap: AutoPipe, _block: Block) {
+class StreamList(val ap: AutoPipe,
+                 val block: Block) {
 
-    private[autopipe] val block = _block
     private[autopipe] val streams = new ListBuffer[Stream]
     private val measures = new ListBuffer[(Symbol, Symbol)]
     private val edges = new ListBuffer[Edge]
@@ -45,4 +45,3 @@ class StreamList(ap: AutoPipe, _block: Block) {
     }
 
 }
-
