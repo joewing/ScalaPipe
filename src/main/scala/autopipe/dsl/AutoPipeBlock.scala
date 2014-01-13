@@ -1,7 +1,7 @@
 
 package autopipe.dsl
 
-import language.implicitConversions
+import scala.language.implicitConversions
 import scala.collection.mutable.ListBuffer
 import scala.collection.mutable.HashSet
 import autopipe._

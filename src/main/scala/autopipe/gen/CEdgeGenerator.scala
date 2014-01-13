@@ -38,9 +38,9 @@ private[autopipe] class CEdgeGenerator extends EdgeGenerator(Platforms.C) {
 
         // Initialize the queue.
         write(queueName + " = (APQ*)malloc(APQ_GetSize(" + depth +
-                ", sizeof(" + valueType + ")));")
+              ", sizeof(" + valueType + ")));")
         write("APQ_Initialize(" + queueName + ", " + depth +
-                ", sizeof(" + valueType + "));")
+              ", sizeof(" + valueType + "));")
 
     }
 
@@ -64,14 +64,14 @@ private[autopipe] class CEdgeGenerator extends EdgeGenerator(Platforms.C) {
         write("{")
         enter
         write("if(" + destBlock.label + ".inputs[" + destIndex +
-                "].data == NULL) {")
+              "].data == NULL) {")
         enter
         write("char *buf;")
         write("uint32_t c = APQ_StartRead(" + queueName + ", &buf);")
         write("if(c > 0) {")
         enter
         write(destBlock.label + ".inputs[" + destIndex + "].data = (" +
-                stream.valueType + "*)buf;")
+              stream.valueType + "*)buf;")
         write(destBlock.label + ".inputs[" + destIndex + "].count = c;")
 
         leave
@@ -83,10 +83,10 @@ private[autopipe] class CEdgeGenerator extends EdgeGenerator(Platforms.C) {
         enter
         write(destBlock.label + ".clock.count += 1;")
         write("ap_" + destBlock.blockType.name + "_push(&" +
-                destBlock.label + ".priv, " +
-                destIndex + ", " +
-                destBlock.label + ".inputs[" + destIndex + "].data, " +
-                destBlock.label + ".inputs[" + destIndex + "].count);")
+              destBlock.label + ".priv, " +
+              destIndex + ", " +
+              destBlock.label + ".inputs[" + destIndex + "].data, " +
+              destBlock.label + ".inputs[" + destIndex + "].count);")
         write("return true;")
         leave
         write("} else {")

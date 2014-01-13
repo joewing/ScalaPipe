@@ -37,12 +37,12 @@ private[autopipe] class CPUResourceGenerator(val ap: AutoPipe,
         val src = stream.sourceBlock.device
 
         val generator: EdgeGenerator = stream.edge match {
-            case c2f: CPU2FPGA                                    => getHDLEdgeGenerator
-            case f2c: FPGA2CPU                                    => getHDLEdgeGenerator
-            case c2g: CPU2GPU                                     => openCLEdgeGenerator
-            case g2c: GPU2CPU                                     => openCLEdgeGenerator
-            case c2c: CPU2CPU if dest.host != src.host    => sockEdgeGenerator
-            case _                                                    => cEdgeGenerator
+            case c2f: CPU2FPGA                          => getHDLEdgeGenerator
+            case f2c: FPGA2CPU                          => getHDLEdgeGenerator
+            case c2g: CPU2GPU                           => openCLEdgeGenerator
+            case g2c: GPU2CPU                           => openCLEdgeGenerator
+            case c2c: CPU2CPU if dest.host != src.host  => sockEdgeGenerator
+            case _                                      => cEdgeGenerator
         }
 
         if (!edgeGenerators.contains(generator)) {
@@ -61,7 +61,7 @@ private[autopipe] class CPUResourceGenerator(val ap: AutoPipe,
         if (!emittedBlockTypes.contains(blockType)) {
             emittedBlockTypes += blockType
             write("#include \"" + blockType.name + "-dir/" +
-                    blockType.name + ".h\"")
+                  blockType.name + ".h\"")
         }
     }
 
@@ -73,7 +73,7 @@ private[autopipe] class CPUResourceGenerator(val ap: AutoPipe,
         write("static struct {")
         enter
         write("APC clock;")
-        write("int active_inputs;")
+        write("volatile int active_inputs;")
         write("AP_input_port inputs[" + inputCount + "];")
         write("AP_output_port outputs[" + outputCount + "];")
         write("AP_block_data data;")
@@ -326,32 +326,6 @@ private[autopipe] class CPUResourceGenerator(val ap: AutoPipe,
         write("ap_" + name + "_destroy(&" + instance + ".priv);")
     }
 
-    private def emitDeclareRemoveInput(block: Block) {
-        val id = threadIds(block)
-        write("static void remove_input" + id + "();")
-    }
-
-    private def emitRemoveInput(block: Block) {
-        val id = threadIds(block)
-        val instance = block.label
-        write("void remove_input" + id + "()")
-        write("{")
-        enter
-        write(instance + ".active_inputs -= 1;")
-        write("if(" + instance + ".active_inputs == 0) {")
-        enter
-        for (stream <- block.getOutputs) {
-            if (stream.destBlock.device == block.device) {
-                val next_id = threadIds(stream.destBlock)
-                write("remove_input" + next_id + "();")
-            }
-        }
-        leave
-        write("}")
-        leave
-        write("}")
-    }
-
     private def emitCheckRunning(block: Block) {
         val id = threadIds(block)
         val instance = block.label
@@ -397,7 +371,7 @@ private[autopipe] class CPUResourceGenerator(val ap: AutoPipe,
         write("count = 0;")
         write("if(XUNLIKELY(retval)) {")
         enter
-        write("remove_input" + id + "();")
+        write(instance + ".active_inputs -= 1;")
         leave
         write("}")
         leave
@@ -422,6 +396,12 @@ private[autopipe] class CPUResourceGenerator(val ap: AutoPipe,
         leave
         write("}")
         write("APC_Stop(&" + instance + ".clock);")
+        for (stream <- block.getOutputs) {
+            if (stream.destBlock.device == block.device) {
+                val dest = stream.destBlock.label
+                write(dest + ".active_inputs -= 1;")
+            }
+        }
         write("return NULL;")
         leave
         write("}")
@@ -600,8 +580,6 @@ private[autopipe] class CPUResourceGenerator(val ap: AutoPipe,
         cpuBlocks.foreach { emitBlockSendSignal(_) }
         cpuBlocks.foreach { emitBlockSend(_) }
         cpuBlocks.foreach { emitBlockRelease(_) }
-        cpuBlocks.foreach { emitDeclareRemoveInput(_) }
-        cpuBlocks.foreach { emitRemoveInput(_) }
         cpuBlocks.foreach { emitCheckRunning(_) }
         cpuBlocks.foreach { emitThread(_) }
 

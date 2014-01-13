@@ -5,10 +5,6 @@ import language.implicitConversions
 import autopipe._
 import scala.collection.mutable.HashSet
 
-object AutoPipeApp {
-    def apply() = new AutoPipeApp
-}
-
 /** ScalaPipe Application DSL. */
 class AutoPipeApp {
 

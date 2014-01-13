@@ -80,7 +80,7 @@ object Averaging {
         // Since there are blocks that are only declared in software and
         // no "edge" blocks are used, we know that all blocks must use the
         // software implementation.
-        object Averaging extends AutoPipeApp {
+        val app = new AutoPipeApp {
 
             val iterations = 1000
             val random0 = Random('iterations -> iterations)
@@ -91,7 +91,7 @@ object Averaging {
         }
 
         // Emit the application code.
-        Averaging.emit("averaging")
+        app.emit("averaging")
 
     }
 
