@@ -149,32 +149,32 @@ class AutoPipeBlock(val name: String) extends EmbeddedControls {
 
     def addr(n: ASTNode) = ASTOpNode(NodeType.addr, n, null, this)
 
-    def sizeof(t: AutoPipeType) = new IntLiteral(t.create.bits / 8, this)
+    def sizeof(t: AutoPipeType) = IntLiteral(t.create.bits / 8, this)
 
     def sizeof(n: ASTNode) = ASTOpNode(NodeType.sizeof, n, null, this)
 
-    implicit def bool(b: Boolean) = new IntLiteral(b, this)
+    implicit def bool(b: Boolean) = IntLiteral(b, this)
 
-    implicit def byte(b: Byte) = new IntLiteral(b, this)
+    implicit def byte(b: Byte) = IntLiteral(b, this)
 
-    implicit def char(c: Char) = new IntLiteral(c, this)
+    implicit def char(c: Char) = IntLiteral(c, this)
 
-    implicit def short(s: Short) = new IntLiteral(s, this)
+    implicit def short(s: Short) = IntLiteral(s, this)
 
-    implicit def int(i: Int) = new IntLiteral(i, this)
+    implicit def int(i: Int) = IntLiteral(i, this)
 
-    implicit def long(l: Long) = new IntLiteral(l, this)
+    implicit def long(l: Long) = IntLiteral(l, this)
 
-    implicit def float(f: Float) = new FloatLiteral(f, this)
+    implicit def float(f: Float) = FloatLiteral(f, this)
 
-    implicit def double(d: Double) = new FloatLiteral(d, this)
+    implicit def double(d: Double) = FloatLiteral(d, this)
 
     implicit def func(f: AutoPipeFunction) = {
         dependencies.add(f.dependencies)
         ASTCallNode(f, this)
     }
 
-    implicit def string(s: String) = new StringLiteral(s, this)
+    implicit def string(s: String) = StringLiteral(s, this)
 
     implicit def builder(b: AutoPipeVariable) = b.create
 

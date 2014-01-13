@@ -69,10 +69,11 @@ private[autopipe] class TempSymbol(
 
 }
 
-private[autopipe] class StateSymbol(_name: String, _valueType: ValueType,
-    _value: Literal) extends BaseSymbol(_name, _valueType) {
-
-    val value = _value
+private[autopipe] class StateSymbol(
+        _name: String,
+        _valueType: ValueType,
+        val value: Literal
+    ) extends BaseSymbol(_name, _valueType) {
 
     var isLocal = false
 
@@ -80,18 +81,19 @@ private[autopipe] class StateSymbol(_name: String, _valueType: ValueType,
 
 }
 
-private[autopipe] class ConfigSymbol(_name: String, _valueType: ValueType,
-    _value: Literal) extends BaseSymbol(_name, _valueType) {
-    val value = _value
+private[autopipe] class ConfigSymbol(
+        _name: String,
+        _valueType: ValueType,
+        val value: Literal
+    ) extends BaseSymbol(_name, _valueType) {
 
     override def toString = name
 
 }
 
-private[autopipe] class ImmediateSymbol(_value: Literal)
-    extends BaseSymbol("", _value.valueType) {
-
-    val value = _value
+private[autopipe] class ImmediateSymbol(
+        val value: Literal
+    ) extends BaseSymbol("", value.valueType) {
 
     override def toString = value.toString
 

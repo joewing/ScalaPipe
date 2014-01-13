@@ -41,11 +41,11 @@ private[opt] object StrengthReduction extends Pass {
             case im: ImmediateSymbol if im.value.long == 0 =>
                 new IRInstruction(NodeType.assign, node.dest, args._2)
             case ts: TempSymbol if node.srca == node.srcb =>
-                val lit = new IntLiteral(ts.valueType, 1)
+                val lit = IntLiteral(ts.valueType, 1, null)
                 val sym = new ImmediateSymbol(lit)
                 new IRInstruction(NodeType.shl, node.dest, node.srca, sym)
             case ss: StateSymbol if node.srca == node.srcb =>
-                val lit = new IntLiteral(ss.valueType, 1)
+                val lit = IntLiteral(ss.valueType, 1, null)
                 val sym = new ImmediateSymbol(lit)
                 new IRInstruction(NodeType.shl, node.dest, node.srca, sym)
             case _ => null
@@ -58,11 +58,11 @@ private[opt] object StrengthReduction extends Pass {
             case im: ImmediateSymbol if im.value.long == 0 =>
                 new IRInstruction(NodeType.assign, node.dest, args._2)
             case ts: TempSymbol if node.srca == node.srcb =>
-                val lit = new IntLiteral(ts.valueType, 1)
+                val lit = IntLiteral(ts.valueType, 1, null)
                 val sym = new ImmediateSymbol(lit)
                 new IRInstruction(NodeType.shl, node.dest, node.srca, sym)
             case ss: StateSymbol if node.srca == node.srcb =>
-                val lit = new IntLiteral(ss.valueType, 1)
+                val lit = IntLiteral(ss.valueType, 1, null)
                 val sym = new ImmediateSymbol(lit)
                 new IRInstruction(NodeType.shl, node.dest, node.srca, sym)
             case _ => null
@@ -92,11 +92,11 @@ private[opt] object StrengthReduction extends Pass {
             case im: ImmediateSymbol if im.value.long == 0 =>
                 new IRInstruction(NodeType.assign, node.dest, node.srca)
             case ts: TempSymbol if node.srca == node.srcb =>
-                val lit = new IntLiteral(ts.valueType, 0)
+                val lit = IntLiteral(ts.valueType, 0, null)
                 val sym = new ImmediateSymbol(lit)
                 new IRInstruction(NodeType.assign, node.dest, sym)
             case ss: StateSymbol if node.srca == node.srcb =>
-                val lit = new IntLiteral(ss.valueType, 0)
+                val lit = IntLiteral(ss.valueType, 0, null)
                 val sym = new ImmediateSymbol(lit)
                 new IRInstruction(NodeType.assign, node.dest, sym)
             case _ => null
@@ -108,11 +108,11 @@ private[opt] object StrengthReduction extends Pass {
             case im: ImmediateSymbol if im.value.long == 0 =>
                 new IRInstruction(NodeType.assign, node.dest, node.srca)
             case ts: TempSymbol if node.srca == node.srcb =>
-                val lit = new IntLiteral(ts.valueType, 0)
+                val lit = IntLiteral(ts.valueType, 0, null)
                 val sym = new ImmediateSymbol(lit)
                 new IRInstruction(NodeType.assign, node.dest, sym)
             case ss: StateSymbol if node.srca == node.srcb =>
-                val lit = new IntLiteral(ss.valueType, 0)
+                val lit = IntLiteral(ss.valueType, 0, null)
                 val sym = new ImmediateSymbol(lit)
                 new IRInstruction(NodeType.assign, node.dest, sym)
             case _ => null
@@ -124,11 +124,11 @@ private[opt] object StrengthReduction extends Pass {
             case im: ImmediateSymbol if im.value.double == 0 =>
                 new IRInstruction(NodeType.assign, node.dest, node.srca)
             case ts: TempSymbol if node.srca == node.srcb =>
-                val lit = new FloatLiteral(ts.valueType, 0.0)
+                val lit = FloatLiteral(ts.valueType, 0.0, null)
                 val sym = new ImmediateSymbol(lit)
                 new IRInstruction(NodeType.assign, node.dest, sym)
             case ss: StateSymbol if node.srca == node.srcb =>
-                val lit = new FloatLiteral(ss.valueType, 0.0)
+                val lit = FloatLiteral(ss.valueType, 0.0, null)
                 val sym = new ImmediateSymbol(lit)
                 new IRInstruction(NodeType.assign, node.dest, sym)
             case _ => null
@@ -156,7 +156,7 @@ private[opt] object StrengthReduction extends Pass {
             case im: ImmediateSymbol =>
                 val l = log2(im.value.long)
                 if (im.value.long == (1 << l)) {
-                    val lit = new IntLiteral(im.valueType, l)
+                    val lit = IntLiteral(im.valueType, l, null)
                     val sym = new ImmediateSymbol(lit)
                     new IRInstruction(NodeType.shl, node.dest, args._2, sym)
                 } else {
@@ -203,9 +203,10 @@ private[opt] object StrengthReduction extends Pass {
                 } else {
                     val l = log2(im.value.long)
                     if (im.value.long == (1 << l)) {
-                        val lit = new IntLiteral(im.valueType, l)
+                        val lit = IntLiteral(im.valueType, l, null)
                         val sym = new ImmediateSymbol(lit)
-                        new IRInstruction(NodeType.shr, node.dest, node.srca, sym)
+                        new IRInstruction(NodeType.shr, node.dest,
+                                          node.srca, sym)
                     } else {
                         null
                     }

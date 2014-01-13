@@ -1,7 +1,5 @@
 package autopipe
 
-import org.scalatest._
-
 class ASTNodeSpec extends UnitSpec {
 
     "Adding" should "produce a new node" in {

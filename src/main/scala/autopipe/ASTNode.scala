@@ -254,7 +254,7 @@ private[autopipe] case class ASTSymbolNode(
     }
 
     def apply(s: Symbol): ASTNode = {
-        index = new SymbolLiteral(s.name)
+        index = SymbolLiteral(s.name, apb)
         index.parent = this
         this
     }
