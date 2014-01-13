@@ -78,12 +78,22 @@ private[autopipe] class SymbolTable(apb: AutoPipeBlock) {
 
     def get(name: String): BaseSymbol = symbols.get(name) match {
         case Some(s)    => s
-        case None        => null
+        case None       => null
     }
 
     def getType(name: String): ValueType = symbols.get(name) match {
         case Some(s)    => s.valueType
-        case None        => null
+        case None       => null
+    }
+
+    def isInput(name: String): Boolean = get(name) match {
+        case is: InputSymbol    => true
+        case _                  => false
+    }
+
+    def isOutput(name: String): Boolean = get(name) match {
+        case os: OutputSymbol   => true
+        case _                  => false
     }
 
     def getInput(pn: PortName): InputSymbol = {
@@ -139,7 +149,7 @@ private[autopipe] class SymbolTable(apb: AutoPipeBlock) {
         for (s <- states.takeWhile(_ != s)) {
             s.valueType match {
                 case at: ArrayValueType => result += (at.bits + 7) / 8
-                case _                        => result += 0
+                case _                  => result += 0
             }
         }
         return result

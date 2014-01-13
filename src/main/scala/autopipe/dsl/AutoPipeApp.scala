@@ -40,11 +40,17 @@ class AutoPipeApp {
     }
 
     implicit def apb2Block(apb: AutoPipeBlock) = ap.createBlock(apb)
-    implicit def block2Stream(b: Block) = b.apply()
+
+    implicit def block2StreamList(b: Block): StreamList = b.apply()
+
     implicit def block2Arg(b: Block) = (null, b.apply().apply())
+
     implicit def stream2Arg(s: Stream) = (null, s)
+
     implicit def streamList2Arg(sl: StreamList) = (null, sl.apply())
+
     implicit def streamList2Stream(sl: StreamList) = sl.apply()
+
     implicit def objToEdge[T <: Edge](e: EdgeObject[T]): T = e.apply()
 
     def measure(streamList: StreamList, stat: Symbol, metric: Symbol) {

@@ -4,12 +4,13 @@ package autopipe
 import autopipe.dsl.AutoPipeFunction
 import autopipe.dsl.AutoPipeObject
 
-private[autopipe] abstract class CodeObject(val ap: AutoPipe,
-                                                          val name: String,
-                                                          val symbols: SymbolTable,
-                                                          val platform: Platforms.Value,
-                                                          val loopBack: Boolean)
-{
+private[autopipe] abstract class CodeObject(
+        val ap: AutoPipe,
+        val name: String,
+        val symbols: SymbolTable,
+        val platform: Platforms.Value,
+        val loopBack: Boolean
+    ) {
 
     private[autopipe] val configs = symbols.configs
     private[autopipe] val states = symbols.states
@@ -22,8 +23,18 @@ private[autopipe] abstract class CodeObject(val ap: AutoPipe,
         val vtype = symbols.getType(name)
         if (vtype == null) {
             Error.raise("symbol not declared: " + name, node)
+            ValueType.void
+        } else {
+            vtype
         }
-        return vtype
+    }
+
+    private[autopipe] def isInput(node: ASTSymbolNode): Boolean = {
+        symbols.isInput(node.symbol)
+    }
+
+    private[autopipe] def isOutput(node: ASTSymbolNode): Boolean = {
+        symbols.isOutput(node.symbol)
     }
 
     private[autopipe] def isInternal(f: AutoPipeFunction): Boolean = {
@@ -51,7 +62,7 @@ private[autopipe] abstract class CodeObject(val ap: AutoPipe,
         case sl: SymbolLiteral =>
             configs.find(_.name == sl.symbol) match {
                 case Some(v)    => getLiteral(v.value)
-                case None        =>
+                case None       =>
                     Error.raise("config option not found: " + sl.symbol, this)
             }
         case _ => lit.toString

@@ -7,7 +7,9 @@ object TypeConverter {
         value match {
             case i: IntLiteral      => convertInt(i, to)
             case f: FloatLiteral    => convertFloat(f, to)
-            case _ => Error.raise("invalid conversion", value)
+            case _ =>
+                Error.raise("invalid conversion", value)
+                value
         }
     }
 
@@ -36,6 +38,7 @@ object TypeConverter {
             case _ =>
                 Error.raise("invalid (int) conversion from " +
                             value.valueType + " to " + to, value)
+                value
         }
     }
 
@@ -52,6 +55,7 @@ object TypeConverter {
             case _ =>
                 Error.raise("invalid (float) conversion from " +
                             value.valueType + " to " + to, value)
+                value
         }
     }
 

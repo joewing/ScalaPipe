@@ -7,30 +7,20 @@ import autopipe.dsl.AutoPipeObject
 import scala.collection.mutable.ListBuffer
 
 abstract class ASTNode(
-    val op: NodeType.Value,
-    val apb: AutoPipeBlock) {
+        val op: NodeType.Value,
+        val apb: AutoPipeBlock
+    ) extends DebugInfo {
 
     private[autopipe] var parent: ASTNode = null
     private[autopipe] def children: Seq[ASTNode]
     private[autopipe] var valueType = ValueType.void
-    private[autopipe] var lineNumber = 0
-    private[autopipe] var fileName = ""
     private[autopipe] var isStart = false
 
     private[autopipe] def isPure: Boolean = children.forall(_.isPure)
 
     // Dirty way to get the line number and file name in case of an error.
     if (apb != null) {
-        try {
-            throw new Exception("DEBUG")
-        } catch {
-            case e: Exception =>
-                val trace = e.getStackTrace().filter {
-                    !_.getClassName().startsWith("autopipe.")
-                }
-                fileName = trace.head.getFileName
-                lineNumber = trace.head.getLineNumber
-        }
+        collectDebugInfo
     }
 
     final def :=[T <% ASTNode](o: T) = ASTAssignNode(this, o, apb)
@@ -328,4 +318,3 @@ private[autopipe] case class ASTReturnNode(
     }
 
 }
-

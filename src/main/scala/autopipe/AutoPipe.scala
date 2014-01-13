@@ -428,8 +428,12 @@ private[autopipe] class AutoPipe {
         streams ++= blocks.flatMap(b => b.blockType.streams)
     }
 
-    private def checkTypes {
+    private def checkStreams {
         streams.foreach { _.checkType }
+    }
+
+    private def checkBlocks {
+        blocks.foreach { _.validate }
     }
 
     private def emitBlocks(dir: File) {
@@ -488,7 +492,8 @@ private[autopipe] class AutoPipe {
         deviceManager.reassignIndexes
         loadBlockTypes
         loadStreams
-        checkTypes
+        checkStreams
+        checkBlocks
         insertMeasures
 
         // Create the directory.
@@ -514,6 +519,7 @@ private[autopipe] class AutoPipe {
         emitDescription(dir)
         emitResources(dir)
         emitMakefile(dir)
+        Error.exit
 
     }
 

@@ -81,7 +81,7 @@ private[autopipe] class ConstantFolder(co: CodeObject) {
             case NodeType.cos   => FloatLiteral(math.cos(a.value), apb)
             case NodeType.tan   => FloatLiteral(math.tan(a.value), apb)
             case NodeType.avail => ASTOpNode(node.op, a, null, apb)
-            case _              => Error.raise("internal", apb)
+            case _              => sys.error("internal")
         }
     }
 

@@ -34,6 +34,8 @@ class StreamList(val ap: AutoPipe,
 
     def apply(s: Symbol): Stream = apply(s.name)
 
+    private[autopipe] def edgeCount = edges.length
+
     private[autopipe] def addMeasure(stat: Symbol, metric: Symbol) {
         measures += ((stat, metric))
         streams.foreach { _.addMeasure(stat, metric) }

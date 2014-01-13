@@ -70,10 +70,13 @@ private[autopipe] class Scope(val apb: AutoPipeBlock,
 
         def emit(cl: Seq[ASTNode], bl: Seq[ASTNode]): ASTNode = {
             bl.size match {
-                case 0 => Error.raise("invalid IF statement", apb)
+                case 0 =>
+                    Error.raise("invalid IF statement", apb)
+                    ASTStopNode(apb)
                 case 1 => ASTIfNode(cl.head, bl.head, null, apb)
                 case 2 => ASTIfNode(cl.head, bl.head, bl.last, apb)
-                case _ => ASTIfNode(cl.head, bl.head, emit(cl.tail, bl.tail), apb)
+                case _ => ASTIfNode(cl.head, bl.head,
+                                    emit(cl.tail, bl.tail), apb)
             }
         }
 
@@ -98,11 +101,13 @@ private[autopipe] class Scope(val apb: AutoPipeBlock,
     def handleEnd(): ASTNode = {
         bodies += getTop()
         nodeType match {
-            case NodeType.IF      => handleIfEnd
+            case NodeType.IF     => handleIfEnd
             case NodeType.SWITCH => handleSwitchEnd
             case NodeType.WHILE  => handleWhileEnd
             case NodeType.BLOCK  => handleBlockEnd
-            case _                    => Error.raise("invalid END", apb)
+            case _               =>
+                Error.raise("invalid END", apb)
+                ASTStopNode(apb)
         }
     }
 

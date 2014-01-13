@@ -29,38 +29,39 @@ private[gen] abstract class HDLNodeEmitter(
         }
     }
 
-    private def emitIntOp(block: StateBlock, vt: IntegerValueType,
-                                 node: IRInstruction) {
+    private def emitIntOp(block: StateBlock,
+                          vt: IntegerValueType,
+                          node: IRInstruction) {
         val dest = emitSymbol(node.dest)
         val srca = emitSymbol(node.srca)
         val srcb = emitSymbol(node.srcb)
         val width = vt.bits
         val state = block.label
         val expression = node.op match {
-            case NodeType.neg     => "-" + srca 
-            case NodeType.not     => "!" + srca
-            case NodeType.compl  => "~" + srca
-            case NodeType.land    => srca + " && " + srcb
-            case NodeType.lor     => srca + " || " + srcb
-            case NodeType.and     => srca + " & " + srcb
-            case NodeType.or      => srca + " | " + srcb
-            case NodeType.xor     => srca + " ^ " + srcb
-            case NodeType.shr     =>
+            case NodeType.neg   => "-" + srca
+            case NodeType.not   => "!" + srca
+            case NodeType.compl => "~" + srca
+            case NodeType.land  => srca + " && " + srcb
+            case NodeType.lor   => srca + " || " + srcb
+            case NodeType.and   => srca + " & " + srcb
+            case NodeType.or    => srca + " | " + srcb
+            case NodeType.xor   => srca + " ^ " + srcb
+            case NodeType.shr   =>
                 if (vt.signed)
                     srca + " >>> " + srcb
                 else
                     srca + " >> " + srcb
-            case NodeType.shl     =>
+            case NodeType.shl   =>
                 if (vt.signed)
                     srca + " <<< " + srcb
                 else
                     srca + " << " + srcb
-            case NodeType.add     =>
+            case NodeType.add   =>
                 moduleEmitter.createSimple("ap_addI", width, List(srca, srcb))
-            case NodeType.sub     =>
+            case NodeType.sub   =>
                 moduleEmitter.createSimple("ap_subI", width, List(srca, srcb))
             case NodeType.mul if node.srca.isInstanceOf[ImmediateSymbol] =>
-                    srca + " * " + srcb
+                srca + " * " + srcb
             case NodeType.mul if !node.srca.isInstanceOf[ImmediateSymbol] =>
                 moduleEmitter.create("ap_mulI", width, state, List(srca, srcb))
             case NodeType.div if vt.signed =>
@@ -76,7 +77,8 @@ private[gen] abstract class HDLNodeEmitter(
             case NodeType.le      => srca + " <= " + srcb
             case NodeType.convert=>
                 val sWidth = node.srca.valueType.bits
-                moduleEmitter.create("ap_ftoi" + sWidth, sWidth, state, List(srca))
+                moduleEmitter.create("ap_ftoi" + sWidth, sWidth, state,
+                                     List(srca))
             case NodeType.abs     => srca + " < 0 ? -" + srca + " : " + srca
             case NodeType.exp     =>
                 moduleEmitter.create("ap_expI", width, state, List(srca))
@@ -111,19 +113,19 @@ private[gen] abstract class HDLNodeEmitter(
         val f1 = frac / 2
         val f2 = (frac + 1) / 2
         val expression = node.op match {
-            case NodeType.neg     => "-" + srca 
-            case NodeType.not     => "!" + srca
-            case NodeType.compl  => "~" + srca
-            case NodeType.land    => srca + " && " + srcb
-            case NodeType.lor     => srca + " || " + srcb
-            case NodeType.and     => srca + " & " + srcb
-            case NodeType.or      => srca + " | " + srcb
-            case NodeType.xor     => srca + " ^ " + srcb
-            case NodeType.shr     => srca + " >>> " + srcb
-            case NodeType.shl     => srca + " <<< " + srcb
-            case NodeType.add     =>
+            case NodeType.neg   => "-" + srca
+            case NodeType.not   => "!" + srca
+            case NodeType.compl => "~" + srca
+            case NodeType.land  => srca + " && " + srcb
+            case NodeType.lor   => srca + " || " + srcb
+            case NodeType.and   => srca + " & " + srcb
+            case NodeType.or    => srca + " | " + srcb
+            case NodeType.xor   => srca + " ^ " + srcb
+            case NodeType.shr   => srca + " >>> " + srcb
+            case NodeType.shl   => srca + " <<< " + srcb
+            case NodeType.add   =>
                 moduleEmitter.createSimple("ap_addI", width, List(srca, srcb))
-            case NodeType.sub     =>
+            case NodeType.sub   =>
                 moduleEmitter.createSimple("ap_subI", width, List(srca, srcb))
             case NodeType.mul if node.srca.isInstanceOf[ImmediateSymbol] => 
                 val ina = shiftRight(node.srca, f1)
@@ -204,14 +206,17 @@ private[gen] abstract class HDLNodeEmitter(
                 moduleEmitter.create("ap_sqrtF" + width, width,
                                             state, List(srca))
             case NodeType.sin =>
-                moduleEmitter.create("ap_sinF" + width, width, state, List(srca))
+                moduleEmitter.create("ap_sinF" + width, width, state,
+                                     List(srca))
             case NodeType.cos =>
-                moduleEmitter.create("ap_cosF" + width, width, state, List(srca))
+                moduleEmitter.create("ap_cosF" + width, width, state,
+                                     List(srca))
             case NodeType.tan =>
-                moduleEmitter.create("ap_tanF" + width, width, state, List(srca))
+                moduleEmitter.create("ap_tanF" + width, width, state,
+                                     List(srca))
             case NodeType.convert =>
                 moduleEmitter.create("ap_itof" + width, width,
-                                            state, List(srca))
+                                     state, List(srca))
             case _ =>
                 Error.raise("unsupported float operation: " + node.op)
         }
@@ -234,7 +239,7 @@ private[gen] abstract class HDLNodeEmitter(
                 case ft: FloatValueType     => emitFloatOp(block, ft, node)
                 case _                            =>
                     Error.raise("unsupported hardware type: " +
-                                    node.dest.valueType)
+                                node.dest.valueType)
             }
         }
     }

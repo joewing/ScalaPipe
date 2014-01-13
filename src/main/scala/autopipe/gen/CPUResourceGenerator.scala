@@ -27,7 +27,9 @@ private[autopipe] class CPUResourceGenerator(val ap: AutoPipe,
         fpga match {
             case "SmartFusion"    => smartFusionEdgeGenerator
             case "Simulation"     => simulationEdgeGenerator
-            case _ => Error.raise("unknown FPGA type: " + fpga)
+            case _ =>
+                Error.raise("unknown FPGA type: " + fpga)
+                simulationEdgeGenerator
         }
     }
 

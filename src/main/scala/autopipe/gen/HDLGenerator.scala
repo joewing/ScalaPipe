@@ -18,7 +18,8 @@ private[gen] trait HDLGenerator extends Generator {
             f.valueType match {
                 case ValueType.float32 => f.rawFloat.toString
                 case ValueType.float64 => f.rawDouble.toString
-                case _ => Error.raise("unsupported float type: " + f.valueType)
+                case _ =>
+                    Error.raise("unsupported float type: " + f.valueType)
             }
         case _ => s.value.toString
     }

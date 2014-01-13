@@ -2,9 +2,10 @@
 package autopipe
 
 private[autopipe] class DeviceSpec(
-        val platform:      Platforms.Value,
-        val host:            String,
-        val index:          Int) {
+        val platform: Platforms.Value,
+        val host: String,
+        val index: Int
+    ) {
 
     def canCombine(other: DeviceSpec): Boolean = {
         platform == other.platform &&
@@ -29,7 +30,15 @@ private[autopipe] class DeviceSpec(
     }
 
     override def toString =
-        platform.toString + "(" + host + ", " + index + ")"
+        if (host != null && index != Int.MaxValue) {
+            platform.toString + "(" + host + ", " + index + ")"
+        } else if (host != null) {
+            platform.toString + "(" + host + ")"
+        } else if (index != Int.MaxValue) {
+            platform.toString + "(" + index + ")"
+        } else {
+            platform.toString
+        }
 
 }
 

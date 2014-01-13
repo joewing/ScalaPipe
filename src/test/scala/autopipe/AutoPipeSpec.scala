@@ -57,9 +57,9 @@ class AutoPipeSpec extends UnitSpec {
         val ap = createAutoPipe()
         val blocks = createApplication(ap, CPU2FPGA(), CPU2CPU())
         val getDevice = PrivateMethod[Device]('getDevice)
-        intercept[RuntimeException] {
-            ap invokePrivate getDevice(blocks)
-        }
+        val oldCount = Error.errorCount
+        ap invokePrivate getDevice(blocks)
+        assert(Error.errorCount == oldCount + 1)
     }
 
     "getConnectedBlocks" should "return connected blocks" in {

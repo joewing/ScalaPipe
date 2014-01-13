@@ -194,12 +194,16 @@ private[autopipe] case class IRNodeEmitter(
 
             case (st: FloatValueType, dt: FixedValueType) =>
                 Error.raise("float-to-fixed conversion not supported", node)
+                expr
+
             case (st: FixedValueType, dt: FloatValueType) =>
                 Error.raise("fixed-to-float conversion not supported", node)
+                expr
 
             case _ =>
                 Error.raise("invalid (hardware) conversion from " + srcType +
-                                " to " + destType, node)
+                            " to " + destType, node)
+                expr
 
         }
     }
@@ -217,13 +221,15 @@ private[autopipe] case class IRNodeEmitter(
     }
 
     private def emitExpr(node: ASTNode): BaseSymbol = node match {
-        case l: Literal                => emitLiteral(l)
-        case s: ASTSymbolNode        => emitSymbol(s)
-        case o: ASTOpNode             => emitOp(o)
+        case l: Literal             => emitLiteral(l)
+        case s: ASTSymbolNode       => emitSymbol(s)
+        case o: ASTOpNode           => emitOp(o)
         case a: ASTAvailableNode    => emitAvailable(a)
         case c: ASTConvertNode      => emitConvert(c)
-        case c: ASTCallNode          => emitCall(c)
-        case _ => Error.raise("invalid expression", node)
+        case c: ASTCallNode         => emitCall(c)
+        case _ =>
+            Error.raise("invalid expression", node)
+            null
     }
 
     private def emitAssign(node: ASTAssignNode) {

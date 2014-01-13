@@ -138,7 +138,7 @@ private[autopipe] class CBlockNodeEmitter(
             val oindex = bt.outputIndex(o)
             val valueType = bt.outputs(oindex).valueType
             write(o + " = (" + valueType.name + "*)ap_allocate(block, " +
-                    oindex + ", 1);")
+                  oindex + ", 1);")
         }
 
         write(emitExpr(node.dest) + " = " + emitExpr(node.src) + ";")
@@ -189,9 +189,9 @@ private[autopipe] class CBlockNodeEmitter(
                             val bytes = (at.itemType.bits + 7) / 8
                             val ch = if (read) 'R' else 'W'
                             write("fprintf(block->trace_fd, \"" + ch +
-                                    "%x:%x\\n\", " +
-                                    offset + " + (" + emitExpr(index) + ") * " + bytes +
-                                    ", " + bytes + ");")
+                                  "%x:%x\\n\", " +
+                                  offset + " + (" + emitExpr(index) +
+                                  ") * " + bytes + ", " + bytes + ");")
                         case _ => ()
                     }
             }
@@ -203,7 +203,7 @@ private[autopipe] class CBlockNodeEmitter(
             addCheckedPorts(portsToCheck)
             writeLeft("AP_STATE_" + gen.nextState + ":")
             write("if(" + portsToCheck.map(_ + " != NULL").mkString(" && ") +
-                    ") {")
+                  ") {")
             enter
         }
         if (bt.parameters.get('trace)) {

@@ -32,10 +32,10 @@ private[autopipe] class InternalBlockType(ap: AutoPipe,
         LocalExtractor.extract(this)
 
         val generator: BlockGenerator = platform match {
-            case Platforms.C          => new CBlockGenerator(this)
-            case Platforms.OpenCL    => new OpenCLBlockGenerator(this)
-            case Platforms.HDL        => new HDLBlockGenerator(this)
-            case _ => Error.raise("no block generator for " + platform)
+            case Platforms.C        => new CBlockGenerator(this)
+            case Platforms.OpenCL   => new OpenCLBlockGenerator(this)
+            case Platforms.HDL      => new HDLBlockGenerator(this)
+            case _                  => sys.error("internal")
         }
         generator.emit(dir)
 

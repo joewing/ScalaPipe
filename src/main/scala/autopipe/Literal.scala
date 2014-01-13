@@ -14,7 +14,9 @@ object Literal {
         case s: Symbol  => SymbolLiteral(ValueType.any, s.name, apb)
         case s: String  => StringLiteral(s, apb)
         case null       => null
-        case _          => Error.raise("invalid literal: " + v, apb)
+        case _          =>
+            Error.raise("invalid literal: " + v, apb)
+            IntLiteral(ValueType.signed32, 0, apb)
     }
 
 }
@@ -174,9 +176,11 @@ object SymbolLiteral {
 
 }
 
-class SymbolLiteral(_t: ValueType, val symbol: String,
-                    _apb: AutoPipeBlock)
-    extends Literal(_t, _apb) {
+class SymbolLiteral(
+        _t: ValueType,
+        val symbol: String,
+        _apb: AutoPipeBlock
+    ) extends Literal(_t, _apb) {
 
     override def toString = symbol
 

@@ -3,7 +3,10 @@ package autopipe;
 
 import scala.collection.mutable.HashMap
 
-private[autopipe] class Block(ap: AutoPipe, val name: String) {
+private[autopipe] class Block(
+        ap: AutoPipe,
+        val name: String
+    ) extends DebugInfo {
 
     private[autopipe] val index = LabelMaker.getInstanceIndex
     private[autopipe] val label = "instance" + index
@@ -12,6 +15,8 @@ private[autopipe] class Block(ap: AutoPipe, val name: String) {
     private val outputs = new HashMap[PortName, Stream]
     private val inputs = new HashMap[PortName, Stream]
     private val configs = new HashMap[String, Literal]
+
+    collectDebugInfo
 
     def apply(): StreamList = new StreamList(ap, this)
 
@@ -131,6 +136,22 @@ private[autopipe] class Block(ap: AutoPipe, val name: String) {
     }
 
     override def toString = name
+
+    private[autopipe] def validate {
+
+        if (inputs.size > blockType.inputs.size) {
+            Error.raise("too many inputs connected for " + name, this)
+        } else if (inputs.size < blockType.inputs.size) {
+            Error.raise("too few inputs connected for " + name, this)
+        }
+
+        if (outputs.size > blockType.outputs.size) {
+            Error.raise("too many outputs connected for " + name, this)
+        } else if (outputs.size < blockType.outputs.size) {
+            Error.raise("too few outputs connected for " + name, this)
+        }
+
+    }
 
 }
 

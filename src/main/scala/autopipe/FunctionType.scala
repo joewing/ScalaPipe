@@ -8,12 +8,13 @@ import autopipe.gen.HDLFunctionGenerator
 import autopipe.gen.OpenCLFunctionGenerator
 import java.io.File
 
-private[autopipe] abstract class FunctionType(_ap: AutoPipe,
-                                                             _name: String,
-                                                             _symbols: SymbolTable,
-                                                             _platform: Platforms.Value,
-                                                             _loopBack: Boolean)
-        extends CodeObject(_ap, _name, _symbols, _platform, _loopBack) {
+private[autopipe] abstract class FunctionType(
+        _ap: AutoPipe,
+        _name: String,
+        _symbols: SymbolTable,
+        _platform: Platforms.Value,
+        _loopBack: Boolean
+    ) extends CodeObject(_ap, _name, _symbols, _platform, _loopBack) {
 
     private[autopipe] val args = symbols.inputs
 
@@ -38,10 +39,11 @@ private[autopipe] abstract class FunctionType(_ap: AutoPipe,
 
 }
 
-private[autopipe] class ExternalFunctionType(ap: AutoPipe,
-                                                            apf: AutoPipeFunction,
-                                                            p: Platforms.Value)
-        extends FunctionType(ap, apf, p) {
+private[autopipe] class ExternalFunctionType(
+        ap: AutoPipe,
+        apf: AutoPipeFunction,
+        p: Platforms.Value
+    ) extends FunctionType(ap, apf, p) {
 
     override def emit(dir: File) {
     }
@@ -50,10 +52,11 @@ private[autopipe] class ExternalFunctionType(ap: AutoPipe,
 
 }
 
-private[autopipe] class InternalFunctionType(ap: AutoPipe,
-                                                            apf: AutoPipeFunction,
-                                                            p: Platforms.Value)
-        extends FunctionType(ap, apf, p) {
+private[autopipe] class InternalFunctionType(
+        ap: AutoPipe,
+        apf: AutoPipeFunction,
+        p: Platforms.Value
+    ) extends FunctionType(ap, apf, p) {
 
     private val root = apf.getRoot
     private val checked = TypeChecker.check(this, root)
@@ -61,10 +64,10 @@ private[autopipe] class InternalFunctionType(ap: AutoPipe,
 
     override def emit(dir: File) {
         val generator: FunctionGenerator = platform match {
-            case Platforms.C          => new CFunctionGenerator(this)
-            case Platforms.OpenCL    => new OpenCLFunctionGenerator(this)
-            case Platforms.HDL        => new HDLFunctionGenerator(this)
-            case _ => Error.raise("No function generator for " + platform)
+            case Platforms.C        => new CFunctionGenerator(this)
+            case Platforms.OpenCL   => new OpenCLFunctionGenerator(this)
+            case Platforms.HDL      => new HDLFunctionGenerator(this)
+            case _ => sys.error("internal")
         }
         generator.emit(dir)
     }
@@ -76,4 +79,3 @@ private[autopipe] class InternalFunctionType(ap: AutoPipe,
     override def internal = true
 
 }
-

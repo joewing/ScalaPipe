@@ -17,22 +17,22 @@ private[autopipe] object ValueType {
 
     private val valueTypes = new HashMap[String, ValueType]
 
-    val unsigned8  = insert(new IntegerValueType("UNSIGNED8",    8, false))
+    val unsigned8   = insert(new IntegerValueType("UNSIGNED8",    8, false))
     val signed8     = insert(new IntegerValueType("SIGNED8",      8, true))
-    val unsigned16 = insert(new IntegerValueType("UNSIGNED16", 16, false))
+    val unsigned16  = insert(new IntegerValueType("UNSIGNED16", 16, false))
     val signed16    = insert(new IntegerValueType("SIGNED16",    16, true))
-    val unsigned32 = insert(new IntegerValueType("UNSIGNED32", 32, false))
+    val unsigned32  = insert(new IntegerValueType("UNSIGNED32", 32, false))
     val signed32    = insert(new IntegerValueType("SIGNED32",    32, true))
-    val unsigned64 = insert(new IntegerValueType("UNSIGNED64", 64, false))
+    val unsigned64  = insert(new IntegerValueType("UNSIGNED64", 64, false))
     val signed64    = insert(new IntegerValueType("SIGNED64",    64, true))
     val float32     = insert(new FloatValueType(  "FLOAT32",     32))
     val float64     = insert(new FloatValueType(  "FLOAT64",     64))
     val float96     = insert(new FloatValueType(  "FLOAT96",     96))
 
-    val any          = insert(new ValueType("any"))
+    val any         = insert(new ValueType("any"))
     val string      = insert(new ValueType("STRING"))
-    val void         = insert(new ValueType("void"))
-    val bool         = signed8
+    val void        = insert(new ValueType("void"))
+    val bool        = signed8
 
     private def insert(vt: ValueType): ValueType = {
         valueTypes += ((vt.name, vt))
@@ -185,7 +185,9 @@ private[autopipe] class FixedValueType(apf: AutoPipeFixed)
         case 16 => ValueType.signed16
         case 32 => ValueType.signed32
         case 64 => ValueType.signed64
-        case _  => Error.raise("invalid bit count for fixed type: " + bits)
+        case _  =>
+            Error.raise("invalid bit count for fixed type: " + bits)
+            ValueType.void
     }
 
 }
