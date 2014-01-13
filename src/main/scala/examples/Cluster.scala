@@ -9,8 +9,8 @@ object Cluster {
 
     def main(args: Array[String]) {
 
-        val clusterCount = 8
-        val iterations = 500
+        val clusterCount = 2
+        val iterations = 10
 
         val MAX_WIDTH = 1024
         val MAX_HEIGHT = 1024
@@ -299,19 +299,16 @@ object Cluster {
 
         val Loop = new AutoPipeLoopBack(ClusterType)
 
-        val Reader = new BMPReader("in.bmp")
-        val Writer = new BMPWriter("out.bmp")
-
         val Cluster = new AutoPipeApp {
             val csrc = ClusterSource(Loop.output())
-            val bmp = Reader()
+            val bmp = BMPReader('file_name -> "in.bmp")
             val vsrc = ValueSource(bmp(0), bmp(1), bmp(2))
             val assignments = Assign(vsrc(0), vsrc(1), vsrc(2), csrc(0))
             val updated = UpdateClusters(assignments(0), assignments(1),
-                                                  assignments(2), assignments(3))
+                                         assignments(2), assignments(3))
             val out = Output(updated(0), assignments(4), updated(1), updated(2))
             Loop.input(out(0))
-            Writer(out(1), out(2), out(3))
+            BMPWriter(out(1), out(2), out(3), 'file_name -> "out.bmp")
         }
         Cluster.emit("cluster")
 

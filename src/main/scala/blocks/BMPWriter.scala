@@ -3,11 +3,15 @@ package blocks
 
 import autopipe.dsl._
 
-class BMPWriter(file: String = "out.bmp") extends AutoPipeBlock {
+/** BMP file writer.
+ * Writes 24-bit bitmaps.
+ */
+object BMPWriter extends AutoPipeBlock {
 
     val data_in     = input(UNSIGNED32)
     val width_in    = input(SIGNED32)
-    val height_in  = input(SIGNED32)
+    val height_in   = input(SIGNED32)
+    val file_name   = config(STRING, 'file_name, "out.bmp")
 
     val fd = local(stdio.FILEPTR, 0)
     val header = local(new AutoPipeArray(UNSIGNED8, 14))
@@ -28,9 +32,9 @@ class BMPWriter(file: String = "out.bmp") extends AutoPipeBlock {
         height = height_in
 
         // Open the file.
-        fd = stdio.fopen(file, "wb")
+        fd = stdio.fopen(file_name, "wb")
         if (fd == 0) {
-            stdio.printf("""ERROR: could not open %s\n""", file)
+            stdio.printf("""ERROR: could not open %s\n""", file_name)
             stdio.exit(-1)
         }
 
