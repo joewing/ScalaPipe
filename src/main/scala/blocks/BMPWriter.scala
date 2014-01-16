@@ -11,7 +11,7 @@ object BMPWriter extends AutoPipeBlock {
     val data_in     = input(UNSIGNED32)
     val width_in    = input(SIGNED32)
     val height_in   = input(SIGNED32)
-    val file_name   = config(STRING, 'file_name, "out.bmp")
+    val file_name   = config(STRING, 'file, "out.bmp")
 
     val fd = local(stdio.FILEPTR, 0)
     val header = local(new AutoPipeArray(UNSIGNED8, 14))
