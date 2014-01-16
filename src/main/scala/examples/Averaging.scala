@@ -34,17 +34,17 @@ object Averaging {
         }
 
         // Create a polymorphic "Add" block.
-        class AddBlock(t: AutoPipeType) extends AutoPipeFunction {
+        class AddBlock(t: AutoPipeType) extends AutoPipeBlock {
 
             // This block takes two inputs and has one output.
             val x0 = input(t)
             val x1 = input(t)
-            returns(t)
+            val y0 = output(t)
 
             // Since there are inputs, this will go in the "push" call.
             // The generated code will wait until all necessary ports are
             // available, and then write the output.
-            ret(x1 + x0)
+            y0 = x0 + x1
 
         }
 
@@ -87,6 +87,9 @@ object Averaging {
             val random1 = Random('iterations -> iterations)
             val result = Half(Add(random0, random1))
             Print(result)
+
+            map(Random -> ANY_BLOCK, CPU2FPGA())
+            map(ANY_BLOCK -> Print, FPGA2CPU())
 
         }
 

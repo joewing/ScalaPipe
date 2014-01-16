@@ -72,7 +72,7 @@ class StateCompressionSpec extends PassTestSpec {
     
             label(5)
             op(NodeType.assign, out, z)
-    
+
             label(6)
             op(NodeType.assign, x, in)
     

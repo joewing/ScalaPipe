@@ -13,11 +13,11 @@ object RunnableExpressions extends DataFlowProblem {
 
     private def isExpression(n: IRNode): Boolean = n match {
         case in: IRInstruction  => true
-        case al: IRArrayLoad     => true
-        case as: IRArrayStore    => true
-        case vl: IRVectorLoad    => true
+        case al: IRArrayLoad    => true
+        case as: IRArrayStore   => true
+        case vl: IRVectorLoad   => true
         case vs: IRVectorStore  => true
-        case _                        => false
+        case _                  => false
     }
 
     private def hasConflictingStore(sb: StateBlock, n: IRNode): Boolean = {
@@ -48,7 +48,11 @@ object RunnableExpressions extends DataFlowProblem {
         case _ =>
             !a.dests.intersect(b.dests).isEmpty ||
             !b.srcs.intersect(a.dests).isEmpty ||
-            !a.srcs.intersect(b.dests).isEmpty
+            !a.srcs.intersect(b.dests).isEmpty ||
+            (a.dests.exists(_.isInstanceOf[OutputSymbol]) &&
+             b.srcs.exists(_.isInstanceOf[InputSymbol])) ||
+            (b.dests.exists(_.isInstanceOf[OutputSymbol]) &&
+             a.srcs.exists(_.isInstanceOf[InputSymbol]))
     }
 
     private def hasConflict(a: IRNode, b: StateBlock): Boolean = {
@@ -62,10 +66,7 @@ object RunnableExpressions extends DataFlowProblem {
         HashSet[T](sb.nodes.filter(isExpression): _*)
 
     def kill(sb: StateBlock, in: Set[T]): Set[T] = {
-        in.filter { i =>
-            hasConflict(i, sb) ||
-            sb.srcs.exists(s => s.isInstanceOf[PortSymbol])
-        }
+        in.filter { i => hasConflict(i, sb) }
     }
 
     def meet(a: Set[T], b: Set[T]) = a.intersect(b)

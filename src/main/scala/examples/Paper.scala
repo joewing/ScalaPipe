@@ -231,6 +231,8 @@ object Paper {
             }
             Print(result)
 
+            map(ANY_BLOCK -> Print, FPGA2CPU())
+
         }
         laplace.emit("paper")
 

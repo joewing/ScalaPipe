@@ -26,8 +26,6 @@ private[opt] object StateCompression extends Pass {
             val other = runnable(sb.label).find { o =>
                 val oblock = graph.block(o)
                 !sb.continuous && !oblock.continuous &&
-                !sb.symbols.exists(s => s.isInstanceOf[PortSymbol]) &&
-                !oblock.symbols.exists(s => s.isInstanceOf[PortSymbol]) &&
                 sb != oblock && sb.label != 0 &&
                 !context.share(sb, o) &&
                 pdom.dominates(oblock, sb) &&
