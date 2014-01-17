@@ -25,12 +25,12 @@ private[gen] trait HDLGenerator extends Generator {
     }
 
     def emitSymbol(sym: BaseSymbol): String = sym match {
-        case is: InputSymbol         => "input_" + is.name
-        case ts: TempSymbol          => "temp" + ts.id
-        case ss: StateSymbol         => "state_" + ss.name
-        case cs: ConfigSymbol        => cs.name
+        case is: InputSymbol        => "input_" + is.name
+        case ts: TempSymbol         => "temp" + ts.id
+        case ss: StateSymbol        => "state_" + ss.name
+        case cs: ConfigSymbol       => cs.name
         case im: ImmediateSymbol    => getImmediate(im)
-        case null                        => ""
+        case null                   => ""
         case _ => sys.error("internal: " + sym)
     }
 

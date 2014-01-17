@@ -35,10 +35,10 @@ private[autopipe] case class IROptimizer(
 
         val finalStateCount = countStates(newGraph)
         val finalVarCount = co.states.size + co.temps.size
-        println("\tStates:     " + initialStateCount + " -> " + finalStateCount)
+        println("\tStates:    " + initialStateCount + " -> " + finalStateCount)
         println("\tVariables: " + initialVarCount + " -> " + finalVarCount)
-        println("\tScore:      " + computeScore(newGraph))
-        println("\tClocks:     " + computeClocks(newGraph))
+        println("\tScore:     " + computeScore(newGraph))
+        println("\tClocks:    " + computeClocks(newGraph))
         return newGraph
     }
 
