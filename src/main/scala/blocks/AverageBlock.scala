@@ -11,14 +11,5 @@ class AverageBlock(t: AutoPipeType) extends AutoPipeBlock {
 
     y0 = (x0 + x1) / 2
 
-/*
-    new AutoPipeBlockTest(this) {
-        input(0, 5)
-        input(1, 15)
-        output(0, 10)
-        run
-    }
-*/
-
 }
 

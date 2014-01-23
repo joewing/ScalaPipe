@@ -18,11 +18,11 @@ object Simplex extends App {
     // Read the initial canonical matrix.
     val Parser = new AutoPipeBlock("Parser") {
 
-        val out          = output(VALUE_TYPE)
+        val out         = output(VALUE_TYPE)
         val filename    = config(STRING, 'filename, "input.txt")
-        val fd            = local(stdio.FILEPTR, 0)
-        val value        = local(VALUE_TYPE)
-        val rc            = local(SIGNED32)
+        val fd          = local(stdio.FILEPTR, 0)
+        val value       = local(VALUE_TYPE)
+        val rc          = local(SIGNED32)
 
         // Open the file.
         if (fd == 0) {
@@ -49,14 +49,14 @@ object Simplex extends App {
 
         val init_in     = input(VALUE_TYPE)
         val feedback    = input(VALUE_TYPE)
-        val out1         = output(VALUE_TYPE)
-        val out2         = output(VALUE_TYPE)
+        val out1        = output(VALUE_TYPE)
+        val out2        = output(VALUE_TYPE)
         val result      = output(VALUE_TYPE)
 
-        val value        = local(VALUE_TYPE)
-        val x             = local(SIGNED32, 0)
-        val y             = local(SIGNED32, 0)
-        val init         = local(BOOL, false)
+        val value       = local(VALUE_TYPE)
+        val x           = local(SIGNED32, 0)
+        val y           = local(SIGNED32, 0)
+        val init        = local(BOOL, false)
 
         // Read the next input.
         if (init) {
@@ -87,9 +87,9 @@ object Simplex extends App {
 
         val array_in    = input(VALUE_TYPE)
 
-        val value        = local(VALUE_TYPE)
-        val x             = local(SIGNED32, 0)
-        val y             = local(SIGNED32, 0)
+        val value       = local(VALUE_TYPE)
+        val x           = local(SIGNED32, 0)
+        val y           = local(SIGNED32, 0)
 
         // Give the current input to the correct row processor.
         value = array_in
@@ -119,18 +119,18 @@ object Simplex extends App {
 
         val array_in    = input(VALUE_TYPE)
         val prow_out    = output(VALUE_TYPE)
-        val pivot_out  = output(VALUE_TYPE)
-        val pindex_out = output(SIGNED32)
-        val column_out = output(SIGNED32)
+        val pivot_out   = output(VALUE_TYPE)
+        val pindex_out  = output(SIGNED32)
+        val column_out  = output(SIGNED32)
 
-        val row          = local(ROW_TYPE)
-        val prow         = local(ROW_TYPE)
-        val value        = local(VALUE_TYPE)
-        val x             = local(SIGNED32, 0)
-        val y             = local(SIGNED32, 0)
+        val row         = local(ROW_TYPE)
+        val prow        = local(ROW_TYPE)
+        val value       = local(VALUE_TYPE)
+        val x           = local(SIGNED32, 0)
+        val y           = local(SIGNED32, 0)
         val column      = local(SIGNED32, 0)
-        val pivot        = local(SIGNED32, -1)
-        val best         = local(VALUE_TYPE)
+        val pivot       = local(SIGNED32, -1)
+        val best        = local(VALUE_TYPE)
 
         // Read the matrix one row at a time.
         value = array_in
@@ -192,18 +192,18 @@ object Simplex extends App {
         val row_in      = input(VALUE_TYPE)
         val prow_in     = input(VALUE_TYPE)
         val pivot_in    = input(VALUE_TYPE)
-        val pindex_in  = input(SIGNED32)
-        val column_in  = input(SIGNED32)
+        val pindex_in   = input(SIGNED32)
+        val column_in   = input(SIGNED32)
         val row_out     = output(VALUE_TYPE)
-        val index        = config(SIGNED32, 'index)
+        val index       = config(SIGNED32, 'index)
 
-        val row          = local(ROW_TYPE)
-        val prow         = local(ROW_TYPE)
-        val pivot        = local(VALUE_TYPE)
+        val row         = local(ROW_TYPE)
+        val prow        = local(ROW_TYPE)
+        val pivot       = local(VALUE_TYPE)
         val pindex      = local(SIGNED32)
         val column      = local(SIGNED32)
-        val x             = local(SIGNED32)
-        val k             = local(VALUE_TYPE)
+        val x           = local(SIGNED32)
+        val k           = local(VALUE_TYPE)
 
         // Read our row.
         x = 0
