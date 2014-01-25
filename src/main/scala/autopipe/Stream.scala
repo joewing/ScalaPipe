@@ -1,30 +1,31 @@
-
 package autopipe
 
 import scala.collection.mutable.HashSet
 import autopipe.dsl.AutoPipeBlock
 
-class Stream(ap: AutoPipe, _sourceBlock: Block, _sourcePort: PortName) {
+class Stream(
+        ap: AutoPipe,
+        private[autopipe] val sourceKernel: Kernel,
+        private[autopipe] val sourcePort: PortName
+    ) {
 
     private[autopipe] val index = LabelMaker.getEdgeIndex
     private[autopipe] val label = "edge" + index
-    private[autopipe] val sourceBlock = _sourceBlock
-    private[autopipe] val sourcePort = _sourcePort
-    private[autopipe] var destBlock: Block = null
+    private[autopipe] var destKernel: Kernel = null
     private[autopipe] var destPort: PortName = null
     private[autopipe] val measures = new HashSet[Measure]
     private[autopipe] var edge: Edge = null
     private[autopipe] var depth = ap.parameters.get[Int]('queueDepth)
 
-    /** Take this stream and apply it to the input of a split block. */
+    /** Take this stream and apply it to the input of a split kernel. */
     def iteratedMap(iterations: Int, splitter: AutoPipeBlock): List[Stream] = {
 
         def helper(iter: Int, inputs: List[Stream]): List[Stream] = {
             if (iter > 0) {
                 val outputs = inputs.flatMap(a => {
-                    val block = ap.createBlock(splitter)((null, a))
+                    val kernel = ap.createKernel(splitter)((null, a))
                     val outputCount = ap.getOutputCount(splitter.name)
-                    Array.range(0, outputCount).map(b => block(b))
+                    Array.range(0, outputCount).map(kernel(_))
                 })
                 helper(iter - 1, outputs)
             } else {
@@ -48,12 +49,11 @@ class Stream(ap: AutoPipe, _sourceBlock: Block, _sourcePort: PortName) {
         math.ceil(log2).toInt
     }
 
-    private[autopipe] def valueType() = 
-        sourceBlock.blockType.outputType(sourcePort)
+    private[autopipe] def valueType = sourceKernel.outputType(sourcePort)
 
     private[autopipe] def checkType {
-        val st = sourceBlock.blockType.outputType(sourcePort)
-        val dt = destBlock.blockType.inputType(destPort)
+        val st = sourceKernel.outputType(sourcePort)
+        val dt = destKernel.inputType(destPort)
         if (st != dt) {
             Error.raise("stream type mismatch: " + st + " vs " + dt)
         }
@@ -63,16 +63,14 @@ class Stream(ap: AutoPipe, _sourceBlock: Block, _sourcePort: PortName) {
         measures += new Measure(this, stat, metric)
     }
 
-    private[autopipe] def setDest(b: Block, p: PortName) {
-        destBlock = b
+    private[autopipe] def setDest(k: Kernel, p: PortName) {
+        destKernel = k
         destPort = p
     }
 
-    private[autopipe] def destIndex: Int =
-        destBlock.blockType.inputIndex(destPort)
+    private[autopipe] def destIndex = destKernel.inputIndex(destPort)
 
-    private[autopipe] def sourceIndex: Int =
-        sourceBlock.blockType.outputIndex(sourcePort)
+    private[autopipe] def sourceIndex = sourceKernel.outputIndex(sourcePort)
 
     private[autopipe] def usePush = measures.exists(_.usePush)
 

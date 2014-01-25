@@ -34,11 +34,11 @@ private[opt] object CopyPropagation extends Pass {
         // Get reaching definitions.
         // Note that reaching contains a mapping from block to a set of
         // definition pairs (symbol, block).
-        val reaching = ReachingDefs.solve(context.co, graph)
+        val reaching = ReachingDefs.solve(context.kt, graph)
 
         // Compute live ranges.
         // Mapping from block to a set of symbols.
-        val live = LiveVariables.solve(context.co, graph)
+        val live = LiveVariables.solve(context.kt, graph)
 
         // Get the set of definitions reaching this block that we use.
         def getDefs(node: IRNode): Set[(BaseSymbol, Int)] = {

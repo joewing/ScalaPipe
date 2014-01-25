@@ -30,13 +30,13 @@ private[autopipe] class Parameters {
     add('timeTrialOutput, null: String)
     add('timeTrialBufferSize, 8192)
     add('timeTrialAffinity, 0)
-    add('share, 1)                 // Share FPGA resources within a block:
-                                        //    0 - no sharing
-                                        //    1 - share resources used in different states
-                                        //    2 - share all resources
-    add('profile, false)         // Insert counters for profiling
+    add('share, 1)              // Share FPGA resources within a kernel:
+                                //  0 - no sharing
+                                //  1 - share independent resources
+                                //  2 - share all resources
+    add('profile, false)        // Insert counters for profiling
     add('fpga, "Simulation")    // Default FPGA device to target
-    add('trace, false)            // Set to generate address traces from C code.
+    add('trace, false)          // Set to generate address traces from C code.
 
     def set(name: Symbol, value: Any) {
         params.get(name) match {

@@ -1,12 +1,11 @@
-
 package autopipe
 
 import scala.collection.mutable.HashSet
 
 private[autopipe] case class StateBlock(
         val nodes: List[IRNode] = Nil,
-        val label: Int             = 0,
-        val ast: ASTNode          = null,
+        val label: Int          = 0,
+        val ast: ASTNode        = null,
         val continuous: Boolean = false
     ) {
 
@@ -80,4 +79,3 @@ private[autopipe] case class StateBlock(
     final def equivalent(o: Any): Boolean = o.toString == toString
 
 }
-

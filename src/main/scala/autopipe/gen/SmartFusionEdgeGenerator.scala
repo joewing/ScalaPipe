@@ -1,5 +1,3 @@
-
-
 package autopipe.gen
 
 import autopipe._
@@ -181,7 +179,7 @@ private[autopipe] class SmartFusionEdgeGenerator(val ap: AutoPipe)
 
             val queueName = "q_" + stream.label
             val valueType = stream.valueType
-            val destBlock = stream.destBlock
+            val destKernel = stream.destKernel
             val destIndex = stream.destIndex
 
             reset
@@ -190,9 +188,9 @@ private[autopipe] class SmartFusionEdgeGenerator(val ap: AutoPipe)
             set("label", stream.label)
             set("queueName", queueName)
             set("valueType", valueType)
-            set("destLabel", destBlock.label)
+            set("destLabel", destKernel.label)
             set("destIndex", destIndex)
-            set("destName", destBlock.blockType.name)
+            set("destName", destKernel.kernelType.name)
 
             // "process"
             write("static void $label$_process()")
@@ -271,4 +269,3 @@ private[autopipe] class SmartFusionEdgeGenerator(val ap: AutoPipe)
     }
 
 }
-

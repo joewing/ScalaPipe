@@ -5,7 +5,7 @@ import autopipe._
 import scala.collection.immutable.HashSet
 
 private[gen] class HDLFunctionNodeEmitter(
-        val ft: FunctionType,
+        val ft: InternalFunctionType,
         _graph: IRGraph,
         _moduleEmitter: HDLModuleEmitter
     ) extends HDLNodeEmitter(ft, _graph, _moduleEmitter) {

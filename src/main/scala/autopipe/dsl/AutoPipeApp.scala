@@ -20,17 +20,17 @@ class AutoPipeApp {
                 val first = 2 * i
                 val second = first + 1
                 val dest = size / 2 + i - 1
-                val block = ap.createBlock(combiner)
-                result(dest) = block((null, inputs(first)),
-                                     (null, inputs(second)))
+                val kernel = ap.createKernel(combiner)
+                result(dest) = kernel((null, inputs(first)),
+                                      (null, inputs(second)))
             }
             for (i <- Array.range(size / 2 - 1, 0, -1)) {
                 val left = i * 2 - 1
                 val right = left + 1
                 val dest = i - 1
-                val block = ap.createBlock(combiner)
-                result(dest) = block((null, result(left)(0)),
-                                            (null, result(right)(0)))
+                val kernel = ap.createKernel(combiner)
+                result(dest) = kernel((null, result(left)(0)),
+                                      (null, result(right)(0)))
             }
             result(0)(0)
         } else {
@@ -39,11 +39,11 @@ class AutoPipeApp {
 
     }
 
-    implicit def apb2Block(apb: AutoPipeBlock) = ap.createBlock(apb)
+    implicit def apb2Block(apb: AutoPipeBlock) = ap.createKernel(apb)
 
-    implicit def block2StreamList(b: Block): StreamList = b.apply()
+    implicit def kernel2StreamList(k: Kernel): StreamList = k.apply()
 
-    implicit def block2Arg(b: Block) = (null, b.apply().apply())
+    implicit def kernel2Arg(k: Kernel) = (null, k.apply().apply())
 
     implicit def stream2Arg(s: Stream) = (null, s)
 

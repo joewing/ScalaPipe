@@ -9,16 +9,16 @@ import autopipe._
 class AutoPipeBlock(val name: String) extends EmbeddedControls {
 
     private val labelCounter = new LabelMaker("S")
-    private[autopipe] val inputs = new ListBuffer[BlockInput]
-    private[autopipe] val outputs = new ListBuffer[BlockOutput]
-    private[autopipe] val states = new ListBuffer[BlockLocal]
-    private[autopipe] val configs = new ListBuffer[BlockConfig]
+    private[autopipe] val inputs = new ListBuffer[KernelInput]
+    private[autopipe] val outputs = new ListBuffer[KernelOutput]
+    private[autopipe] val states = new ListBuffer[KernelLocal]
+    private[autopipe] val configs = new ListBuffer[KernelConfig]
     private[autopipe] val externals = new ListBuffer[Platforms.Value]
     private[autopipe] val dependencies = new DependencySet
     private[autopipe] val scopeStack = new ListBuffer[autopipe.Scope]
     private[autopipe] var loopBack = false
 
-    def this() = this(LabelMaker.getBlockLabel)
+    def this() = this(LabelMaker.getKernelLabel)
 
     implicit val im = this
 
@@ -48,20 +48,20 @@ class AutoPipeBlock(val name: String) extends EmbeddedControls {
     def output(t: AutoPipeType, n: Symbol = null): AutoPipeVariable = {
         val label = if (n != null) n.name else getLabel
         val node = new AutoPipeVariable(label, this)
-        outputs += new BlockOutput(label, t)
+        outputs += new KernelOutput(label, t)
         node
     }
 
     def input(t: AutoPipeType, n: Symbol = null): AutoPipeVariable = {
         val label = if (n != null) n.name else getLabel
         val node = new AutoPipeVariable(label, this)
-        inputs += new BlockInput(label, t)
+        inputs += new KernelInput(label, t)
         node
     }
 
     def config(t: AutoPipeType, n: Symbol, v: Any = null): AutoPipeVariable = {
         val node = new AutoPipeVariable(n.name, this)
-        configs += new BlockConfig(n.name, t, v)
+        configs += new KernelConfig(n.name, t, v)
         node
     }
 
@@ -74,7 +74,7 @@ class AutoPipeBlock(val name: String) extends EmbeddedControls {
 
     def local(t: AutoPipeType, v: Any = null): AutoPipeVariable = {
         val label = getLabel
-        states += new BlockLocal(label, t.create(), v)
+        states += new KernelLocal(label, t.create(), v)
         new AutoPipeVariable(label, this)
     }
 

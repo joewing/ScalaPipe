@@ -6,9 +6,9 @@ import autopipe.gen.ObjectGenerator
 
 abstract class AutoPipeObject(val name: String) {
 
-    def this() = this(LabelMaker.getBlockLabel)
+    def this() = this(LabelMaker.getKernelLabel)
 
-    private[autopipe] def generator(co: CodeObject): ObjectGenerator
+    private[autopipe] def generator(kt: KernelType): ObjectGenerator
 
 }
 

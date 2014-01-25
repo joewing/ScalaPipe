@@ -7,8 +7,8 @@ import scala.collection.mutable.ListBuffer
 import autopipe._
 
 private[autopipe] case class IRNodeEmitter(
-        _co: CodeObject
-    ) extends NodeEmitter(_co) with HDLGenerator {
+        _kt: KernelType
+    ) extends NodeEmitter(_kt) with HDLGenerator {
 
     private val instructions = new ArrayBuffer[StateBlock]
 
@@ -21,14 +21,14 @@ private[autopipe] case class IRNodeEmitter(
 
     private def set(l: Int, node: IRNode, ast: ASTNode) {
         val sb = node match {
-            case c: IRConditional    => StateBlock(List(node), ast=ast, label=l)
-            case g: IRGoto             => StateBlock(List(node), ast=ast, label=l)
-            case s: IRSwitch          => StateBlock(List(node), ast=ast, label=l)
-            case s: IRStart            => StateBlock(List(node), ast=ast, label=l)
-            case s: IRStop             => StateBlock(List(node), ast=ast, label=l)
-            case r: IRReturn          => StateBlock(List(node), ast=ast, label=l)
-            case _                        => StateBlock(List(node, IRGoto()),
-                                                              ast=ast, label=l)
+            case c: IRConditional   => StateBlock(List(node), ast=ast, label=l)
+            case g: IRGoto          => StateBlock(List(node), ast=ast, label=l)
+            case s: IRSwitch        => StateBlock(List(node), ast=ast, label=l)
+            case s: IRStart         => StateBlock(List(node), ast=ast, label=l)
+            case s: IRStop          => StateBlock(List(node), ast=ast, label=l)
+            case r: IRReturn        => StateBlock(List(node), ast=ast, label=l)
+            case _                  => StateBlock(List(node, IRGoto()),
+                                                  ast=ast, label=l)
         }
         instructions(l) = sb
     }
@@ -36,7 +36,7 @@ private[autopipe] case class IRNodeEmitter(
     private def getPointer(ast: ASTNode): Int = append(IRGoto(), ast)
 
     private def sort(op: NodeType.Value, a: BaseSymbol, b: BaseSymbol,
-                          symmetric: NodeType.Value) = {
+                     symmetric: NodeType.Value) = {
         if (a < b || symmetric == NodeType.invalid) {
             (op, a, b)
         } else {
@@ -45,63 +45,63 @@ private[autopipe] case class IRNodeEmitter(
     }
 
     private def emitBinaryOp(node: ASTOpNode,
-                                     symmetric: NodeType.Value = NodeType.invalid) = {
-        val dest = co.createTemp(node.valueType)
+                             symmetric: NodeType.Value = NodeType.invalid) = {
+        val dest = kt.createTemp(node.valueType)
         val (op, srca, srcb) =
             sort(node.op, emitExpr(node.a), emitExpr(node.b), symmetric)
         append(IRInstruction(op, dest, srca, srcb), node)
-        co.releaseTemp(srca)
-        co.releaseTemp(srcb)
+        kt.releaseTemp(srca)
+        kt.releaseTemp(srcb)
         dest
     }
 
     private def emitUnaryOp(node: ASTOpNode): BaseSymbol = {
-        val dest = co.createTemp(node.valueType)
+        val dest = kt.createTemp(node.valueType)
         val src = emitExpr(node.a)
         append(IRInstruction(node.op, dest, src), node)
-        co.releaseTemp(src)
+        kt.releaseTemp(src)
         dest
     }
 
     private def emitAvailable(node: ASTAvailableNode): BaseSymbol = {
-        val dest = co.createTemp(node.valueType)
-        val src = co.getSymbol(node.symbol)
+        val dest = kt.createTemp(node.valueType)
+        val src = kt.getSymbol(node.symbol)
         append(IRInstruction(node.op, dest, src), node)
-        co.releaseTemp(src)
+        kt.releaseTemp(src)
         dest
     }
 
     private def emitOp(node: ASTOpNode): BaseSymbol = node.op match {
-        case NodeType.not     => emitUnaryOp(node)
-        case NodeType.neg     => emitUnaryOp(node)
-        case NodeType.compl  => emitUnaryOp(node)
-        case NodeType.addr    => emitUnaryOp(node)
-        case NodeType.land    => emitBinaryOp(node, NodeType.land)
-        case NodeType.lor     => emitBinaryOp(node, NodeType.lor)
-        case NodeType.and     => emitBinaryOp(node, NodeType.and)
-        case NodeType.or      => emitBinaryOp(node, NodeType.or)
-        case NodeType.xor     => emitBinaryOp(node, NodeType.xor)
-        case NodeType.shr     => emitBinaryOp(node)
-        case NodeType.shl     => emitBinaryOp(node)
-        case NodeType.add     => emitBinaryOp(node, NodeType.add)
-        case NodeType.sub     => emitBinaryOp(node)
-        case NodeType.mul     => emitBinaryOp(node, NodeType.mul)
-        case NodeType.div     => emitBinaryOp(node)
-        case NodeType.mod     => emitBinaryOp(node)
-        case NodeType.eq      => emitBinaryOp(node, NodeType.eq)
-        case NodeType.ne      => emitBinaryOp(node, NodeType.ne)
-        case NodeType.gt      => emitBinaryOp(node, NodeType.lt)
-        case NodeType.lt      => emitBinaryOp(node, NodeType.gt)
-        case NodeType.ge      => emitBinaryOp(node, NodeType.le)
-        case NodeType.le      => emitBinaryOp(node, NodeType.ge)
-        case NodeType.abs     => emitUnaryOp(node)
-        case NodeType.exp     => emitUnaryOp(node)
-        case NodeType.log     => emitUnaryOp(node)
-        case NodeType.sqrt    => emitUnaryOp(node)
-        case NodeType.sin     => emitUnaryOp(node)
-        case NodeType.cos     => emitUnaryOp(node)
-        case NodeType.tan     => emitUnaryOp(node)
-        case _ => sys.error("invalid operation: " + node)
+        case NodeType.not   => emitUnaryOp(node)
+        case NodeType.neg   => emitUnaryOp(node)
+        case NodeType.compl => emitUnaryOp(node)
+        case NodeType.addr  => emitUnaryOp(node)
+        case NodeType.land  => emitBinaryOp(node, NodeType.land)
+        case NodeType.lor   => emitBinaryOp(node, NodeType.lor)
+        case NodeType.and   => emitBinaryOp(node, NodeType.and)
+        case NodeType.or    => emitBinaryOp(node, NodeType.or)
+        case NodeType.xor   => emitBinaryOp(node, NodeType.xor)
+        case NodeType.shr   => emitBinaryOp(node)
+        case NodeType.shl   => emitBinaryOp(node)
+        case NodeType.add   => emitBinaryOp(node, NodeType.add)
+        case NodeType.sub   => emitBinaryOp(node)
+        case NodeType.mul   => emitBinaryOp(node, NodeType.mul)
+        case NodeType.div   => emitBinaryOp(node)
+        case NodeType.mod   => emitBinaryOp(node)
+        case NodeType.eq    => emitBinaryOp(node, NodeType.eq)
+        case NodeType.ne    => emitBinaryOp(node, NodeType.ne)
+        case NodeType.gt    => emitBinaryOp(node, NodeType.lt)
+        case NodeType.lt    => emitBinaryOp(node, NodeType.gt)
+        case NodeType.ge    => emitBinaryOp(node, NodeType.le)
+        case NodeType.le    => emitBinaryOp(node, NodeType.ge)
+        case NodeType.abs   => emitUnaryOp(node)
+        case NodeType.exp   => emitUnaryOp(node)
+        case NodeType.log   => emitUnaryOp(node)
+        case NodeType.sqrt  => emitUnaryOp(node)
+        case NodeType.sin   => emitUnaryOp(node)
+        case NodeType.cos   => emitUnaryOp(node)
+        case NodeType.tan   => emitUnaryOp(node)
+        case _              => sys.error("invalid operation: " + node)
     }
 
     private def emitCallFunc(node: ASTCallNode): BaseSymbol = {
@@ -116,10 +116,10 @@ private[autopipe] case class IRNodeEmitter(
 
     private def emitSymbol(node: ASTSymbolNode): BaseSymbol = {
 
-        val sym = co.getSymbol(node.symbol)
+        val sym = kt.getSymbol(node.symbol)
         var src = sym
         if (sym.isInstanceOf[PortSymbol]) {
-            src = co.createTemp(node.valueType)
+            src = kt.createTemp(node.valueType)
             append(IRInstruction(NodeType.assign, src, sym), node)
         }
 
@@ -131,14 +131,14 @@ private[autopipe] case class IRNodeEmitter(
 
             // Array reference.
             val offset = emitExpr(node.index)
-            val dest = co.createTemp(node.valueType)
+            val dest = kt.createTemp(node.valueType)
             if (useFlatMemory(src.valueType)) {
                 append(IRVectorLoad(dest, src, offset), node)
             } else {
                 append(IRArrayLoad(dest, src, offset), node)
             }
-            co.releaseTemp(src)
-            co.releaseTemp(offset)
+            kt.releaseTemp(src)
+            kt.releaseTemp(offset)
             dest
 
         }
@@ -154,31 +154,31 @@ private[autopipe] case class IRNodeEmitter(
             case (st: IntegerValueType, dt: IntegerValueType) => expr
             case (st: FloatValueType, dt: FloatValueType) => expr
             case (st: IntegerValueType, dt: FloatValueType) =>
-                val dest = co.createTemp(destType)
+                val dest = kt.createTemp(destType)
                 append(IRInstruction(NodeType.convert, dest, expr), node)
-                co.releaseTemp(expr)
+                kt.releaseTemp(expr)
                 dest
             case (st: FloatValueType, dt: IntegerValueType) =>
-                val dest = co.createTemp(destType)
+                val dest = kt.createTemp(destType)
                 append(IRInstruction(NodeType.convert, dest, expr), node)
-                co.releaseTemp(expr)
+                kt.releaseTemp(expr)
                 dest
 
             case (st: IntegerValueType, dt: FixedValueType) =>
-                val dest = co.createTemp(destType)
+                val dest = kt.createTemp(destType)
                 append(IRInstruction(NodeType.shl, dest, expr,
                                             emitS32(dt.fraction)), node)
-                co.releaseTemp(expr)
+                kt.releaseTemp(expr)
                 dest
             case (st: FixedValueType, dt: IntegerValueType) =>
-                val dest = co.createTemp(destType)
+                val dest = kt.createTemp(destType)
                 append(IRInstruction(NodeType.shr, dest, expr,
                                             emitS32(st.fraction)), node)
-                co.releaseTemp(expr)
+                kt.releaseTemp(expr)
                 dest
 
             case (st: FixedValueType, dt: FixedValueType) =>
-                val dest = co.createTemp(destType)
+                val dest = kt.createTemp(destType)
                 if (st.fraction > dt.fraction) {
                     val shift = st.fraction - dt.fraction
                     append(IRInstruction(NodeType.shr, dest, expr,
@@ -210,7 +210,7 @@ private[autopipe] case class IRNodeEmitter(
 
     private def emitCall(node: ASTCallNode): BaseSymbol = {
         val dest = if (node.returnType != null) {
-                co.createTemp(node.returnType)
+                kt.createTemp(node.returnType)
             } else {
                 null
             }
@@ -237,21 +237,21 @@ private[autopipe] case class IRNodeEmitter(
         val src = emitExpr(node.src)
 
         def emitArrayStore(sn: ASTSymbolNode) {
-            val dest = co.getSymbol(sn.symbol)
+            val dest = kt.getSymbol(sn.symbol)
             val offset = emitExpr(sn.index)
             if (useFlatMemory(dest.valueType)) {
                 append(IRVectorStore(dest, offset, src), node)
             } else {
                 append(IRArrayStore(dest, offset, src), node)
             }
-            co.releaseTemp(offset)
-            co.releaseTemp(src)
+            kt.releaseTemp(offset)
+            kt.releaseTemp(src)
         }
 
         def emitStore(sn: ASTSymbolNode) {
-            val dest = co.getSymbol(sn.symbol)
+            val dest = kt.getSymbol(sn.symbol)
             append(IRInstruction(node.op, dest, src), node)
-            co.releaseTemp(src)
+            kt.releaseTemp(src)
         }
 
         node.dest match {
@@ -272,7 +272,7 @@ private[autopipe] case class IRNodeEmitter(
         instructions += null
 
         // Allow the test symbol to be reused.
-        co.releaseTemp(test)
+        kt.releaseTemp(test)
 
         // Emit the true branch.
         val truePointer = getPointer(node)
@@ -346,7 +346,7 @@ private[autopipe] case class IRNodeEmitter(
         // Emit the test.
         val top = getPointer(node)
         val test = emitExpr(node.cond)
-        co.releaseTemp(test)
+        kt.releaseTemp(test)
 
         // Save space for the conditional.
         val condIndex = instructions.size
@@ -383,7 +383,7 @@ private[autopipe] case class IRNodeEmitter(
     def emit(node: ASTNode, topLevel: Boolean = true): IRGraph = {
         var mainLoop: Int = 0
         if (topLevel) {
-            val values = co.states.filter(_.value != null)
+            val values = kt.states.filter(_.value != null)
             val label = instructions.size
             val sblock = StateBlock(List(IRStart()), ast=node, label=label)
             val initial = values.foldLeft(sblock) { (b, s) =>

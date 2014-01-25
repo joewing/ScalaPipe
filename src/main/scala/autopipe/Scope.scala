@@ -1,12 +1,13 @@
-
 package autopipe
 
 import autopipe.dsl.AutoPipeBlock
 import scala.collection.mutable.ListBuffer
 
-private[autopipe] class Scope(val apb: AutoPipeBlock,
-                                        val nodeType: NodeType.Value,
-                                        _cond: ASTNode = null) {
+private[autopipe] class Scope(
+        val apb: AutoPipeBlock,
+        val nodeType: NodeType.Value,
+        _cond: ASTNode = null
+    ) {
 
     var conditions = new ListBuffer[ASTNode]
     var bodies = new ListBuffer[ASTNode]
@@ -112,4 +113,3 @@ private[autopipe] class Scope(val apb: AutoPipeBlock,
     }
 
 }
-

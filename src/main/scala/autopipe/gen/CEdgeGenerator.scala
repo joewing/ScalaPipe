@@ -48,45 +48,46 @@ private[autopipe] class CEdgeGenerator extends EdgeGenerator(Platforms.C) {
 
         val queueName = getQueueName(stream)
         val destIndex = stream.destIndex
-        val destBlock = stream.destBlock
-        val sourceBlock = stream.sourceBlock
+        val destKernel = stream.destKernel
+        val sourceKernel = stream.sourceKernel
         val sourceIndex = stream.sourceIndex
-        val destDevice = stream.destBlock.device
-        val sourceDevice = stream.sourceBlock.device
+        val destDevice = stream.destKernel.device
+        val sourceDevice = stream.sourceKernel.device
 
         // Define the queue data structure.
         write("static APQ *" + queueName + ";")
 
         // "process" - Run on the consumer thread (dest).
-        write("static void " + sourceBlock.label + "_send_signal(int,int,int);")
-        write("static void " + destBlock.label + "_send_signal(int,int,int);")
+        write("static void " + sourceKernel.label +
+              "_send_signal(int,int,int);")
+        write("static void " + destKernel.label + "_send_signal(int,int,int);")
         write("static bool " + stream.label + "_process()")
         write("{")
         enter
-        write("if(" + destBlock.label + ".inputs[" + destIndex +
+        write("if(" + destKernel.label + ".inputs[" + destIndex +
               "].data == NULL) {")
         enter
         write("char *buf;")
         write("uint32_t c = APQ_StartRead(" + queueName + ", &buf);")
         write("if(c > 0) {")
         enter
-        write(destBlock.label + ".inputs[" + destIndex + "].data = (" +
+        write(destKernel.label + ".inputs[" + destIndex + "].data = (" +
               stream.valueType + "*)buf;")
-        write(destBlock.label + ".inputs[" + destIndex + "].count = c;")
+        write(destKernel.label + ".inputs[" + destIndex + "].count = c;")
 
         leave
         write("}")
         leave
         write("}")
 
-        write("if(" + destBlock.label + ".inputs[" + destIndex + "].data) {")
+        write("if(" + destKernel.label + ".inputs[" + destIndex + "].data) {")
         enter
-        write(destBlock.label + ".clock.count += 1;")
-        write("ap_" + destBlock.blockType.name + "_push(&" +
-              destBlock.label + ".priv, " +
+        write(destKernel.label + ".clock.count += 1;")
+        write("ap_" + destKernel.name + "_push(&" +
+              destKernel.label + ".priv, " +
               destIndex + ", " +
-              destBlock.label + ".inputs[" + destIndex + "].data, " +
-              destBlock.label + ".inputs[" + destIndex + "].count);")
+              destKernel.label + ".inputs[" + destIndex + "].data, " +
+              destKernel.label + ".inputs[" + destIndex + "].count);")
         write("return true;")
         leave
         write("} else {")

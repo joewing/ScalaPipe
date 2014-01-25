@@ -10,12 +10,12 @@ import scala.math.log
 object Laplace {
 
 
-    val walkCount  = 16      // Number of walk blocks (power of 2).
+    val walkCount   = 16      // Number of walk blocks (power of 2).
     val mapping     = 2        // See below for descriptions.
-    val customRNG  = true
-    var width        = 100     // Width of the area
+    val customRNG   = false
+    var width       = 100     // Width of the area
     var height      = 100     // Height of the area
-    var iterations = 256 / walkCount;
+    var iterations  = 256 / walkCount
 
     // Resource mappings:
     // 0: Everything on a single CPU.

@@ -23,13 +23,11 @@ private[autopipe] class SimulationResourceGenerator(
 
     override def getRules: String = {
 
-        val blocks = ap.blocks.filter(_.device == device)
-        val btypes = blocks.map(_.blockType).toSet
-        val funcs = ap.functions.filter(_.platform == device.platform)
-        val names = funcs.map(_.name) ++ btypes.map(_.name)
+        val kernelTypes = ap.getKernelTypes(device)
+        val names = kernelTypes.map(_.name)
         val base = "sim.v fp.v int.v fpga_x.v fpga_wrap.v"
         val bstr = names.foldLeft(base) { (s, name) =>
-            s + " " ++ name + "-dir/" + name + ".v"
+            s + " " + name + "/" + name + ".v"
         }
 
         write("SIM_BLOCKS =" + bstr)
@@ -45,7 +43,6 @@ private[autopipe] class SimulationResourceGenerator(
 
         write("sim: hdl compile")
         write("\techo finish | ./proc_localhost")
-        write("\tgtkwave dump.vcd")
         write
 
         getOutput
@@ -60,14 +57,15 @@ private[autopipe] class SimulationResourceGenerator(
     private def emitWrapFile(dir: File) {
 
         val inputStreams = ap.streams.filter { s =>
-            s.destBlock.device == device && s.sourceBlock.device != device
+            s.destKernel.device == device && s.sourceKernel.device != device
         }
         val outputStreams = ap.streams.filter { s =>
-            s.sourceBlock.device == device && s.destBlock.device != device
+            s.sourceKernel.device == device && s.destKernel.device != device
         }
 
         // Write the FIFO module (in this case, just a register).
-        write("module ap_fifo(clk, rst, din, dout, re, we, avail, empty, full);")
+        write("module ap_fifo(clk, rst, din, dout, " +
+              "re, we, avail, empty, full);")
         enter
         write
         write("parameter WIDTH = 8;")
@@ -124,7 +122,7 @@ private[autopipe] class SimulationResourceGenerator(
         write("endmodule")
         write
 
-        // Wrapper around the ScalaPipe blocks.
+        // Wrapper around the ScalaPipe kernels.
         write("module XModule(")
         enter
         write("input wire clk,")
@@ -160,7 +158,8 @@ private[autopipe] class SimulationResourceGenerator(
             for (b <- 0 until i.valueType.bits / 8) {
                 set("a", b * 8)
                 set("b", i.valueType.bits - b * 8 - 8)
-                write("assign data$index$[$a + 7$:$a$] = din$index$[$b + 7$:$b$];")
+                write("assign data$index$[$a + 7$:$a$] = " +
+                      "din$index$[$b + 7$:$b$];")
             }
         }
         write
@@ -175,12 +174,13 @@ private[autopipe] class SimulationResourceGenerator(
             for (b <- 0 until o.valueType.bits / 8) {
                 set("a", b * 8)
                 set("b", o.valueType.bits - b * 8 - 8)
-                write("assign dout$index$[$a + 7$:$a$] = data$index$[$b + 7$:$b$];")
+                write("assign dout$index$[$a + 7$:$a$] = " +
+                      "data$index$[$b + 7$:$b$];")
             }
         }
         write
 
-        // Instantiate the ScalaPipe blocks.
+        // Instantiate the ScalaPipe kernels.
         write("fpga0 x(.clk(clk), .rst(rst)")
         enter
         for (i <- inputStreams) {
@@ -211,10 +211,10 @@ private[autopipe] class SimulationResourceGenerator(
     private def emitSimFile(dir: File) {
 
         val inputStreams = ap.streams.filter { s =>
-            s.destBlock.device == device && s.sourceBlock.device != device
+            s.destKernel.device == device && s.sourceKernel.device != device
         }
         val outputStreams = ap.streams.filter { s =>
-            s.sourceBlock.device == device && s.destBlock.device != device
+            s.sourceKernel.device == device && s.destKernel.device != device
         }
 
         write("module sim;")

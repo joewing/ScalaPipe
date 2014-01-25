@@ -67,7 +67,6 @@ private[autopipe] class SimulationEdgeGenerator(val ap: AutoPipe)
             set("label", s.label);
             write("close(stream$label$);")
             write("unlink(\"stream$label$\");")
-            write("free(q_$label$);")
         }
         leave
         write("}")
@@ -94,13 +93,14 @@ private[autopipe] class SimulationEdgeGenerator(val ap: AutoPipe)
             write("}")
 
             // Open the FIFO.
-            if (s.sourceBlock.device.platform == platform) {
+            if (s.sourceKernel.device.platform == platform) {
                 // Edge from the device.
                 write("stream$label$ = open(\"stream$label$\", " +
-                        "O_RDONLY | O_NONBLOCK | O_SYNC);")
+                      "O_RDONLY | O_NONBLOCK | O_SYNC);")
             } else {
                 // Edge to the device.
-                write("stream$label$ = open(\"stream$label$\", O_RDWR | O_SYNC);")
+                write("stream$label$ = open(\"stream$label$\", " +
+                      "O_RDWR | O_SYNC);")
             }
             write("if(stream$label$ < 0) {")
             enter
@@ -110,7 +110,8 @@ private[autopipe] class SimulationEdgeGenerator(val ap: AutoPipe)
             write("}")
 
             // Create the buffer.
-            write("$queue$ = (APQ*)malloc(APQ_GetSize($depth$, sizeof($type$)));")
+            write("$queue$ = (APQ*)malloc(APQ_GetSize($depth$, " +
+                  "sizeof($type$)));")
             write("APQ_Initialize($queue$, $depth$, sizeof($type$));")
 
         }
@@ -213,17 +214,18 @@ private[autopipe] class SimulationEdgeGenerator(val ap: AutoPipe)
 
     }
 
-    private def writeReceiveFunctions(device: Device, stream: Stream,
-                                                 senders: Traversable[Stream]) {
+    private def writeReceiveFunctions(device: Device,
+                                      stream: Stream,
+                                      senders: Traversable[Stream]) {
 
         reset
         set("label", stream.label)
         set("queue", "q_" + stream.label)
         set("fd", "stream" + stream.label)
         set("type", stream.valueType)
-        set("destLabel", stream.destBlock.label)
+        set("destLabel", stream.destKernel.label)
         set("destIndex", stream.destIndex)
-        set("destName", stream.destBlock.blockType.name)
+        set("destName", stream.destKernel.kernelType.name)
 
         // Globals.
         write("static int stream$label$ = -1;")
@@ -245,7 +247,8 @@ private[autopipe] class SimulationEdgeGenerator(val ap: AutoPipe)
         write("ssize_t offset = 0;")
         write("do {")
         enter
-        write("ssize_t rc = read($fd$, &data[offset], sizeof($type$) - offset);")
+        write("ssize_t rc = read($fd$, &data[offset], " +
+              "sizeof($type$) - offset);")
         write("if(rc > 0) {")
         enter
         write("got_read = true;")

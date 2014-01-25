@@ -4,7 +4,7 @@ package autopipe.gen
 import autopipe._
 
 private[autopipe] class CFunctionNodeEmitter(
-        val ft: FunctionType,
+        val ft: InternalFunctionType,
         _timing: Map[ASTNode, Int]
     ) extends CNodeEmitter(ft, _timing) {
 

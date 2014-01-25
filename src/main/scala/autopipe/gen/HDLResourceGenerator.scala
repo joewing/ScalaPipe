@@ -60,17 +60,17 @@ private[autopipe] abstract class HDLResourceGenerator(val ap: AutoPipe,
     private def emitInternal(dir: File) {
 
         val streams = ap.streams.filter { s =>
-            s.sourceBlock.device == device || s.destBlock.device == device
+            s.sourceKernel.device == device || s.destKernel.device == device
         }
         val tt = new TimeTrial(streams)
         val inStreams = streams.filter { s =>
-            s.destBlock.device == device && s.sourceBlock.device != device
+            s.destKernel.device == device && s.sourceKernel.device != device
         }
         val outStreams = streams.filter { s =>
-            s.sourceBlock.device == device && s.destBlock.device != device
+            s.sourceKernel.device == device && s.destKernel.device != device
         }
         val internalStreams = streams.filter { s =>
-            s.sourceBlock.device == device && s.destBlock.device == device
+            s.sourceKernel.device == device && s.destKernel.device == device
         }
 
         write("module fpga" + id + "(")
@@ -151,30 +151,30 @@ private[autopipe] abstract class HDLResourceGenerator(val ap: AutoPipe,
         }
         write
 
-        // Instantiate blocks.
-        val blocks = ap.blocks.filter { _.device == device }
-        for (block <- blocks) {
-            write("X_" + block.blockType.name)
+        // Instantiate kernels.
+        for (kernel <- ap.kernels if kernel.device == device) {
+            val kernelName = "kernel_" + kernel.name
+            write(kernelName)
             enter
-            val configs = block.getConfigs
+            val configs = kernel.getConfigs
             if (!configs.isEmpty) {
                 write("#(" + configs.foldLeft("")({ (a, c) =>
                     (if (a.isEmpty) "" else ", ") +
                     "." + c._1 + "(" + c._2 + ")"
                 }) + ")")
             }
-            write(block.label + "(")
+            write(kernel.label + "(")
             enter
             write(".clk(clk), .rst(rst)")
-            for (i <- block.getInputs) {
-                val destPort = i.destBlock.inputName(i.destPort)
+            for (i <- kernel.getInputs) {
+                val destPort = i.destKernel.inputName(i.destPort)
                 write(",")
                 write(".input_" + destPort + "(" + i.label + "_input),")
                 write(".avail_" + destPort + "(" + i.label + "_avail),")
                 write(".read_"  + destPort + "(" + i.label + "_read)")
             }
-            for (o <- block.getOutputs) {
-                val srcPort = o.sourceBlock.outputName(o.sourcePort)
+            for (o <- kernel.getOutputs) {
+                val srcPort = o.sourceKernel.outputName(o.sourcePort)
                 write(",")
                 write(".output_" + srcPort + "(" + o.label + "_output),")
                 write(".write_"  + srcPort + "(" + o.label + "_write),")
@@ -183,7 +183,7 @@ private[autopipe] abstract class HDLResourceGenerator(val ap: AutoPipe,
             leave
             write(");")
             leave
-            for (i <- block.getInputs) {
+            for (i <- kernel.getInputs) {
                 write("assign " + i.label + "_avail = " +
                         "!" + i.label + "_empty;")
             }

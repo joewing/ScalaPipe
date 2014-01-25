@@ -7,7 +7,7 @@ import scala.collection.mutable.ArrayBuffer
 import scala.collection.mutable.HashMap
 
 private[gen] class HDLModuleEmitter(
-        val co: CodeObject,
+        val kt: KernelType,
         val graph: IRGraph
     ) extends HDLGenerator {
 
@@ -41,7 +41,7 @@ private[gen] class HDLModuleEmitter(
         val states = new ListBuffer[RAMState]
     }
 
-    private val share = co.parameters.get[Int]('share)
+    private val share = kt.parameters.get[Int]('share)
     private val components = new HashMap[String, Component]
     private val simpleComponents = new HashMap[String, SimpleComponent]
     private val componentIds = new HashMap[String, Int]

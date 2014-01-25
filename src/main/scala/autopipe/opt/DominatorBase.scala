@@ -1,4 +1,3 @@
-
 package autopipe.opt
 
 import autopipe._
@@ -6,8 +5,10 @@ import scala.collection.mutable.HashMap
 import scala.collection.mutable.HashSet
 import scala.collection.mutable.Stack
 
-private[autopipe] abstract class DominatorBase(val co: CodeObject,
-                                                              val graph: IRGraph) {
+private[autopipe] abstract class DominatorBase(
+        val kt: KernelType,
+        val graph: IRGraph
+    ) {
 
     // DFS
     var count        = 0
@@ -197,4 +198,3 @@ private[autopipe] abstract class DominatorBase(val co: CodeObject,
     }
 
 }
-

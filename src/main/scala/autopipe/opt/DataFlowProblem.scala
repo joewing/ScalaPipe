@@ -1,4 +1,3 @@
-
 package autopipe.opt
 
 import autopipe._
@@ -14,7 +13,7 @@ abstract class DataFlowProblem {
 
     def forward: Boolean
 
-    def init(co: CodeObject, graph: IRGraph): Set[T]
+    def init(kt: KernelType, graph: IRGraph): Set[T]
 
     def gen(sb: StateBlock, in: Set[T]): Set[T]
 
@@ -52,12 +51,12 @@ abstract class DataFlowProblem {
         }
     }
 
-    final def solve(co: CodeObject, graph: IRGraph): Result = {
+    final def solve(kt: KernelType, graph: IRGraph): Result = {
 
         val before = new Result
         val after = new Result
         val work = new HashSet[StateBlock]
-        val top = init(co, graph)
+        val top = init(kt, graph)
 
         graph.blocks.foreach { block =>
             before += ((block.label, top))
@@ -90,4 +89,3 @@ abstract class DataFlowProblem {
     }
 
 }
-

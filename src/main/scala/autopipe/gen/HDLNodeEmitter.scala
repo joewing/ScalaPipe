@@ -1,4 +1,3 @@
-
 package autopipe.gen
 
 import scala.collection.mutable.ListBuffer
@@ -7,10 +6,10 @@ import scala.collection.mutable.HashSet
 import autopipe._
 
 private[gen] abstract class HDLNodeEmitter(
-        _co: CodeObject,
+        _kt: KernelType,
         val graph: IRGraph,
         val moduleEmitter: HDLModuleEmitter)
-    extends NodeEmitter(_co) with HDLGenerator {
+    extends NodeEmitter(_kt) with HDLGenerator {
 
     def emitBegin(block: StateBlock): Unit
     def emitEnd(block: StateBlock): Unit
@@ -387,20 +386,20 @@ private[gen] abstract class HDLNodeEmitter(
         block.nodes.foreach { node =>
             write("// " + node)
             node match {
-                case inode: IRInstruction  => emitInstruction(block, inode)
-                case vl:     IRVectorLoad    => emitVectorLoad(block, vl)
-                case vs:     IRVectorStore  => emitVectorStore(block, vs)
-                case al:     IRArrayLoad     => emitArrayLoad(block, al)
-                case as:     IRArrayStore    => emitArrayStore(block, as)
-                case stop:  IRStop            => emitStop(block, stop)
-                case ret:    IRReturn         => emitReturn(block, ret)
-                case gnode: IRGoto            => emitGoto(block, gnode)
-                case cnode: IRConditional  => emitConditional(block, cnode)
-                case snode: IRSwitch         => emitSwitch(block, snode)
-                case nnode: IRNoOp            => ()
-                case snode: IRStart          => emitStart(block, snode)
-                case cnode: IRCall            => emitCall(block, cnode)
-                case phi:    IRPhi             => emitPhi(block, phi)
+                case inode: IRInstruction    => emitInstruction(block, inode)
+                case vl:    IRVectorLoad    => emitVectorLoad(block, vl)
+                case vs:    IRVectorStore   => emitVectorStore(block, vs)
+                case al:    IRArrayLoad     => emitArrayLoad(block, al)
+                case as:    IRArrayStore    => emitArrayStore(block, as)
+                case stop:  IRStop          => emitStop(block, stop)
+                case ret:   IRReturn        => emitReturn(block, ret)
+                case gnode: IRGoto          => emitGoto(block, gnode)
+                case cnode: IRConditional   => emitConditional(block, cnode)
+                case snode: IRSwitch        => emitSwitch(block, snode)
+                case nnode: IRNoOp          => ()
+                case snode: IRStart         => emitStart(block, snode)
+                case cnode: IRCall          => emitCall(block, cnode)
+                case phi:   IRPhi           => emitPhi(block, phi)
                 case _ => sys.error("internal: " + node)
             }
         }

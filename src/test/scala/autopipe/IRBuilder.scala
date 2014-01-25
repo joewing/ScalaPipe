@@ -6,7 +6,7 @@ import scala.collection.mutable.HashMap
 
 /** A simple DSL for generating IRGraphs to be used for testing. */
 private[autopipe] class IRBuilder
-    extends CodeObject(new AutoPipe, "test",
+    extends KernelType(new AutoPipe, "test",
                        new SymbolTable(null),
                        Platforms.HDL,
                        false) {
@@ -23,9 +23,6 @@ private[autopipe] class IRBuilder
     }
 
     private def getName: String = "l" + getLabel
-
-    private val inputs = symbols.inputs
-    private val outputs = symbols.outputs
 
     def input(t: AutoPipeType): InputSymbol = {
         val i = new InputSymbol(getName, t.create(), inputs.size)
@@ -172,6 +169,11 @@ private[autopipe] class IRBuilder
         }
         return updated.values.foldLeft(IRGraph()) { (g, sb) => g.insert(sb) }
     }
+
+    override def emit(dir: java.io.File) {
+    }
+
+    def internal = true
 
 }
 

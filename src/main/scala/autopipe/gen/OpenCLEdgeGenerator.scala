@@ -1,4 +1,3 @@
-
 package autopipe.gen
 
 import scala.collection.mutable.HashSet
@@ -98,29 +97,29 @@ private[autopipe] class OpenCLEdgeGenerator(val ap: AutoPipe)
                 write("static OCLPort " + s.label + "_data;")
             }
 
-            // Get blocks on this device.
-            val localBlocks = getBlocks(device, ap.blocks)
+            // Get kernels on this device.
+            val localKernels = getKernels(device, ap.kernels)
 
-            // Get unique block types for this device.
-            val blockTypes = localBlocks.map { _.blockType }.toList.distinct
+            // Get unique kernel types for this device.
+            val kernelTypes = localKernels.map(_.kernelType).toList.distinct
 
-            // Declare kernels for each block type.
-            for (bt <- blockTypes) {
-                val kernel = device.label + "_" + bt.name + "_kernel"
+            // Declare kernels for each kernel type.
+            for (kt <- kernelTypes) {
+                val kernel = device.label + "_" + kt.name + "_kernel"
                 write("static cl_kernel " + kernel + ";")
             }
 
-            // Declare data for blocks on this device.
+            // Declare data for kernels on this device.
             write("extern \"C\" {")
-            for (bt <- localBlocks.map { _.blockType }.toList.distinct) {
-                val name = bt.name
-                write("#include \"" + name + "-dir/" + name + ".cl\"")
+            for (kt <- localKernels.map(_.kernelType).toList.distinct) {
+                val name = kt.name
+                write("#include \"" + name + "/" + name + ".cl\"")
 
             }
             write("}")
-            for (b <- localBlocks) {
+            for (k <- localKernels) {
 
-                write("static OCLBlock " + b.label + "_block;")
+                write("static OCLBlock " + k.label + "_block;")
 
                 write("static struct {")
                 enter
@@ -128,29 +127,29 @@ private[autopipe] class OpenCLEdgeGenerator(val ap: AutoPipe)
                 write("cl_int ap_ready;")
                 write("cl_int ap_state_index;")
 
-                for (s <- b.blockType.inputs) {
+                for (s <- k.kernelType.inputs) {
                     write("cl_int " + s + "_size;")
                     write("cl_int " + s + "_read;")
                 }
 
-                for (s <- b.blockType.outputs) {
+                for (s <- k.kernelType.outputs) {
                     write("cl_int " + s + "_size;")
                     write("cl_int " + s + "_sent;")
                 }
 
                 leave
-                write("} " + b.label + "_control;")
+                write("} " + k.label + "_control;")
 
                 val uniqueTypes = new HashSet[ValueType]
-                b.blockType.states.foreach { s => uniqueTypes += s.valueType }
+                k.kernelType.states.foreach(s => uniqueTypes += s.valueType)
                 writeTypes(uniqueTypes)
 
                 write("static struct {")
                 enter
 
-                // Write state variables for internal blocks.
-                if (b.blockType.internal) {
-                    for (s <- b.blockType.states if !s.isLocal) {
+                // Write state variables for internal kernels.
+                if (k.kernelType.internal) {
+                    for (s <- k.kernelType.states if !s.isLocal) {
                         val valueType = s.valueType
                         val name = s.name
                         write(valueType.name + " " + name + ";")
@@ -158,7 +157,7 @@ private[autopipe] class OpenCLEdgeGenerator(val ap: AutoPipe)
                 }
 
                 leave
-                write("} " + b.label + "_data;")
+                write("} " + k.label + "_data;")
 
             }
 
@@ -171,7 +170,7 @@ private[autopipe] class OpenCLEdgeGenerator(val ap: AutoPipe)
     private def writeSendFunctions(stream: Stream) {
 
         val queueName = stream.label + "_data.queue"
-        val sem = stream.destBlock.device.label + "_sem"
+        val sem = stream.destKernel.device.label + "_sem"
 
         // "get_free" - Run on the producer thread (source).
         write("static int " + stream.label + "_get_free()")
@@ -218,8 +217,8 @@ private[autopipe] class OpenCLEdgeGenerator(val ap: AutoPipe)
     private def writeReceiveFunctions(stream: Stream) {
 
         val queueName = stream.label + "_data.queue"
-        val sem = stream.sourceBlock.device.label + "_sem"
-        val destBlock = stream.destBlock
+        val sem = stream.sourceKernel.device.label + "_sem"
+        val destKernel = stream.destKernel
         val destIndex = stream.destIndex
 
         // "process"
@@ -229,15 +228,15 @@ private[autopipe] class OpenCLEdgeGenerator(val ap: AutoPipe)
         write("char *buf = NULL;")
         write("uint32_t c = APQ_StartRead(" + queueName + ", &buf);")
         write("if(c > 0 && " +
-                destBlock.label + ".inputs[" + destIndex + "].data == NULL) {")
+              destKernel.label + ".inputs[" + destIndex + "].data == NULL) {")
         enter
-        write(destBlock.label + ".inputs[" + destIndex + "].data = buf;")
-        write(destBlock.label + ".clock.count += 1;")
-        write("APC_Start(&" + destBlock.label + ".clock);")
-        write("ap_" + destBlock.blockType.name + "_push(&" + destBlock.label +
-                ".priv, " + destIndex + ", " + destBlock.label + ".inputs[" +
-                destIndex + "].data, c);")
-        write("APC_Stop(&" + destBlock.label + ".clock);")
+        write(destKernel.label + ".inputs[" + destIndex + "].data = buf;")
+        write(destKernel.label + ".clock.count += 1;")
+        write("APC_Start(&" + destKernel.label + ".clock);")
+        write("ap_" + destKernel.kernelType.name + "_push(&" +
+              destKernel.label + ".priv, " + destIndex + ", " +
+              destKernel.label + ".inputs[" + destIndex + "].data, c);")
+        write("APC_Stop(&" + destKernel.label + ".clock);")
         leave
         write("}")
         leave
@@ -326,34 +325,36 @@ private[autopipe] class OpenCLEdgeGenerator(val ap: AutoPipe)
 
     }
 
-    private def initKernel(device: Device, device_index: Int, bt: BlockType) {
+    private def initKernel(device: Device,
+                           device_index: Int,
+                           kt: KernelType) {
 
-        val kernel = device.label + "_" + bt.name + "_kernel"
+        val kernel = device.label + "_" + kt.name + "_kernel"
         val devid = "devices[" + device_index + "]"
         val context = device.label + "_context"
-        val source = bt.name + "_source"
+        val source = kt.name + "_source"
 
         // Create the program.
         write("program = clCreateProgramWithSource(" + context + ", 1, " +
-                source + ", NULL, &rc);")
+              source + ", NULL, &rc);")
         write("if(XUNLIKELY(rc != CL_SUCCESS)) {")
         enter
         write("fprintf(stderr, \"clCreateProgramWithSource failed: " +
-                "%d\\n\", rc);")
+              "%d\\n\", rc);")
         write("exit(-1);")
         leave
         write("}")
 
         // Build the program.
         write("rc = clBuildProgram(program, 1, &" + devid +
-                ", NULL, NULL, NULL);")
+              ", NULL, NULL, NULL);")
         write("if(XUNLIKELY(rc != CL_SUCCESS)) {")
         enter
         write("char *buffer;")
         write("size_t bufsize;")
         write("fprintf(stderr, \"clBuildProgram failed: %d\\n\", rc);")
         write("clGetProgramBuildInfo(program, " + devid + ", " +
-                "CL_PROGRAM_BUILD_LOG, 0, NULL, &bufsize);")
+              "CL_PROGRAM_BUILD_LOG, 0, NULL, &bufsize);")
         write("buffer = new char[bufsize];")
         write("memset(buffer, 0, bufsize);")
         write("clGetProgramBuildInfo(program, " + devid + ", " +
@@ -365,7 +366,7 @@ private[autopipe] class OpenCLEdgeGenerator(val ap: AutoPipe)
         write("}")
 
         // Create the kernel.
-        write(kernel + " = clCreateKernel(program, \"" + bt.name + "\", &rc);")
+        write(kernel + " = clCreateKernel(program, \"" + kt.name + "\", &rc);")
         write("if(XUNLIKELY(rc != CL_SUCCESS)) {")
         enter
         write("fprintf(stderr, \"clCreateKernel failed: %d\\n\", rc);")
@@ -382,7 +383,7 @@ private[autopipe] class OpenCLEdgeGenerator(val ap: AutoPipe)
 
         // Create a context.
         write(context + "= clCreateContext(NULL, 1, &" + devid +
-                ", NULL, NULL, &rc);")
+              ", NULL, NULL, &rc);")
         write("if(XUNLIKELY(rc != CL_SUCCESS)) {")
         enter
         write("fprintf(stderr, \"clCreateContext failed: %d\\n\", rc);")
@@ -404,8 +405,8 @@ private[autopipe] class OpenCLEdgeGenerator(val ap: AutoPipe)
         // Get the maximum number of work item dimensions.
         write("cl_uint work_dim = 1;")
         write("rc = clGetDeviceInfo(" + devid +
-                ", CL_DEVICE_MAX_WORK_ITEM_DIMENSIONS, sizeof(cl_uint), " +
-                "&work_dim, NULL);")
+              ", CL_DEVICE_MAX_WORK_ITEM_DIMENSIONS, sizeof(cl_uint), " +
+              "&work_dim, NULL);")
         write("if(XUNLIKELY(rc != CL_SUCCESS)) {")
         enter
         write("fprintf(stderr, \"clGetDeviceInfo failed: %d\\n\", rc);")
@@ -417,19 +418,19 @@ private[autopipe] class OpenCLEdgeGenerator(val ap: AutoPipe)
         // a workgroup.  Note that we only use a single dimension.
         write("size_t *sizes = new size_t[work_dim];")
         write("rc = clGetDeviceInfo(" + devid +
-                ", CL_DEVICE_MAX_WORK_ITEM_SIZES, sizeof(size_t) * work_dim, " +
-                "sizes, NULL);")
+              ", CL_DEVICE_MAX_WORK_ITEM_SIZES, sizeof(size_t) * work_dim, " +
+              "sizes, NULL);")
         write("rc = clGetDeviceInfo(" + devid +
-                ", CL_DEVICE_MAX_WORK_ITEM_DIMENSIONS, sizeof(cl_uint), " +
-                "&work_dim, NULL);")
+              ", CL_DEVICE_MAX_WORK_ITEM_DIMENSIONS, sizeof(cl_uint), " +
+              "&work_dim, NULL);")
         write("if(XUNLIKELY(rc != CL_SUCCESS)) {")
         enter
         write("fprintf(stderr, \"clGetDeviceInfo failed: %d\\n\", rc);")
         write("exit(-1);")
         leave
         write("}")
-        write(device.label + "_wgsize = sizes[0] < " + device.label + "_wgsize" +
-                " ? sizes[0] : " + device.label + "_wgsize;")
+        write(device.label + "_wgsize = sizes[0] < " + device.label +
+              "_wgsize" + " ? sizes[0] : " + device.label + "_wgsize;")
         write("delete [] sizes;")
         write("fprintf(stderr, \"Workgroup size for device %d is %lu\\n\", " +
                 device_index + ", " + device.label + "_wgsize);")
@@ -450,40 +451,41 @@ private[autopipe] class OpenCLEdgeGenerator(val ap: AutoPipe)
         }
 
         // Initialize kernels.
-        val localBlocks = ap.blocks.filter { b => b.device == device }
-        for (bt <- localBlocks.map { _.blockType }.toList.distinct) {
-            initKernel(device, device_index, bt)
+        val localKernels = ap.kernels.filter { b => b.device == device }
+        for (kt <- localKernels.map(_.kernelType).toList.distinct) {
+            initKernel(device, device_index, kt)
         }
 
         // Set up block instances.
-        for (block <- localBlocks) {
+        for (kernel <- localKernels) {
 
-            val kernel = block.label + "_block.kernel"
-            val commandQueue = block.label + "_block.queue"
-            val controlHandle = block.label + "_block.control_handle"
-            val dataHandle = block.label + "_block.data_handle"
-            val state = block.label + "_block.state"
-            val clock = block.label + "_block.clock"
-            val blockEvents = block.label + "_block.events"
-            val control = block.label + "_control"
-            val data = block.label + "_data"
+            val name = kernel.label + "_block.kernel"
+            val commandQueue = kernel.label + "_block.queue"
+            val controlHandle = kernel.label + "_block.control_handle"
+            val dataHandle = kernel.label + "_block.data_handle"
+            val state = kernel.label + "_block.state"
+            val clock = kernel.label + "_block.clock"
+            val blockEvents = kernel.label + "_block.events"
+            val control = kernel.label + "_control"
+            val data = kernel.label + "_data"
 
-            write(kernel + " = " +
-                    device.label + "_" + block.blockType.name + "_kernel;")
+            write(name + " = " +
+                  device.label + "_" + kernel.kernelType.name + "_kernel;")
 
             // Create the command queue.
             write(commandQueue + " = clCreateCommandQueue(" +
-                    device.label + "_context, " + devid + ", " + "0, &rc);")
+                  device.label + "_context, " + devid + ", " + "0, &rc);")
             write("if(XUNLIKELY(rc != CL_SUCCESS)) {")
             enter
-            write("fprintf(stderr, \"clCreateCommandQueue failed: %d\\n\", rc);")
+            write("fprintf(stderr, \"clCreateCommandQueue failed: %d\\n\", " +
+                  "rc);")
             write("exit(-1);")
             leave
             write("}")
 
             // Create a handle for the block control data.
             write(controlHandle + " = clCreateBuffer(" + context +
-                    ", CL_MEM_READ_WRITE, sizeof(" + control + "), NULL, &rc);")
+                  ", CL_MEM_READ_WRITE, sizeof(" + control + "), NULL, &rc);")
             write("if(XUNLIKELY(rc != CL_SUCCESS)) {")
             enter
             write("fprintf(stderr, \"clCreateBuffer failed: %d\\n\", rc);")
@@ -494,7 +496,7 @@ private[autopipe] class OpenCLEdgeGenerator(val ap: AutoPipe)
             // Create a handle for the local block data.
             // Note that we write this block at startup and then leave it.
             write(dataHandle + " = clCreateBuffer(" + context +
-                    ", CL_MEM_READ_WRITE, sizeof(" + data + "), NULL, &rc);")
+                  ", CL_MEM_READ_WRITE, sizeof(" + data + "), NULL, &rc);")
             write("if(XUNLIKELY(rc != CL_SUCCESS)) {")
             enter
             write("fprintf(stderr, \"clCreateBuffer failed: %d\\n\", rc);")
@@ -505,29 +507,30 @@ private[autopipe] class OpenCLEdgeGenerator(val ap: AutoPipe)
             // Initialize the block state.
             write(control + ".ap_state_index = 0;")
             write("APC_Init(&" + clock + ");")
-            for (s <- block.blockType.states if !s.isLocal) {
+            for (s <- kernel.kernelType.states if !s.isLocal) {
                 val name = s.name
                 val literal = s.value
                 if (literal != null) {
-                    val str = block.blockType.getLiteral(literal)
+                    val str = kernel.kernelType.getLiteral(literal)
                     write(data + "." + name + " = " + str + ";")
                 }
             }
 
             // Copy the initial block state to the device.
             write("rc = clEnqueueWriteBuffer(" + commandQueue + ", " +
-                    dataHandle + ", CL_TRUE, 0, sizeof(" + data + "), " +
-                    "&" + data + ", 0, NULL, NULL);")
+                  dataHandle + ", CL_TRUE, 0, sizeof(" + data + "), " +
+                  "&" + data + ", 0, NULL, NULL);")
             write("if(XUNLIKELY(rc != CL_SUCCESS)) {")
             enter
-            write("fprintf(stderr, \"clEnqueueWriteBuffer failed: %d\\n\", rc);")
+            write("fprintf(stderr, \"clEnqueueWriteBuffer failed: %d\\n\", " +
+                  "rc);")
             write("exit(-1);")
             leave
             write("}")
 
             // Initialize space for block events.
             // We need one for each device-to-host transfer.
-            val outputCount = block.getOutputs.size
+            val outputCount = kernel.getOutputs.size
             write(blockEvents + " = new cl_event[" + outputCount + "];")
 
             // Set up pending transfers and state.
@@ -538,7 +541,7 @@ private[autopipe] class OpenCLEdgeGenerator(val ap: AutoPipe)
         // Start the process thread.
         write("sem_init(&" + device.label + "_sem, 0, 0);")
         write("pthread_create(&" + device.label + "_tid, NULL, " +
-                device.label + "_thread, NULL);")
+              device.label + "_thread, NULL);")
 
     }
 
@@ -604,13 +607,13 @@ private[autopipe] class OpenCLEdgeGenerator(val ap: AutoPipe)
 
         val sem = device.label + "_sem"
 
-        // Get blocks mapped to this device.
-        val localBlocks = ap.blocks.filter { b => b.device == device }
+        // Get kernels mapped to this device.
+        val localKernels = ap.kernels.filter(k => k.device == device)
 
-        // Determine the maximum number of host-to-device streams for a block.
+        // Determine the maximum number of host-to-device streams for a kernel.
         // This is used to allocate enough space in the event array.
-        val maxHostDeviceStreams = localBlocks.foldLeft(0) { (a, b) =>
-            val t = b.getInputs.count { _.sourceBlock.device != device }
+        val maxHostDeviceStreams = localKernels.foldLeft(0) { (a, k) =>
+            val t = k.getInputs.count(_.sourceKernel.device != device)
             math.max(a, t)
         }
 
@@ -632,19 +635,19 @@ private[autopipe] class OpenCLEdgeGenerator(val ap: AutoPipe)
         enter
 
         // Start kernels.
-        for (block <- localBlocks) {
+        for (kernel <- localKernels) {
 
-            val kernel = block.label + "_block.kernel"
-            val blockControlHandle = block.label + "_block.control_handle"
-            val blockDataHandle = block.label + "_block.data_handle"
-            val blockState = block.label + "_block.state"
-            val commandQueue = block.label + "_block.queue"
-            val clock = block.label + "_block.clock"
-            val blockData = block.label + "_data"
-            val blockControl = block.label + "_control"
+            val name = kernel.label + "_block.kernel"
+            val blockControlHandle = kernel.label + "_block.control_handle"
+            val blockDataHandle = kernel.label + "_block.data_handle"
+            val blockState = kernel.label + "_block.state"
+            val commandQueue = kernel.label + "_block.queue"
+            val clock = kernel.label + "_block.clock"
+            val blockData = kernel.label + "_data"
+            val blockControl = kernel.label + "_control"
             val readyFlag = blockControl + ".ap_ready"
-            val blockEvents = block.label + "_block.events"
-            val blockEventCount = block.label + "_block.event_count"
+            val blockEvents = kernel.label + "_block.events"
+            val blockEventCount = kernel.label + "_block.event_count"
             var arg = 0
 
             // Check if we should attempt to start this kernel.
@@ -655,8 +658,8 @@ private[autopipe] class OpenCLEdgeGenerator(val ap: AutoPipe)
             write("pending = 0;")
 
             // Enqueue input argument copies from host.
-            val remoteInputs = block.getInputs.filter {
-                _.sourceBlock.device != device
+            val remoteInputs = kernel.getInputs.filter {
+                _.sourceKernel.device != device
             }
             for (stream <- remoteInputs) {
 
@@ -680,18 +683,19 @@ private[autopipe] class OpenCLEdgeGenerator(val ap: AutoPipe)
                 write(offset + " = buffer_offset;")
                 write("if(buffer_offset + available > " + copied + ") {")
                 enter
-                write("size_t offset = " + copied + " * sizeof(" + valueType + ");")
+                write("size_t offset = " + copied + " * sizeof(" + valueType +
+                      ");")
                 write("size_t to_copy = buffer_offset + available - " +
-                        copied + ";")
+                      copied + ";")
                 write("to_copy *= sizeof(" + valueType + ");")
                 write("buf = &" + queueName + "->data[offset];")
                 write("status = clEnqueueWriteBuffer(" + commandQueue + ", " +
-                        stream.label + "_data.handle, CL_FALSE, offset, to_copy, " +
-                        "buf, 0, NULL, &events[pending]);")
+                      stream.label + "_data.handle, CL_FALSE, offset, " +
+                      "to_copy, buf, 0, NULL, &events[pending]);")
                 write("if(XUNLIKELY(status != CL_SUCCESS)) {")
                 enter
-                write("fprintf(stderr, \"clEnqueueWriteBuffer failed: %d\\n\", " +
-                        " status);")
+                write("fprintf(stderr, \"clEnqueueWriteBuffer failed: " +
+                      "%d\\n\",  status);")
                 write("exit(-1);")
                 leave
                 write("}")
@@ -703,8 +707,8 @@ private[autopipe] class OpenCLEdgeGenerator(val ap: AutoPipe)
             }
 
             // Set up local inputs.
-            val localInputs = block.getInputs.filter {
-                _.sourceBlock.device == device
+            val localInputs = kernel.getInputs.filter {
+                _.sourceKernel.device == device
             }
             for (stream <- localInputs) {
 
@@ -726,15 +730,16 @@ private[autopipe] class OpenCLEdgeGenerator(val ap: AutoPipe)
 
             // Determine if we should attempt to run again.
             write("has_data = " + blockControl + ".ap_state_index >= 0;")
-            for (stream <- block.getInputs) {
+            for (stream <- kernel.getInputs) {
                 val index = stream.destIndex
                 val sizeval = blockControl + ".input" + index + "_size"
                 val readval = blockControl + ".input" + index + "_read"
-                write("has_data = has_data || " + readval + " < " + sizeval + ";")
+                write("has_data = has_data || " + readval + " < " +
+                      sizeval + ";")
             }
 
             // Setup out-bound buffer sizes.
-            for (stream <- block.getOutputs) {
+            for (stream <- kernel.getOutputs) {
                 val index = stream.sourceIndex
                 val sizeval = blockControl + ".output" + index + "_size"
                 val sentval = blockControl + ".output" + index + "_sent"
@@ -742,7 +747,7 @@ private[autopipe] class OpenCLEdgeGenerator(val ap: AutoPipe)
                 val copied = stream.label + "_data.copied"
                 write("if(has_data) {")
                 enter
-                if (stream.destBlock.device == device) {
+                if (stream.destKernel.device == device) {
                     write(sentval + " = APQ_StartWriteOffset(" + queueName +
                             ", " + queueName + "->depth / 4);")
                     write("if(" + sentval + " >= 0) {")
@@ -776,7 +781,7 @@ private[autopipe] class OpenCLEdgeGenerator(val ap: AutoPipe)
             write(readyFlag + " = 0;")
 
             // Set up block-local data.
-            write("status = clSetKernelArg(" + kernel + ", " + arg +
+            write("status = clSetKernelArg(" + name + ", " + arg +
                     ", sizeof(cl_mem), &" + blockControlHandle + ");")
             write("if(XUNLIKELY(status != CL_SUCCESS)) {")
             enter
@@ -785,7 +790,7 @@ private[autopipe] class OpenCLEdgeGenerator(val ap: AutoPipe)
             leave
             write("}")
             arg += 1
-            write("status = clSetKernelArg(" + kernel + ", " + arg +
+            write("status = clSetKernelArg(" + name + ", " + arg +
                     ", sizeof(cl_mem), &" + blockDataHandle + ");")
             write("if(XUNLIKELY(status != CL_SUCCESS)) {")
             enter
@@ -796,12 +801,13 @@ private[autopipe] class OpenCLEdgeGenerator(val ap: AutoPipe)
             arg += 1
 
             // Set up the inputs.
-            for (stream <- block.getInputs) {
-                write("status = clSetKernelArg(" + kernel + ", " + arg +
-                        ", sizeof(cl_mem), &" + stream.label + "_data.handle);")
+            for (stream <- kernel.getInputs) {
+                write("status = clSetKernelArg(" + name + ", " + arg +
+                      ", sizeof(cl_mem), &" + stream.label + "_data.handle);")
                 write("if(XUNLIKELY(status != CL_SUCCESS)) {")
                 enter
-                write("fprintf(stderr, \"clSetKernelArg failed: %d\\n\", status);")
+                write("fprintf(stderr, \"clSetKernelArg failed: %d\\n\", " +
+                      "status);")
                 write("exit(-1);")
                 leave
                 write("}")
@@ -809,12 +815,13 @@ private[autopipe] class OpenCLEdgeGenerator(val ap: AutoPipe)
             }
 
             // Set up the outputs.
-            for (stream <- block.getOutputs) {
-                write("status = clSetKernelArg(" + kernel + ", " + arg +
-                        ", sizeof(cl_mem), &" + stream.label + "_data.handle);")
+            for (stream <- kernel.getOutputs) {
+                write("status = clSetKernelArg(" + name + ", " + arg +
+                      ", sizeof(cl_mem), &" + stream.label + "_data.handle);")
                 write("if(XUNLIKELY(status != CL_SUCCESS)) {")
                 enter
-                write("fprintf(stderr, \"clSetKernelArg failed: %d\\n\", status);")
+                write("fprintf(stderr, \"clSetKernelArg failed: %d\\n\", " +
+                      "status);")
                 write("exit(-1);")
                 leave
                 write("}")
@@ -835,9 +842,9 @@ private[autopipe] class OpenCLEdgeGenerator(val ap: AutoPipe)
             write("}")
 
             // Enqueue the kernel.
-            if (block.blockType.states.filter { s => !s.isLocal }.isEmpty) {
+            if (kernel.kernelType.states.filter(s => !s.isLocal).isEmpty) {
                 write("size_t workgroup_size = " + device.label + "_wgsize;")
-                for (o <- block.getOutputs) {
+                for (o <- kernel.getOutputs) {
                     val maxdepth = o.depth / 4
                     write("if(workgroup_size > " + maxdepth + ") {")
                     enter
@@ -849,7 +856,7 @@ private[autopipe] class OpenCLEdgeGenerator(val ap: AutoPipe)
                 write("const size_t workgroup_size = 1;")
             }
             write("status = clEnqueueNDRangeKernel(" + commandQueue + ", " +
-                    kernel + ", 1, NULL, &workgroup_size, &workgroup_size, " +
+                    name + ", 1, NULL, &workgroup_size, &workgroup_size, " +
                     "pending + 1, events, &taskEvent);")
             write("if(XUNLIKELY(status != CL_SUCCESS)) {")
             enter
@@ -906,7 +913,7 @@ private[autopipe] class OpenCLEdgeGenerator(val ap: AutoPipe)
 
             // Finish buffer reads for inputs.
             // Note that this is done for both remote and internal edges.
-            for (stream <- block.getInputs) {
+            for (stream <- kernel.getInputs) {
                 val index = stream.destIndex
                 val queueName = stream.label + "_data.queue"
                 val readval = blockControl + ".input" + index + "_read"
@@ -933,7 +940,7 @@ private[autopipe] class OpenCLEdgeGenerator(val ap: AutoPipe)
 
             // Kernel has completed and the data block has been copied back
             // to the host.  Now we need to queue up transfers to move data
-            // to the next blocks.
+            // to the next kernels.
             // We stay in the FINISHED state until all device-to-host transfers
             // have been enqueued.  We then switch to TRANSFERRING until all
             // transfers complete.
@@ -941,8 +948,8 @@ private[autopipe] class OpenCLEdgeGenerator(val ap: AutoPipe)
             write(blockState + " = OCL_STATE_TRANSFERRING;")
 
             // Start device-to-host transfers.
-            for (stream <- block.getOutputs.filter {
-                _.destBlock.device != device
+            for (stream <- kernel.getOutputs.filter {
+                _.destKernel.device != device
             }) {
 
                 val index = stream.sourceIndex
@@ -954,7 +961,8 @@ private[autopipe] class OpenCLEdgeGenerator(val ap: AutoPipe)
 
                 write("if(" + sentval + " > 0) {")
                 enter
-                write("buf = APQ_StartWrite(" + queueName + ", " + sentval + ");")
+                write("buf = APQ_StartWrite(" + queueName + ", " +
+                      sentval + ");")
                 write("if(buf != NULL) {")
                 enter
                 write("status = clEnqueueReadBuffer(" + commandQueue + ", " +
@@ -964,8 +972,8 @@ private[autopipe] class OpenCLEdgeGenerator(val ap: AutoPipe)
                         blockEvents + "[" + blockEventCount + "]);")
                 write("if(XUNLIKELY(status != CL_SUCCESS)) {")
                 enter
-                write("fprintf(stderr, \"clEnqueueReadBuffer failed: %d\\n\", " +
-                        "status);")
+                write("fprintf(stderr, \"clEnqueueReadBuffer failed: " +
+                      "%d\\n\", status);")
                 write("exit(-1);")
                 leave
                 write("}")
@@ -988,15 +996,15 @@ private[autopipe] class OpenCLEdgeGenerator(val ap: AutoPipe)
             enter
 
             // Finish writes for streams on the device.
-            for (stream <- block.getOutputs.filter {
-                _.destBlock.device == device
+            for (stream <- kernel.getOutputs.filter {
+                _.destKernel.device == device
             }) {
                 val queueName = stream.label + "_data.queue"
                 val copied = stream.label + "_data.copied"
                 val index = stream.sourceIndex
-                val sentval = block.label + "_control.output" + index + "_sent"
+                val sentval = kernel.label + "_control.output" + index + "_sent"
                 write("APQ_FinishWrite(" + queueName + ", " +
-                        sentval + " - " + copied + ");")
+                      sentval + " - " + copied + ");")
             }
 
             // Read the ready flag again so we know when everything is complete.
@@ -1043,8 +1051,8 @@ private[autopipe] class OpenCLEdgeGenerator(val ap: AutoPipe)
             enter
             write(blockState + " = OCL_STATE_READY;")
 
-            for (stream <- block.getOutputs.filter {
-                _.destBlock.device != device
+            for (stream <- kernel.getOutputs.filter {
+                _.destKernel.device != device
             }) {
                 val queueName = stream.label + "_data.queue"
                 val copied = stream.label + "_data.copied"
@@ -1077,17 +1085,19 @@ private[autopipe] class OpenCLEdgeGenerator(val ap: AutoPipe)
         for (device <- getDevices(streams)) {
             write("thread_ticks = 0;")
             write("thread_us = 0;")
-            write("fprintf(stderr, \"OpenCL Thread " + device.index + ":\\n\");")
-            for (block <- getBlocks(device, ap.blocks)) {
-                val name = block.blockType.name
-                val instance = block.label
+            write("fprintf(stderr, \"OpenCL Thread " + device.index +
+                  ":\\n\");")
+            for (kernel <- getKernels(device, ap.kernels)) {
+                val name = kernel.kernelType.name
+                val instance = kernel.label
                 val ticks = instance + "_block.clock.total_ticks"
                 val pushes = instance + "_block.clock.count"
                 write("ticks = " + ticks + ";")
                 write("pushes = " + pushes + ";")
                 write("us = (ticks * total_us) / total_ticks;")
-                write("fprintf(stderr, \"     " + name + "(" + instance + "): " +
-                        "%llu ticks, %llu pushes, %llu us\\n\", ticks, pushes, us);")
+                write("fprintf(stderr, \"     " + name + "(" + instance +
+                      "): %llu ticks, %llu pushes, %llu us\\n\", " +
+                      "ticks, pushes, us);")
                 write("thread_ticks += ticks;")
                 write("thread_us += us;")
             }

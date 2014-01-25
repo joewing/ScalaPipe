@@ -1,4 +1,3 @@
-
 package autopipe.dsl
 
 import autopipe._
@@ -18,16 +17,15 @@ class AutoPipeLoopBack(val t: AutoPipeType) {
         out = in
     }
 
-    private[autopipe] var block: Block = null
+    private[autopipe] var kernel: Kernel = null
 
     def input(s: Stream) {
-        block.setInput(null, s)
+        kernel.setInput(null, s)
     }
 
     def output()(implicit ap: AutoPipe): Stream = {
-        block = ap.createBlock(apBlock)
-        block.apply()()
+        kernel = ap.createKernel(apBlock)
+        kernel.apply()()
     }
 
 }
-

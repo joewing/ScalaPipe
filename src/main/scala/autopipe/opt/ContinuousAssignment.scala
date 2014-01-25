@@ -17,7 +17,7 @@ private[opt] object ContinuousAssignment extends Pass {
         val maxCost = 10
 
         // Compute reaching definitions.
-        val defs = ReachingDefs.solve(context.co, graph)
+        val defs = ReachingDefs.solve(context.kt, graph)
 
         // Function to compute the max path cost.
         def computeCost(g: IRGraph): Int = {

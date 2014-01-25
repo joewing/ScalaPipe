@@ -3,11 +3,11 @@ package autopipe.gen
 
 import autopipe._
 
-private[autopipe] class HDLIRContext(val co: CodeObject) extends IRContext {
+private[autopipe] class HDLIRContext(val kt: KernelType) extends IRContext {
 
     def eliminateVariables = true
 
-    private val share: Boolean = co.parameters.get[Int]('share) > 1
+    private val share: Boolean = kt.parameters.get[Int]('share) > 1
 
     def share(a: IRNode, b: IRNode): Boolean = (a, b) match {
         case (ia: IRInstruction, ib: IRInstruction) =>

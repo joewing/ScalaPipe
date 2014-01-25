@@ -1,24 +1,12 @@
-
 package autopipe.dsl
 
 import scala.collection.mutable.ListBuffer
 import scala.collection.mutable.HashSet
 import autopipe._
 
-trait ReturnType {
+class AutoPipeFunction(_name: String) extends AutoPipeBlock(_name) {
 
-    private[autopipe] var returnType = ValueType.void
-
-    def returns(t: AutoPipeType) {
-        returnType = t.create()
-    }
-
-}
-
-class AutoPipeFunction(_name: String)
-    extends AutoPipeBlock(_name) with ReturnType {
-
-    def this() = this(LabelMaker.getFunctionLabel)
+    def this() = this(LabelMaker.getKernelLabel)
 
     // Include paths needed for this function.
     def ipath(n: String) {
@@ -45,6 +33,11 @@ class AutoPipeFunction(_name: String)
         input(t)
     }
 
+    // Return type.
+    def returns(t: AutoPipeType) {
+        output(t)
+    }
+
     // Return a value.
     // FIXME: It would be nice to be able to override __return instead.
     def ret(result: ASTNode = null) {
@@ -52,4 +45,3 @@ class AutoPipeFunction(_name: String)
     }
 
 }
-

@@ -1,4 +1,3 @@
-
 package autopipe.gen
 
 import scala.collection.mutable.HashMap
@@ -12,23 +11,24 @@ private[autopipe] object XGenerator extends Generator {
         case at: ArrayValueType     =>
             "array<" + at.baseType + ">[" + at.length + "]"
         case st: StructValueType    =>
-            "struct<" + st.fields.map(x => getTypeName(x._2)).mkString(",") + ">"
+            val fieldTypes = st.fields.map(f => getTypeName(f._2))
+            "struct<" + fieldTypes.mkString(",") + ">"
         case td: TypeDefValueType  => td.value
         case _                            => vt.baseType.toString
     }
 
-    private class BlockGenerator(val bt: BlockType) {
+    private class KernelGenerator(val kt: KernelType) {
 
         def emitDecl: String = ""
 
-        def emitBlocks(blocks: Seq[Block]): String = ""
+        def emitKernels(kernels: Seq[Kernel]): String = ""
 
         def emitMapping: String = ""
 
     }
 
-    private class ExternalBlockGenerator(_bt: BlockType)
-        extends BlockGenerator(_bt) {
+    private class ExternalKernelGenerator(_kt: KernelType)
+        extends KernelGenerator(_kt) {
 
         private def emitInput(i: InputSymbol): String = {
             "    input " + getTypeName(i.valueType) + " " + i.name + ";\n"
@@ -44,28 +44,31 @@ private[autopipe] object XGenerator extends Generator {
         }
 
         override def emitDecl = {
-            val configs = bt.configs
-            val inputs = bt.inputs
-            val outputs = bt.outputs
-            "block " + bt.name + " {\n" +
+            val configs = kt.configs
+            val inputs = kt.inputs
+            val outputs = kt.outputs
+            "block " + kt.name + " {\n" +
                 configs.foldLeft("")((a, b) => a + emitConfig(b)) +
                 inputs.foldLeft("")((a, b) => a + emitInput(b)) +
                 outputs.foldLeft("")((a, b) => a + emitOutput(b)) +
             "};\n" +
-            "platform " + bt.platform + " {\n" +
-            "    impl " + bt.name +
-            " (base=\"" + bt.name + "\");\n" +
+            "platform " + kt.platform + " {\n" +
+            "    impl " + kt.name +
+            " (base=\"" + kt.name + "\");\n" +
             "};\n"
         }
 
-        override def emitBlocks(blocks: Seq[Block]): String = {
-            blocks.foldLeft("")((a, b) => a + b.emit)
+        override def emitKernels(kernels: Seq[Kernel]): String = {
+            val strs = kernels.map { k =>
+                "    " + k.name + "\n"
+            }
+            strs.mkString
         }
 
     }
 
-    private class InternalBlockGenerator(_bt: BlockType)
-        extends ExternalBlockGenerator(_bt) {
+    private class InternalKernelGenerator(_kt: KernelType)
+        extends ExternalKernelGenerator(_kt) {
     }
 
     private object ExDMA {
@@ -93,8 +96,8 @@ private[autopipe] object XGenerator extends Generator {
             val count = streams.size
 
             def emitSHM(s: Stream) = {
-                "    ({ " + s.sourceBlock.device.procName +
-                ", " + s.destBlock.device.procName +
+                "    ({ " + s.sourceKernel.device.procName +
+                ", " + s.destKernel.device.procName +
                 "}, queuelength=8192)"
             }
 
@@ -123,9 +126,9 @@ private[autopipe] object XGenerator extends Generator {
 
     }
 
-    private def createGenerator(bt: BlockType) = bt match {
-        case in: InternalBlockType => new InternalBlockGenerator(in)
-        case ex: ExternalBlockType => new ExternalBlockGenerator(ex)
+    private def createGenerator(kt: KernelType) = kt match {
+        case in: InternalKernelType => new InternalKernelGenerator(in)
+        case ex: ExternalKernelType => new ExternalKernelGenerator(ex)
         case _ => sys.error("Unknown block type")
     }
 
@@ -134,13 +137,13 @@ private[autopipe] object XGenerator extends Generator {
         var declStr = ""
         var blockStr = ""
         var mapStr = ""
-        for (bt <- ap.getBlockTypes) {
-            if (!bt.blocks.isEmpty) {
-                val generator = createGenerator(bt)
-                declStr += generator.emitDecl
-                blockStr += generator.emitBlocks(bt.blocks)
-                mapStr += generator.emitMapping
-            }
+        val kernelTypes = ap.kernels.map(_.kernelType).toSet
+        for (kt <- kernelTypes) {
+            val kernels = ap.kernels.filter(_.kernelType == kt)
+            val generator = createGenerator(kt)
+            declStr += generator.emitDecl
+            blockStr += generator.emitKernels(kernels)
+            mapStr += generator.emitMapping
         }
 
         val edgeTypes = new HashMap[Edge, ListBuffer[Stream]]
@@ -165,10 +168,10 @@ private[autopipe] object XGenerator extends Generator {
             mapStr += d.emit
         }
         val edgeStr = ap.streams.foldLeft("") { (a, s) =>
-            val sourcePort = s.sourceBlock.outputName(s.sourcePort)
-            val destPort = s.destBlock.inputName(s.destPort)
-            val sourceString = s.sourceBlock.label + "." + sourcePort
-            val destString = s.destBlock.label + "." + destPort
+            val sourcePort = s.sourceKernel.outputName(s.sourcePort)
+            val destPort = s.destKernel.inputName(s.destPort)
+            val sourceString = s.sourceKernel.label + "." + sourcePort
+            val destString = s.destKernel.label + "." + destPort
             a + s.label + ": " + sourceString + " -> " + destString + ";\n"
         }
         var measureStr = ""

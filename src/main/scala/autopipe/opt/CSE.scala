@@ -19,7 +19,7 @@ private[opt] object CSE extends Pass {
     @tailrec
     private def cse(context: IRContext, graph: IRGraph): IRGraph = {
 
-        val ae = AvailableExpressions.solve(context.co, graph)
+        val ae = AvailableExpressions.solve(context.kt, graph)
 
         // Find an expression to replace.
         // Note that ae is a mapping from block to a set of expressions

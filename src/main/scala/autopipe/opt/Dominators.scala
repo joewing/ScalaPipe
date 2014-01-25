@@ -1,4 +1,3 @@
-
 package autopipe.opt
 
 import autopipe._
@@ -6,8 +5,10 @@ import scala.collection.mutable.HashMap
 import scala.collection.mutable.HashSet
 import scala.collection.mutable.Stack
 
-private[autopipe] class Dominators(_co: CodeObject, _graph: IRGraph)
-        extends DominatorBase(_co, _graph) {
+private[autopipe] class Dominators(
+        _kt: KernelType,
+        _graph: IRGraph
+    ) extends DominatorBase(_kt, _graph) {
 
     val phis = new HashMap[BaseSymbol, HashMap[StateBlock, IRPhi]]
 
@@ -95,7 +96,7 @@ private[autopipe] class Dominators(_co: CodeObject, _graph: IRGraph)
 
 /*
     private def placePhis() {
-        val live = LiveVariables.solve(co, graph)
+        val live = LiveVariables.solve(kt, graph)
         val symbols = new HashSet[BaseSymbol]
         graph.blocks.foreach { b =>
             symbols ++= b.symbols.filter { s => canRename(s) }
@@ -152,7 +153,7 @@ private[autopipe] class Dominators(_co: CodeObject, _graph: IRGraph)
             // of the phi.
             var newSymbol = phis(s).get(x) match {
                 case Some(p) =>
-                    p.dest = co.createTemp(s.valueType)
+                    p.dest = kt.createTemp(s.valueType)
                     p.dest
                 case None =>
                     current
@@ -166,7 +167,7 @@ private[autopipe] class Dominators(_co: CodeObject, _graph: IRGraph)
             // If we are writting to the symbol, we need to create
             // a new temporary for the destination.
             for (n <- x.nodes if n.dests.contains(s)) {
-                n.dest = co.createTemp(s.valueType)
+                n.dest = kt.createTemp(s.valueType)
                 newSymbol = n.dest
             }
 
@@ -221,4 +222,3 @@ private[autopipe] class Dominators(_co: CodeObject, _graph: IRGraph)
 */
 
 }
-

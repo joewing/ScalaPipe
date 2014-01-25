@@ -1,4 +1,3 @@
-
 package autopipe.opt
 
 import autopipe._
@@ -14,7 +13,7 @@ object AvailableExpressions extends DataFlowProblem {
     private def isExpression(n: IRNode): Boolean =
         !n.dests.isEmpty && !n.symbols.exists(isPort)
 
-    def init(co: CodeObject, graph: IRGraph) = HashSet[T]()
+    def init(kt: KernelType, graph: IRGraph) = HashSet[T]()
 
     def gen(sb: StateBlock, in: Set[T]): Set[T] = {
         val nodes = sb.nodes.filter { n =>
@@ -29,4 +28,3 @@ object AvailableExpressions extends DataFlowProblem {
     def meet(a: Set[T], b: Set[T]) = a.intersect(b)
 
 }
-

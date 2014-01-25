@@ -1,4 +1,3 @@
-
 package autopipe.opt
 
 import autopipe._
@@ -22,12 +21,16 @@ private[opt] object RemoveVariables extends Pass {
             }
 
             // Build up the list to remove.
-            val removedStates = context.co.states.filter(s => !states.contains(s))
-            val removedTemps = context.co.temps.filter(t => !temps.contains(t))
+            val removedStates = context.kt.states.filter { s =>
+                !states.contains(s)
+            }
+            val removedTemps = context.kt.temps.filter { t =>
+                !temps.contains(t)
+            }
 
             // Remove extras.
-            context.co.states --= removedStates
-            context.co.temps --= removedTemps
+            context.kt.states --= removedStates
+            context.kt.temps --= removedTemps
 
         }
 
@@ -36,4 +39,3 @@ private[opt] object RemoveVariables extends Pass {
     }
 
 }
-

@@ -5,14 +5,14 @@ import scala.collection.immutable.ListSet
 
 private[autopipe] object LocalExtractor {
 
-    def extract(co: CodeObject) {
-        val extractor = new LocalExtractor(co)
+    def extract(kt: KernelType) {
+        val extractor = new LocalExtractor(kt)
         extractor.extract
     }
 
 }
 
-private[autopipe] class LocalExtractor(val co: CodeObject) {
+private[autopipe] class LocalExtractor(val k: KernelType) {
 
     def extract {
 
@@ -20,14 +20,14 @@ private[autopipe] class LocalExtractor(val co: CodeObject) {
         // Get a list of all entry points to the block.
         // An entry point is the top of the block, and before every input
         // and every output.
-        val root = co.impl.expression
+        val root = kt.impl.expression
         val entries = getEntries(root, ListSet(root))
 
         // Walk the AST.
         // For each state variable, if a use before a definition is
         // found, the variable is assumed to be a state variable.  Otherwise,
         // it can be converted to a local variable.
-        for (s <- co.states) {
+        for (s <- kt.states) {
 
             // Check if this value is used before being defined at any
             // entry point.
@@ -48,7 +48,7 @@ private[autopipe] class LocalExtractor(val co: CodeObject) {
     private def hasPort(node: ASTNode): Boolean = {
         node.children.foldLeft(false) { (a, c) =>
             a || (c match {
-                case sn: ASTSymbolNode if co.isPort(sn.symbol) => true
+                case sn: ASTSymbolNode if kt.isPort(sn.symbol) => true
                 case _ => hasPort(c)
             })
         }
@@ -67,7 +67,7 @@ private[autopipe] class LocalExtractor(val co: CodeObject) {
                                   lst: ListSet[ASTNode]): ListSet[ASTNode] = {
         node.children.foldLeft(lst) { (l, c) =>
             c match {
-                case sn: ASTSymbolNode if co.isPort(sn.symbol) =>
+                case sn: ASTSymbolNode if kt.isPort(sn.symbol) =>
                     getEntries(c, l + getStart(c))
                 case wn: ASTWhileNode if hasPort(wn) =>
                     getEntries(c, l + c)

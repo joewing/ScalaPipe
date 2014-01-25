@@ -1,10 +1,11 @@
-
 package autopipe
 
 import scala.collection.mutable.ListBuffer
 
-class StreamList(val ap: AutoPipe,
-                 val block: Block) {
+class StreamList(
+        val ap: AutoPipe,
+        val kernel: Kernel
+    ) {
 
     private[autopipe] val streams = new ListBuffer[Stream]
     private val measures = new ListBuffer[(Symbol, Symbol)]
@@ -14,21 +15,21 @@ class StreamList(val ap: AutoPipe,
 
     def apply(i: Int): Stream = {
         val port_name = new IntPortName(i)
-        val stream = new Stream(ap, block, port_name)
+        val stream = ap.createStream(kernel, port_name)
         measures.foreach { m => stream.addMeasure(m._1, m._2) }
         edges.foreach { stream.edge = _ }
         streams += stream
-        block.setOutput(port_name, stream)
+        kernel.setOutput(port_name, stream)
         stream
     }
 
     def apply(s: String): Stream = {
         val port_name = new StringPortName(s)
-        val stream = new Stream(ap, block, port_name)
+        val stream = ap.createStream(kernel, port_name)
         measures.foreach { m => stream.addMeasure(m._1, m._2) }
         edges.foreach { stream.edge = _ }
         streams += stream
-        block.setOutput(port_name, stream)
+        kernel.setOutput(port_name, stream)
         stream
     }
 

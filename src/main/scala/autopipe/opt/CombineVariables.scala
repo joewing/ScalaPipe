@@ -20,7 +20,7 @@ private[opt] object CombineVariables extends Pass {
         val removed = new HashSet[BaseSymbol]
 
         // Get live variables for each state.
-        val live = LiveVariables.solve(context.co, graph)
+        val live = LiveVariables.solve(context.kt, graph)
 
         // Determine if two variables can be combined.
         def canCombine(g: IRGraph, a: BaseSymbol, b: BaseSymbol): Boolean = {

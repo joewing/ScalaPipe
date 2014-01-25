@@ -5,24 +5,26 @@ import autopipe.dsl.AutoPipeBlock
 
 class AutoPipeSpec extends UnitSpec {
 
+    val apb = new AutoPipeBlock("TestKernel")
+
     def createAutoPipe(): AutoPipe = {
         val ap = new AutoPipe()
-        ap.createBlock(new AutoPipeBlock("TestBlock"))
+        ap.createKernel(apb)
         ap
     }
 
-    def createBlock(ap: AutoPipe) = {
-        new Block(ap, "TestBlock")
+    def createKernel(ap: AutoPipe) = {
+        new Kernel(ap, apb)
     }
 
     def createApplication(ap: AutoPipe,
                           edge1: Edge = null,
-                          edge2: Edge = null): Seq[Block] = {
-        val block1 = createBlock(ap)
-        val block2 = createBlock(ap)
-        val block3 = createBlock(ap)
-        val block4 = createBlock(ap)
-        val sl1 = block1()
+                          edge2: Edge = null): Seq[Kernel] = {
+        val kernel1 = createKernel(ap)
+        val kernel2 = createKernel(ap)
+        val kernel3 = createKernel(ap)
+        val kernel4 = createKernel(ap)
+        val sl1 = kernel1()
         val stream1 = sl1(0)
         val stream2 = sl1(1)
         if (edge1 != null) {
@@ -31,43 +33,44 @@ class AutoPipeSpec extends UnitSpec {
         if(edge2 != null) {
             stream2.setEdge(edge2)
         }
-        val sl2 = block2((null, stream1))
-        val sl3 = block3((null, stream2))
-        block4((null, sl2(0)), (null, sl3(0)))
-        Seq(block1, block2, block3, block4)
+        val sl2 = kernel2((null, stream1))
+        val sl3 = kernel3((null, stream2))
+        kernel4((null, sl2(0)), (null, sl3(0)))
+        Seq(kernel1, kernel2, kernel3, kernel4)
     }
 
     "getDevice" should "return a CPU device by default" in {
         val ap = createAutoPipe()
-        val blocks = createApplication(ap)
+        val kernels = createApplication(ap)
         val getDevice = PrivateMethod[Device]('getDevice)
-        val device = ap invokePrivate getDevice(blocks)
+        val device = ap invokePrivate getDevice(kernels)
         assert(device.deviceType.platform == Platforms.C)
     }
 
     "getDevice" should "return the correct device type" in {
         val ap = createAutoPipe()
-        val blocks = createApplication(ap, CPU2FPGA(), CPU2FPGA())
+        val kernels = createApplication(ap, CPU2FPGA(), CPU2FPGA())
         val getDevice = PrivateMethod[Device]('getDevice)
-        val device = ap invokePrivate getDevice(blocks)
+        val device = ap invokePrivate getDevice(kernels)
         assert(device.deviceType.platform == Platforms.HDL)
     }
 
     "getDevice" should "raise an error on an invalid mapping" in {
         val ap = createAutoPipe()
-        val blocks = createApplication(ap, CPU2FPGA(), CPU2CPU())
+        val kernels = createApplication(ap, CPU2FPGA(), CPU2CPU())
         val getDevice = PrivateMethod[Device]('getDevice)
         val oldCount = Error.errorCount
-        ap invokePrivate getDevice(blocks)
+        ap invokePrivate getDevice(kernels)
         assert(Error.errorCount == oldCount + 1)
     }
 
-    "getConnectedBlocks" should "return connected blocks" in {
+    "getConnectedKernels" should "return connected kernels" in {
         val ap = createAutoPipe()
-        val blocks = createApplication(ap)
-        val getConnectedBlocks = PrivateMethod[Seq[Block]]('getConnectedBlocks)
-        val lst = ap invokePrivate getConnectedBlocks(blocks(2))
-        assert(blocks.length == lst.length)
+        val kernels = createApplication(ap)
+        val getConnectedKernels =
+            PrivateMethod[Seq[Kernel]]('getConnectedKernels)
+        val lst = ap invokePrivate getConnectedKernels(kernels(2))
+        assert(kernels.length == lst.length)
     }
 
 }

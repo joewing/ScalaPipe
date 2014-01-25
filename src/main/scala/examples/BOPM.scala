@@ -86,7 +86,7 @@ object BOPM {
 			
 		}
 
-		val Time = new AutoPipeBlock("Time") {
+		val Time = new AutoPipeBlock {
 
 			val y0 = output(FLOAT32)
 			val iterations = local(UNSIGNED32, count)

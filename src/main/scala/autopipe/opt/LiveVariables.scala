@@ -1,4 +1,3 @@
-
 package autopipe.opt
 
 import autopipe._
@@ -11,7 +10,7 @@ object LiveVariables extends DataFlowProblem {
 
     def forward = false
 
-    def init(co: CodeObject, graph: IRGraph) = HashSet[T]()
+    def init(kt: KernelType, graph: IRGraph) = HashSet[T]()
 
     def gen(sb: StateBlock, in: Set[T]): Set[T] =
         HashSet(sb.srcs.filter(isVariable): _*)
@@ -30,4 +29,3 @@ object LiveVariables extends DataFlowProblem {
     def meet(a: Set[T], b: Set[T]) = a.union(b)
 
 }
-

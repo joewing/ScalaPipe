@@ -1,4 +1,3 @@
-
 package autopipe.opt
 
 import autopipe._
@@ -9,9 +8,9 @@ private[opt] object BlockExtractor {
     private val minStates = 2
     private val maxBits    = 128
 
-    def extract(co: CodeObject, graph: IRGraph): List[List[StateBlock]] = {
+    def extract(kt: KernelType, graph: IRGraph): List[List[StateBlock]] = {
 
-        val live = LiveVariables.solve(co, graph)
+        val live = LiveVariables.solve(kt, graph)
         val lst = extractAll(graph, graph.blocks.toList).filter { l =>
             val liveIn    = used(l).intersect(live(l.head).toList)
             val liveOut  = modified(l).intersect(live(l.last).toList)
@@ -69,4 +68,3 @@ private[opt] object BlockExtractor {
 */
 
 }
-

@@ -37,9 +37,8 @@ private[autopipe] object Error {
         }
     }
 
-    def raise(msg: String, co: CodeObject): String = co match {
-        case i: InternalBlockType       => raise(msg, i.expression)
-        case f: InternalFunctionType    => raise(msg, f.expression)
+    def raise(msg: String, kt: KernelType): String = kt match {
+        case ikt: InternalKernelType    => raise(msg, ikt.expression)
         case _                          => raise(msg)
     }
 

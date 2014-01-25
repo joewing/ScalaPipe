@@ -17,7 +17,7 @@ private[autopipe] class LabelMaker(val prefix: String = "") {
 
 private[autopipe] object LabelMaker {
 
-    private val blockCounter = new LabelMaker("block")
+    private val kernelCounter = new LabelMaker("kernel")
     private val instanceCounter = new LabelMaker
     private val edgeCounter = new LabelMaker
     private val typeCounter = new LabelMaker("type")
@@ -25,7 +25,7 @@ private[autopipe] object LabelMaker {
     private val functionCounter = new LabelMaker("func")
     private val portCounter = new LabelMaker
 
-    def getBlockLabel() = blockCounter.next()
+    def getKernelLabel() = kernelCounter.next()
 
     def getInstanceIndex() = instanceCounter.nextIndex()
 

@@ -1,14 +1,13 @@
-
 package autopipe.gen
 
 import autopipe._
 import scala.collection.immutable.HashSet
 
-private[gen] class HDLBlockNodeEmitter(
-        val bt: InternalBlockType,
+private[gen] class HDLKernelNodeEmitter(
+        _kt: InternalKernelType,
         _graph: IRGraph,
         _moduleEmitter: HDLModuleEmitter
-    ) extends HDLNodeEmitter(bt, _graph, _moduleEmitter) {
+    ) extends HDLNodeEmitter(_kt, _graph, _moduleEmitter) {
 
     private def getLocalPorts(node: IRNode, p: BaseSymbol => Boolean) = {
         node match {
@@ -41,7 +40,7 @@ private[gen] class HDLBlockNodeEmitter(
 
     override def emitEnd(block: StateBlock) {
         val portsToRelease = getCheckedPorts
-        for (i <- portsToRelease if bt.isInput(i)) {
+        for (i <- portsToRelease if kt.isInput(i)) {
             moduleEmitter.addReadState(block.label, i)
         }
         leave
@@ -86,7 +85,12 @@ private[gen] class HDLBlockNodeEmitter(
 
     override def emitReturn(block: StateBlock, node: IRReturn) {
         val src = emitSymbol(node.result)
-        moduleEmitter.addWriteState(block.label, "output", src)
+        val dest = kt.outputs.head.name
+        moduleEmitter.addWriteState(block.label, dest, src)
+
+        val startState = graph.nodes.collect { case s: IRStart => s }.head.next
+        write("state <= " + startState + ";")
+
     }
 
     override def start {
@@ -118,4 +122,3 @@ private[gen] class HDLBlockNodeEmitter(
     }
 
 }
-

@@ -1,4 +1,3 @@
-
 package autopipe.gen
 
 import autopipe._
@@ -32,10 +31,10 @@ private[autopipe] class SmartFusionResourceGenerator(
     private def emitWrapFile(dir: File) {
 
         val inputStreams = ap.streams.filter { s =>
-            s.destBlock.device == device && s.sourceBlock.device != device
+            s.destKernel.device == device && s.sourceKernel.device != device
         }
         val outputStreams = ap.streams.filter { s =>
-            s.sourceBlock.device == device && s.destBlock.device != device
+            s.sourceKernel.device == device && s.destKernel.device != device
         }
 
         // Write the FIFO module (in this case, just a register).
@@ -96,7 +95,7 @@ private[autopipe] class SmartFusionResourceGenerator(
         write("endmodule")
         write
 
-        // Wrapper around the ScalaPipe blocks.
+        // Wrapper around the ScalaPipe kernels.
         write("module XModule(")
         enter
         write("input wire clk,")
@@ -142,7 +141,7 @@ private[autopipe] class SmartFusionResourceGenerator(
         }
         write
 
-        // Instantiate the ScalaPipe blocks.
+        // Instantiate the ScalaPipe kernels.
         write("fpga0 x(.clk(clk), .rst(rst)")
         enter
         for (i <- inputStreams) {
@@ -294,10 +293,10 @@ private[autopipe] class SmartFusionResourceGenerator(
     private def emitTopFile(dir: File) {
 
         val inputStreams = ap.streams.filter { s =>
-            s.destBlock.device == device && s.sourceBlock.device != device
+            s.destKernel.device == device && s.sourceKernel.device != device
         }
         val outputStreams = ap.streams.filter { s =>
-            s.sourceBlock.device == device && s.destBlock.device != device
+            s.sourceKernel.device == device && s.destKernel.device != device
         }
 
         write("module sp_interface(")
@@ -467,4 +466,3 @@ private[autopipe] class SmartFusionResourceGenerator(
     }
 
 }
-

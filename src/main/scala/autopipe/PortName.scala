@@ -1,20 +1,11 @@
-
 package autopipe
 
-private[autopipe] abstract class PortName {
-    def isIndex: Boolean
-    def index: Int
-}
+private[autopipe] abstract class PortName
 
-private[autopipe] class StringPortName(name: String) extends PortName {
-    override def isIndex = false
+private[autopipe] class StringPortName(val name: String) extends PortName {
     override def toString = name
-    override def index = -1
 }
 
-private[autopipe] class IntPortName(name: Int) extends PortName {
-    override def isIndex = true
+private[autopipe] class IntPortName(val name: Int) extends PortName {
     override def toString = "$" + name
-    override def index = name
 }
-

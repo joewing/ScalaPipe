@@ -1,4 +1,3 @@
-
 package examples
 
 import autopipe._
@@ -14,7 +13,7 @@ object Mandelbrot {
         println("  -h <int>      Height")
         println("  -l <int>      Levels of split blocks")
         println("  -i <int>      Number of iterations")
-        println("  -hw             Use hardware")
+        println("  -hw           Use hardware")
         sys.exit(-1)
     }
 
@@ -26,7 +25,7 @@ object Mandelbrot {
             case "-h"  :: v :: t => parse(t, values + (('height, v.toInt)))
             case "-l"  :: v :: t => parse(t, values + (('levels, v.toInt)))
             case "-i"  :: v :: t => parse(t, values + (('iterations, v.toInt)))
-            case "-hw" :: t        => parse(t, values + (('hw, 1)))
+            case "-hw" :: t      => parse(t, values + (('hw, 1)))
             case Nil => values
             case other => println("invalid option: " + other); usage
         }
@@ -35,11 +34,11 @@ object Mandelbrot {
     def main(args: Array[String]) {
 
         // Set up defaults.
-        val defaults = Map('width -> 1024)         ++
-                            Map('height -> 1024)        ++
-                            Map('iterations -> 256)    ++
-                            Map('levels -> 0)            ++
-                            Map('hw -> 1)
+        val defaults = Map('width -> 64)        ++
+                       Map('height -> 64)       ++
+                       Map('iterations -> 16)   ++
+                       Map('levels -> 0)        ++
+                       Map('hw -> 1)
 
         // Parse arguments.
         val options = parse(args.toList, defaults)
@@ -51,11 +50,11 @@ object Mandelbrot {
 
         // Display what we will be generating.
         println("Generating mandelbrot application:")
-        println("  Width:         " + width)
-        println("  Height:        " + height)
-        println("  Iterations:  " + maxIterations)
-        println("  Levels:        " + levels)
-        println("  Platform:     " + (if (use_hw) "hardware" else "software"))
+        println("  Width:      " + width)
+        println("  Height:     " + height)
+        println("  Iterations: " + maxIterations)
+        println("  Levels:     " + levels)
+        println("  Platform:   " + (if (use_hw) "hardware" else "software"))
 
         val FIXED = new AutoPipeFixed(32, 16)
 
@@ -183,11 +182,6 @@ object Mandelbrot {
             if (use_hw) {
                 map(Start -> ANY_BLOCK, CPU2FPGA())
                 map(ANY_BLOCK -> Print, FPGA2CPU())
-            } else {
-/*
-                map(ANY_BLOCK -> Iterate, CPU2CPU(id = -1))
-                map(Iterate -> ANY_BLOCK, CPU2CPU(id = 1))
-*/
             }
 
         }
@@ -196,5 +190,3 @@ object Mandelbrot {
     }
 
 }
-
-

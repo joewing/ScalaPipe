@@ -10,7 +10,7 @@ import autopipe._
 import autopipe.dsl.AutoPipeObject
 
 private[gen] abstract class NodeEmitter(
-        val co: CodeObject
+        val kt: KernelType
     ) extends Generator {
 
     private val checkedPorts = new ListBuffer[HashSet[String]]

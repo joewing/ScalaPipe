@@ -1,4 +1,3 @@
-
 package autopipe
 
 import scala.language.implicitConversions
@@ -6,14 +5,14 @@ import scala.collection.mutable.ListBuffer
 
 private[autopipe] object ConstantFolder {
 
-    def fold(co: CodeObject, root: ASTNode): ASTNode = {
-        val folder = new ConstantFolder(co)
+    def fold(kt: KernelType, root: ASTNode): ASTNode = {
+        val folder = new ConstantFolder(kt)
         folder.fold(root)
     }
 
 }
 
-private[autopipe] class ConstantFolder(co: CodeObject) {
+private[autopipe] class ConstantFolder(kt: KernelType) {
 
     implicit private def bool(v: Long): Boolean = v != 0
 
@@ -175,4 +174,3 @@ private[autopipe] class ConstantFolder(co: CodeObject) {
     }
 
 }
-

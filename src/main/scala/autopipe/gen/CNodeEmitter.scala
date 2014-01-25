@@ -1,4 +1,3 @@
-
 package autopipe.gen
 
 import scala.collection.immutable.ListSet
@@ -6,9 +5,9 @@ import scala.collection.mutable.HashSet
 import autopipe._
 
 private[autopipe] abstract class CNodeEmitter(
-        _co: CodeObject,
+        _kt: KernelType,
         val timing: Map[ASTNode, Int]
-    ) extends NodeEmitter(_co) {
+    ) extends NodeEmitter(_kt) {
 
     private val usedTimings = new HashSet[ASTNode]
 
@@ -143,7 +142,7 @@ private[autopipe] abstract class CNodeEmitter(
                 a + ", " + emitExpr(n)
             }
         }
-        if (co.isInternal(node.func) && co.parameters.get('profile)) {
+        if (kt.isInternal(node.func) && kt.parameters.get('profile)) {
             node.symbol + "(&block->ap_clocks, " + argString + ")"
         } else {
             node.symbol + "(" + argString + ")"

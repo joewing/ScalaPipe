@@ -1,4 +1,3 @@
-
 package autopipe.opt
 
 import autopipe._
@@ -59,7 +58,7 @@ object RunnableExpressions extends DataFlowProblem {
         b.nodes.exists(n => hasConflict(a, n))
     }
 
-    def init(co: CodeObject, graph: IRGraph) =
+    def init(kt: KernelType, graph: IRGraph) =
         HashSet[T](graph.nodes.filter(isExpression): _*)
 
     def gen(sb: StateBlock, in: Set[T]): Set[T] =
@@ -72,4 +71,3 @@ object RunnableExpressions extends DataFlowProblem {
     def meet(a: Set[T], b: Set[T]) = a.intersect(b)
 
 }
-

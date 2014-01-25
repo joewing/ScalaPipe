@@ -1,4 +1,3 @@
-
 package autopipe.gen
 
 import autopipe._
@@ -9,30 +8,33 @@ import java.io.FileOutputStream
 import java.io.PrintStream
 import scala.collection.mutable.HashMap
 
-private[autopipe] class HDLBlockGenerator(_bt: InternalBlockType)
-    extends BlockGenerator(_bt) with HDLGenerator {
+private[autopipe] class HDLKernelGenerator(
+        _kt: InternalKernelType
+    ) extends KernelGenerator(_kt) with HDLGenerator {
 
     private var stateCount      = 0
+    private val optimizedAST    = ASTOptimizer(kt).optimize(kt.expression)
+    private val ir              = IRNodeEmitter(kt).emit(optimizedAST)
+    private val context         = new HDLIRContext(kt)
+    protected val graph         = IROptimizer(kt, context).optimize(ir)
+    private val moduleEmitter   = new HDLModuleEmitter(kt, graph)
 
-    private val optimizedAST    = ASTOptimizer(bt).optimize(bt.expression)
-    private val ir                 = IRNodeEmitter(bt).emit(optimizedAST)
-    private val context          = new HDLIRContext(bt)
-    private val graph             = IROptimizer(bt, context).optimize(ir)
-    private val moduleEmitter  = new HDLModuleEmitter(bt, graph)
+    protected def emitFunctionHDL {
+    }
 
     private def emitHDL: String = {
 
-        val moduleName = "X_" + bt.name
+        val kernelName = "kernel_" + kt.name
 
         // Write the module header.
-        write("module " + moduleName + "(")
+        write("module " + kernelName + "(")
         enter
-        for (i <- bt.inputs) {
+        for (i <- kt.inputs) {
             write("input_" + i.name + ",")
             write("avail_" + i.name + ",")
             write("read_" + i.name + ",")
         }
-        for (o <- bt.outputs) {
+        for (o <- kt.outputs) {
             write("output_" + o.name + ",")
             write("write_" + o.name + ",")
             write("afull_" + o.name + ",")
@@ -46,13 +48,13 @@ private[autopipe] class HDLBlockGenerator(_bt: InternalBlockType)
         write
 
         // I/O declarations.
-        for (i <- bt.inputs) {
+        for (i <- kt.inputs) {
             val pts = getPortTypeString("input_" + i.name, i.valueType)
             write("input wire " + pts + ";")
             write("input wire avail_" + i.name + ";")
             write("output wire read_" + i.name + ";")
         }
-        for (o <- bt.outputs) {
+        for (o <- kt.outputs) {
             val pts = getPortTypeString("output_" + o.name, o.valueType)
             write("output wire " + pts + ";")
             write("output wire write_" + o.name + ";")
@@ -64,30 +66,30 @@ private[autopipe] class HDLBlockGenerator(_bt: InternalBlockType)
         write
 
         // Configuration options.
-        for (c <- bt.configs) {
+        for (c <- kt.configs) {
             if (c.value != null) {
                 write("parameter " + c.name + " = " + c.value + ";")
             } else {
                 write("parameter " + c.name + " = 0;")
             }
         }
-        if (!bt.configs.isEmpty) {
+        if (!kt.configs.isEmpty) {
             write
         }
 
         // States.
-        for (s <- bt.states) {
+        for (s <- kt.states) {
             emitLocal("state_" + s.name, s)
         }
-        if (!bt.states.isEmpty) {
+        if (!kt.states.isEmpty) {
             write
         }
 
         // Temporaries.
-        for (t <- bt.temps) {
+        for (t <- kt.temps) {
             emitLocal("temp" + t.id, t)
         }
-        if (!bt.temps.isEmpty) {
+        if (!kt.temps.isEmpty) {
             write
         }
 
@@ -97,7 +99,7 @@ private[autopipe] class HDLBlockGenerator(_bt: InternalBlockType)
         write
 
         // Generate code.
-        val nodeEmitter = new HDLBlockNodeEmitter(bt, graph, moduleEmitter)
+        val nodeEmitter = new HDLKernelNodeEmitter(kt, graph, moduleEmitter)
         nodeEmitter.start
         graph.blocks.foreach(sb => nodeEmitter.emit(sb))
         nodeEmitter.stop
@@ -119,47 +121,23 @@ private[autopipe] class HDLBlockGenerator(_bt: InternalBlockType)
         leave
         write("endmodule")
 
+        emitFunctionHDL
+
         getOutput
     }
 
     override def emit(dir: File) {
 
         // Create the block directory.
-        val basename = bt.name
-        val subdirname = basename + "-dir"
-        val parent = new File(dir, subdirname)
+        val parent = new File(dir, kt.name)
         parent.mkdir
 
         // Generate the HDL.
-        val hdlFile = new File(parent, basename + ".v")
+        val hdlFile = new File(parent, kt.name + ".v")
         val headerPS = new PrintStream(new FileOutputStream(hdlFile))
         headerPS.print(emitHDL)
         headerPS.close
 
-        // Generate the makefile.
-        val makeFile = new File(parent, "Makefile")
-        val makePS = new PrintStream(new FileOutputStream(makeFile))
-        makePS.println("V_FILES=" + basename + ".v")
-        makePS.println("""
-# Get the source files.
-get_files:
-	echo $(addprefix $(BLKDIR)/,$(C_FILES)) >> $(C_FILE_LIST)
-	echo $(addprefix $(BLKDIR)/,$(CXX_FILES)) >> $(CXX_FILE_LIST)
-	echo $(addprefix $(BLKDIR)/,$(VHDL_FILES)) >> $(VHDL_FILE_LIST)
-	echo $(addprefix $(BLKDIR)/,$(V_FILES)) >> $(V_FILE_LIST)
-
-# Generate the synthesis file.
-synfile:
-	$(foreach b,$(VHDL_FILES), \
-		/bin/echo "add_file -vhdl \"$(BLKPATH)/$b\"" >> $(PRJFILE);)
-	$(foreach b,$(V_FILES), \
-		/bin/echo "add_file -verilog \"$(BLKPATH)/$b\"" >> $(PRJFILE);)
-
-clean:
-	rm -f *.o""")
-        makePS.close
-
     }
 
 }
-

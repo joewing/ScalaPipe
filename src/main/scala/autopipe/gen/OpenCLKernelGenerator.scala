@@ -6,8 +6,9 @@ import java.io.File
 
 import autopipe._
 
-private[autopipe] class OpenCLBlockGenerator(_bt: InternalBlockType)
-    extends BlockGenerator(_bt) with StateTrait {
+private[autopipe] class OpenCLKernelGenerator(
+        _kt: InternalKernelType
+    ) extends KernelGenerator(_kt) with StateTrait {
 
     private def clwrite(s: String) {
         write("\"" + s + "\\n\"")
@@ -67,20 +68,24 @@ private[autopipe] class OpenCLBlockGenerator(_bt: InternalBlockType)
         }
     }
 
+    protected def emitFunction {
+    }
+
     private def emitSource: String = {
 
-        write("static const char *" + bt.name + "_source[] = {")
+        write("static const char *" + kt.name + "_source[] = {")
 
-        clwrite("#line 3 \\\"" + bt.name + ".cl\\\"")
-        clwrite("#pragma OPENCL EXTENSION cl_khr_byte_addressable_store: enable")
+        clwrite("#line 3 \\\"" + kt.name + ".cl\\\"")
+        clwrite("#pragma OPENCL EXTENSION cl_khr_byte_addressable_store: " +
+                "enable")
         clwrite("#pragma OPENCL EXTENSION cl_khr_fp64: enable")
 
         // Write typedefs.
         val emittedTypes = new HashSet[ValueType]
-        bt.configs.foreach { c => emitType(c.valueType, emittedTypes) }
-        bt.states.foreach { s => emitType(s.valueType, emittedTypes) }
-        bt.inputs.foreach { i => emitType(i.valueType, emittedTypes) }
-        bt.outputs.foreach { o => emitType(o.valueType, emittedTypes) }
+        kt.configs.foreach { c => emitType(c.valueType, emittedTypes) }
+        kt.states.foreach { s => emitType(s.valueType, emittedTypes) }
+        kt.inputs.foreach { i => emitType(i.valueType, emittedTypes) }
+        kt.outputs.foreach { o => emitType(o.valueType, emittedTypes) }
         emitType(ValueType.signed8, emittedTypes)    // Booleans
         emitType(ValueType.signed32, emittedTypes)  // Integer literals
         emitType(ValueType.float64, emittedTypes)    // Float literals
@@ -89,60 +94,60 @@ private[autopipe] class OpenCLBlockGenerator(_bt: InternalBlockType)
         clwrite("typedef struct {")
         clwrite("int ap_ready;")
         clwrite("int ap_state_index;")
-        for (i <- bt.inputs) {
+        for (i <- kt.inputs) {
             clwrite("int " + i.name + "_size;")
             clwrite("int " + i.name + "_read;")
         }
-        for (o <- bt.outputs) {
+        for (o <- kt.outputs) {
             clwrite("int " + o.name + "_size;")
             clwrite("int " + o.name + "_sent;")
         }
-        clwrite("} " + bt.name + "_control;")
+        clwrite("} " + kt.name + "_control;")
 
         // Write the block data struct.
         clwrite("typedef struct {")
-        for (s <- bt.states if !s.isLocal) {
+        for (s <- kt.states if !s.isLocal) {
             clwrite(s.valueType.name + " " + s.name + ";")
         }
-        clwrite("} " + bt.name + "_data;")
+        clwrite("} " + kt.name + "_data;")
 
         // Start the kernel function.
-        clwrite("__kernel void " + bt.name +
-                  "(__global " + bt.name + "_control *control, " +
-                  "__global " + bt.name + "_data *block")
+        clwrite("__kernel void " + kt.name +
+                  "(__global " + kt.name + "_control *control, " +
+                  "__global " + kt.name + "_data *block")
 
         // Input ports.
-        for (i <- bt.inputs) {
+        for (i <- kt.inputs) {
             clwrite(", __global " + i.valueType + " *" + i.name)
         }
 
         // Output ports.
-        for (o <- bt.outputs) {
+        for (o <- kt.outputs) {
             clwrite(", __global " + o.valueType + " *" + o.name)
         }
 
         clwrite(") {")
 
         // Declare locals.
-        for (l <- bt.states if l.isLocal) {
+        for (l <- kt.states if l.isLocal) {
             clwrite(l.valueType.name + " " + l.name + ";")
         }
 
         // Generate the kernel code.
-        val nodeEmitter = new OpenCLBlockNodeEmitter(bt, this, null)
-        nodeEmitter.emit(bt.expression)
+        val nodeEmitter = new OpenCLKernelNodeEmitter(kt, this, null)
+        nodeEmitter.emit(kt.expression)
 
         clwrite("for(;;) {")
 
         clwrite("const int id = get_local_id(0);")
-        if (bt.states.filter { s => !s.isLocal }.isEmpty) {
+        if (kt.states.filter { s => !s.isLocal }.isEmpty) {
             clwrite("int unit_size = get_local_size(0);")
-            for (i <- bt.inputs) {
+            for (i <- kt.inputs) {
                 clwrite("unit_size = min(unit_size, " +
                           "control->" + i.name + "_size - " +
                           "control->" + i.name + "_read);")
             }
-            for (i <- bt.outputs) {
+            for (i <- kt.outputs) {
                 clwrite("unit_size = min(unit_size, " +
                           "control->" + i.name + "_size - " +
                           "control->" + i.name + "_sent);")
@@ -175,23 +180,22 @@ private[autopipe] class OpenCLBlockGenerator(_bt: InternalBlockType)
         clwrite("}")    // Function.
         write("};")
 
+        emitFunction
+
         getOutput
 
     }
 
     override def emit(dir: File) {
 
-        import java.io.FileOutputStream
-        import java.io.PrintStream
+        import java.io.{FileOutputStream, PrintStream}
 
         // Create the block directory.
-        val basename = bt.name
-        val subdirname = basename + "-dir"
-        val parent = new File(dir, subdirname)
+        val parent = new File(dir, kt.name)
         parent.mkdir
 
         // Write the source.
-        val file = new File(parent, basename + ".cl")
+        val file = new File(parent, kt.name + ".cl")
         val ps = new PrintStream(new FileOutputStream(file))
         ps.print(emitSource)        
         ps.close

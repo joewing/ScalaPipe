@@ -1,60 +1,100 @@
-
-
 package autopipe.gen
 
 import autopipe._
+import scala.collection.mutable.ListBuffer
+import java.io.{File, FileOutputStream, PrintStream}
 
-private[autopipe] class MakefileGenerator extends Generator {
+private[autopipe] class MakefileGenerator(
+        val ap: AutoPipe
+    ) extends Generator {
 
-    def emit(ap: AutoPipe) {
+    private def emitKernelMakefile(dir: File,
+                                   name: String,
+                                   platforms: Set[Platforms.Value]) {
 
-        // Get a list of block types.
-        val blockTypes = ap.blocks.map(_.blockType).distinct
+        // Make the directory.
+        val subdir = new File(dir, name)
+        subdir.mkdir
 
-        // Get a list of functions.
-        val functions = ap.functions
+        // Generate the Makefile.
+        val makeFile = new File(subdir, "Makefile")
+        val makePS = new PrintStream(new FileOutputStream(makeFile))
+        if (platforms.contains(Platforms.HDL)) {
+            makePS.println("V_FILES=" + name + ".v")
+        }
+        if (platforms.contains(Platforms.C)) {
+            makePS.println("C_FILES=" + name + ".c")
+        }
+        makePS.println("""
+# Get the source files.
+get_files:
+	echo $(addprefix $(BLKDIR)/,$(C_FILES)) >> $(C_FILE_LIST)
+	echo $(addprefix $(BLKDIR)/,$(CXX_FILES)) >> $(CXX_FILE_LIST)
+	echo $(addprefix $(BLKDIR)/,$(VHDL_FILES)) >> $(VHDL_FILE_LIST)
+	echo $(addprefix $(BLKDIR)/,$(V_FILES)) >> $(V_FILE_LIST)
+
+# Generate the synthesis file.
+synfile:
+	$(foreach b,$(VHDL_FILES), \
+		/bin/echo "add_file -vhdl \"$(BLKPATH)/$b\"" >> $(PRJFILE);)
+	$(foreach b,$(V_FILES), \
+		/bin/echo "add_file -verilog \"$(BLKPATH)/$b\"" >> $(PRJFILE);)
+
+clean:
+	rm -f *.o""")
+        makePS.close
+
+
+    }
+
+    def emit(dir: File) {
+
+        // Get a list of kernel types.
+        val kernelTypes = ap.getKernelTypes()
+
+        // Get the set of devices.
+        var devices = ap.kernels.map(_.device).toSet
+
+        // Get the set of platforms for each kernel type.
+        var platformMap = Map[String, Set[Platforms.Value]]()
+        devices.foreach { d =>
+            val platform = d.platform
+            ap.getKernelTypes(d).filter(_.internal).foreach { kt =>
+                val name = kt.name
+                val ps = platformMap.getOrElse(name, Set[Platforms.Value]())
+                val ns = ps + platform
+                platformMap = platformMap + (name -> ns)
+            }
+        }
+
+        // Emit Makefiles for the kernels.
+        kernelTypes.filter(_.internal).map(_.name).foreach { kt =>
+            emitKernelMakefile(dir, kt, platformMap(kt))
+        }
 
         // Get a list of libraries.
-        val libraries = blockTypes.flatMap { bt =>
-            bt.dependencies.get(DependencySet.Library)
+        val libraries = kernelTypes.flatMap { kt =>
+            kt.dependencies.get(DependencySet.Library)
         }
 
         // Get a list of library paths.
-        val lpaths = blockTypes.flatMap { bt =>
-            bt.dependencies.get(DependencySet.LPath)
+        val lpaths = kernelTypes.flatMap { kt =>
+            kt.dependencies.get(DependencySet.LPath)
         }
 
         // Get a list of include paths.
-        val ipaths = blockTypes.flatMap { bt =>
-            bt.dependencies.get(DependencySet.IPath)
+        val ipaths = kernelTypes.flatMap { kt =>
+            kt.dependencies.get(DependencySet.IPath)
         }
 
-        // Get a list of local C blocks.
-        val localC = blockTypes.filter { bt =>
-            bt.platform == Platforms.C && bt.internal
+        // Get a list of local C kernels.
+        val localC = kernelTypes.filter { kt =>
+            kt.platform == Platforms.C && kt.internal
         }
 
-        // Get a list of external C blocks.
-        val externalC = blockTypes.filter { bt =>
-            bt.platform == Platforms.C && !bt.internal
-        }
-
-        // Get a list of local HDL blocks.
-        val localHDL = blockTypes.filter { bt =>
-            bt.platform == Platforms.HDL && bt.internal
-        }
-
-        // Get a list of external HDL blocks.
-        val externalHDL = blockTypes.filter { bt =>
-            bt.platform == Platforms.HDL && !bt.internal
-        }
-
-        // Get a list of internal C and HDL functions.
-        val cFunctions = functions.filter { ft =>
-            ft.platform == Platforms.C && ft.internal
-        }
-        val hdlFunctions = functions.filter { ft =>
-            ft.platform == Platforms.HDL && ft.internal
+        // Get a list of local HDL kernels.
+        val localHDL = kernelTypes.filter { kt =>
+            kt.platform == Platforms.HDL && kt.internal
         }
 
         // Determine if we need to link in TimeTrial.
@@ -64,12 +104,8 @@ private[autopipe] class MakefileGenerator extends Generator {
         val targets = ap.devices.map { d => "proc_" + d.host }
 
         write("TARGETS=" + targets.mkString(" "))
-        write("LOCAL_C_BLOCKS=" + localC.mkString(" ") + " " +
-                                          cFunctions.mkString(" "))
-        write("C_BLOCKS=" + externalC.mkString(" "))
-        write("LOCAL_FPGA_BLOCKS=" + localHDL.mkString(" ") + " " +
-                                              hdlFunctions.mkString(" "))
-        write("FPGA_BLOCKS=" + externalHDL.mkString(" "))
+        write("C_BLOCKS=" + localC.mkString(" "))
+        write("FPGA_BLOCKS=" + localHDL.mkString(" "))
         write("TTOBJ=" + (if (needTimeTrial) "tta.o" else ""))
 
         val ipaths_str = ipaths.foldLeft("") { (a, p) => a + " -I" + p }
@@ -87,27 +123,12 @@ ifndef THIS
     export THIS:=$(shell pwd)
 endif
 
-ALL_C_BLOCKS := $(C_BLOCKS) $(LOCAL_C_BLOCKS)
-ALL_FPGA_BLOCKS := $(FPGA_BLOCKS) $(LOCAL_FPGA_BLOCKS)
-BLOCKS := $(ALL_FPGA_BLOCKS) $(ALL_C_BLOCKS)
-BLOCK_CINC := $(foreach x,$(ALL_C_BLOCKS),-I$(THIS)/$x-dir)
-BLOCK_XINC := $(foreach x,$(BLOCKS),-I$(THIS)/$x-dir)
+BLOCKS := $(sort $(FPGA_BLOCKS) $(C_BLOCKS))
+BLOCK_CINC := $(foreach x,$(C_BLOCKS),-I$(THIS)/$x)
+BLOCK_XINC := $(foreach x,$(BLOCKS),-I$(THIS)/$x)
 
 # Determine our architecture.
 ARCH := $(shell uname -s)-$(shell uname -m)
-
-# Get site-specific settings.
-# We pull in any user-specified settings and then read the
-# default file to pull in any settings that haven't been specified.
-ifdef X_SITE_CONFIG
-    include $(X_SITE_CONFIG)
-endif
-
-ifdef $(SSH)
-    BLOCK_REPO ?= svn+ssh://$(SSH)@cinnabox.int.seas.wustl.edu/project/mercury/auto-pipe/xblocks/trunk
-else
-    BLOCK_REPO ?= file:///project/mercury/auto-pipe/xblocks/trunk
-endif
 
 INCS = -I$(THIS)
 export CFLAGS = -Wall -O2 $(INCS) $(EXTRA_CFLAGS) $(USER_CFLAGS)
@@ -135,51 +156,33 @@ flow: compile
 help:
 	@echo
 	@echo "Makefile targets:"
-	@echo "    all                    Same as compile (default target)"
-	@echo "    compile              Check out blocks and compile"
-	@echo "    update                Update blocks to the latest revision"
-	@echo "    syn                    Synthesize HDL"
-	@echo "    build                 Generate a bitfile"
-	@echo "    flow                  Same as \"make syn build\""
-	@echo "    sim                    Simluate HDL"
-	@echo "    install              Install the bitfile"
-	@echo "    clean                 Remove generated files"
-	@echo "    distclean            Remove generated files and block checkouts"
-	@echo "    help                  Display this message"
-	@echo
-	@echo "Note: Set the X_SITE_CONFIG enviroment variable to the"
-	@echo "full-path of site-specific settings.  See site.makefile in the"
-	@echo "makefiles directory of the xapps repository for an example."
+	@echo "    all              Same as compile (default target)"
+	@echo "    compile          Check out blocks and compile"
+	@echo "    update           Update blocks to the latest revision"
+	@echo "    syn              Synthesize HDL"
+	@echo "    build            Generate a bitfile"
+	@echo "    flow             Same as \"make syn build\""
+	@echo "    sim              Simluate HDL"
+	@echo "    install          Install the bitfile"
+	@echo "    clean            Remove generated files"
+	@echo "    distclean        Remove generated files and block checkouts"
+	@echo "    help             Display this message"
 	@echo
 
 # Check out and build the blocks.
 .PHONY: blocks
 blocks:
-	$(foreach b,$(BLOCKS), $(MAKE) $(b)-dir;)
+	$(foreach b,$(BLOCKS), $(MAKE) $(b);)
 	rm -f $(V_FILE_LIST) $(VHDL_FILE_LIST) $(C_FILE_LIST) $(CXX_FILE_LIST)
 	$(foreach b,$(BLOCKS),\
-	    (cd $b-dir ; $(MAKE) get_files "BLKDIR=$(THIS)/$b-dir");)
+	    (cd $b ; $(MAKE) get_files "BLKDIR=$(THIS)/$b");)
 
 .PHONY: clean_blocks
 clean_blocks:
-	$(foreach b,$(ALL_C_BLOCKS), \
-		(if [ -e $(b)-dir ] ; then \
-			cd $(b)-dir && $(MAKE) -i clean ; \
+	$(foreach b,$(C_BLOCKS), \
+		(if [ -e $(b) ] ; then \
+			cd $(b) && $(MAKE) -i clean ; \
 		fi);)
-
-# Rule to check out a block.
-BVERSION = $(if $($*_VERSION),$($*_VERSION),HEAD)
-%-dir:
-	svn co -r $(BVERSION) $(BLOCK_REPO)/$* $@
-
-# Rule to update to the requested revision of a block.
-%-update: %-dir
-	(cd $*-dir && svn up -r $(BVERSION))
-
-# Rule to update all blocks.
-update:
-	$(foreach b,$(C_BLOCKS), $(MAKE) $(b)-update;)
-	$(foreach b,$(FPGA_BLOCKS), $(MAKE) $(b)-update;)
 
 # Rule for compiling everything.
 compile: blocks
@@ -208,11 +211,12 @@ clean: clean_blocks
 
 # Rule for cleaning up everything.
 distclean: clean
-	$(foreach b,$(C_BLOCKS), rm -rf $b-dir;)
-	$(foreach b,$(FPGA_BLOCKS), rm -rf $b-dir;)
+	$(foreach b,$(C_BLOCKS), rm -rf $b;)
+	$(foreach b,$(FPGA_BLOCKS), rm -rf $b;)
 """)
+
+        writeFile(dir, "Makefile")
 
     }
 
 }
-

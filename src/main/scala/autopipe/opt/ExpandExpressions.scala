@@ -39,9 +39,9 @@ private[opt] object ExpandExpressions extends Pass {
 
     /** Rename a symbol in a basic block. */
     private def rename(context: IRContext,
-                             g: IRGraph,
-                             sym: BaseSymbol,
-                             sb: List[Int]): IRGraph = {
+                       g: IRGraph,
+                       sym: BaseSymbol,
+                       sb: List[Int]): IRGraph = {
 
         // Find the last index where the source is assigned.
         val uses = sb.filter(b => g.block(b).symbols.contains(sym)).zipWithIndex
@@ -57,7 +57,7 @@ private[opt] object ExpandExpressions extends Pass {
             val i = toModify._2
 
             // Create temporary for the destination.
-            val temp = context.co.createTemp(sym.valueType)
+            val temp = context.kt.createTemp(sym.valueType)
 
             // Update the destination.
             // The updated graph is called updatedDests.

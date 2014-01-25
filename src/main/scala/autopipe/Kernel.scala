@@ -1,16 +1,16 @@
-
-package autopipe;
+package autopipe
 
 import scala.collection.mutable.HashMap
+import autopipe.dsl.AutoPipeBlock
 
-private[autopipe] class Block(
-        ap: AutoPipe,
-        val name: String
+private[autopipe] class Kernel(
+        val ap: AutoPipe,
+        val apb: AutoPipeBlock
     ) extends DebugInfo {
 
+    private[autopipe] val name = apb.name
     private[autopipe] val index = LabelMaker.getInstanceIndex
     private[autopipe] val label = "instance" + index
-    private[autopipe] var blockType: BlockType = null
     private[autopipe] var device: Device = null
     private val outputs = new HashMap[PortName, Stream]
     private val inputs = new HashMap[PortName, Stream]
@@ -42,6 +42,8 @@ private[autopipe] class Block(
         new StreamList(ap, this)
     }
 
+    private[autopipe] def kernelType = ap.kernelType(name, device.platform)
+
     private[autopipe] def setInput(n: String, s: Stream) {
         val portName: PortName = if(n == null) new IntPortName(inputs.size)
                                  else new StringPortName(n)
@@ -71,7 +73,7 @@ private[autopipe] class Block(
         configs += (n -> value)
     }
 
-    private[autopipe] def setConfigs(o: Block) {
+    private[autopipe] def setConfigs(o: Kernel) {
         for (c <- o.configs) {
             configs += c
         }
@@ -84,32 +86,43 @@ private[autopipe] class Block(
         }
     }
 
-    private[autopipe] def inputName(pn: PortName): String = {
-        if(pn.isIndex) {
-            blockType.inputName(pn.index)
-        } else {
-            pn.toString
+    private def getPort(pn: PortName, lst: Seq[KernelPort]): KernelPort = {
+        pn match {
+        case ip: IntPortName => lst(ip.name)
+        case _ =>
+            lst.find(i => i.name == pn) match {
+                case Some(p)    => p
+                case None       => null
+            }
         }
     }
 
-    private[autopipe] def outputName(pn: PortName): String = {
-        if(pn.isIndex) {
-            blockType.outputName(pn.index)
-        } else {
-            pn.toString
-        }
-    }
+    private def getInput(pn: PortName): KernelPort = getPort(pn, apb.inputs)
 
-    private[autopipe] def inputIndex(pn: PortName): Int =
-        blockType.inputIndex(pn)
+    private def getOutput(pn: PortName) = getPort(pn, apb.outputs)
+
+    private[autopipe] def inputName(pn: PortName) = getInput(pn).name
+
+    private[autopipe] def inputType(pn: PortName) = getInput(pn).valueType
+
+    private[autopipe] def outputName(pn: PortName) = getOutput(pn).name
+
+    private[autopipe] def outputType(pn: PortName) = getOutput(pn).valueType
+
+    private[autopipe] def inputIndex(pn: PortName): Int = pn match {
+        case in: IntPortName => in.name
+        case _ => apb.inputs.indexWhere(i => i.name == pn)
+    }
 
     private[autopipe] def inputIndex(s: Stream): Int = {
         val matches = inputs.toList.filter { case (k, v) => v == s }
         inputIndex(matches.head._1)
     }
 
-    private[autopipe] def outputIndex(pn: PortName): Int =
-        blockType.outputIndex(pn)
+    private[autopipe] def outputIndex(pn: PortName): Int = pn match {
+        case in: IntPortName => in.name
+        case _ => apb.outputs.indexWhere(o => o.name == pn)
+    }
 
     private[autopipe] def getInputs: List[Stream] = inputs.toList.map(_._2)
 
@@ -127,31 +140,22 @@ private[autopipe] class Block(
         getStr(configs.toList)
     }
 
-    private[autopipe] def emit: String = {
-        val decl = "    " + blockType.name + " " + label
-        if(!configs.isEmpty)
-            decl + "(" + getConfigString + ");\n"
-        else
-            decl + ";\n"
-    }
-
     override def toString = name
 
     private[autopipe] def validate {
 
-        if (inputs.size > blockType.inputs.size) {
+        if (inputs.size > apb.inputs.size) {
             Error.raise("too many inputs connected for " + name, this)
-        } else if (inputs.size < blockType.inputs.size) {
+        } else if (inputs.size < apb.inputs.size) {
             Error.raise("too few inputs connected for " + name, this)
         }
 
-        if (outputs.size > blockType.outputs.size) {
+        if (outputs.size > apb.outputs.size) {
             Error.raise("too many outputs connected for " + name, this)
-        } else if (outputs.size < blockType.outputs.size) {
+        } else if (outputs.size < apb.outputs.size) {
             Error.raise("too few outputs connected for " + name, this)
         }
 
     }
 
 }
-

@@ -3,7 +3,7 @@ package autopipe
 
 private[autopipe] trait IRContext {
 
-    val co: CodeObject
+    val kt: KernelType
 
     /** Determine if extra variables should be eliminated. */
     def eliminateVariables: Boolean

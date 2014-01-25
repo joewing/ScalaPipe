@@ -1,4 +1,3 @@
-
 package autopipe
 
 import scala.collection.immutable.HashMap

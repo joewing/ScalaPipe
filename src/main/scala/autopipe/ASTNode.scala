@@ -253,12 +253,15 @@ private[autopipe] case class ASTSymbolNode(
 
 private[autopipe] case class ASTCallNode(
         val func: AutoPipeFunction,
-        _apb: AutoPipeBlock = null)
-    extends ASTNode(NodeType.call, _apb) with ASTStartNode {
+        _apb: AutoPipeBlock = null
+    ) extends ASTNode(NodeType.call, _apb) with ASTStartNode {
 
     val symbol = func.name
 
-    val returnType = func.returnType
+    val returnType = func.outputs.headOption match {
+        case Some(o)    => o.valueType
+        case None       => ValueType.void
+    }
 
     var args: Seq[ASTNode] = null
 

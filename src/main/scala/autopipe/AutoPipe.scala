@@ -13,57 +13,50 @@ import autopipe.gen.RawFileGenerator
 
 private[autopipe] class AutoPipe {
 
-    private[autopipe] val blocks = new ListBuffer[Block]
-    private[autopipe] val streams = new HashSet[Stream]
+    private[autopipe] val kernels = new ListBuffer[Kernel]
+    private[autopipe] var streams = Set[Stream]()
     private[autopipe] val devices = new HashSet[Device]
     private[autopipe] val parameters = new Parameters
-    private val blockTypes = new HashMap[String, HashSet[BlockType]]
-    private val functionTypes = new HashMap[String, HashSet[FunctionType]]
+    private var kernelDecls = Map[String, AutoPipeBlock]()
+    private var kernelTypes = Map[(String, Platforms.Value), KernelType]()
     private val edges = new HashSet[EdgeMapping]
     private val measures = new HashSet[EdgeMeasurement]
     private val deviceManager = new DeviceManager(parameters)
     private val resourceManager = new ResourceManager(this)
 
-    private[autopipe] def functions: Traversable[FunctionType] = {
-        functionTypes.values.flatten
-    }
+    private def addKernelType(b: AutoPipeBlock,
+                              p: Platforms.Value): KernelType = {
 
-    private def addBlockType(b: AutoPipeBlock) {
-
-        if (!blockTypes.contains(b.name)) {
-
-            // Create external block types.
-            b.externals.foreach { p =>
-                val hs = blockTypes.getOrElseUpdate(b.name,
-                                                    new HashSet[BlockType])
-                hs += new ExternalBlockType(this, b, p)
-            }
-
-            // Create internal block types.
-            val ps = Platforms.values.filter(p => !b.externals.contains(p))
-            ps.foreach { p =>
-                val hs = blockTypes.getOrElseUpdate(b.name,
-                                                    new HashSet[BlockType])
-                hs += new InternalBlockType(this, b, p)
-            }
-
+        // Check if this kernel already exists for the specified platform.
+        val key = (b.name, p)
+        if (kernelTypes.contains(key)) {
+            return kernelTypes(key)
         }
 
-    }
-
-    private def addFunctionType(f: AutoPipeFunction, p: Platforms.Value) {
-        val hs = functionTypes.getOrElseUpdate(f.name,
-                                               new HashSet[FunctionType])
-        if (!hs.exists(_.platform == p)) {
-            if (f.externals.contains(p)) {
-                hs += new ExternalFunctionType(this, f, p)
-            } else {
-                hs += new InternalFunctionType(this, f, p)
-            }
+        // Create a new instance for the specified platform.
+        val kt = b match {
+            case f: AutoPipeFunction =>
+                if (b.externals.contains(p)) {
+                    new ExternalFunctionType(this, f, p)
+                } else {
+                    new InternalFunctionType(this, f, p)
+                }
+            case _ =>
+                if (b.externals.contains(p)) {
+                    new ExternalKernelType(this, b, p)
+                } else {
+                    new InternalKernelType(this, b, p)
+                }
         }
+
+        // Add the kernel to our map.
+        kernelTypes = kernelTypes + (key -> kt)
+
+        return kt
+
     }
 
-    // Add an edge block at the specified edge(s).
+    // Add an edge kernel at the specified edge(s).
     private[autopipe] def addEdge(edge: EdgeMapping) {
         edges += edge
     }
@@ -78,47 +71,61 @@ private[autopipe] class AutoPipe {
         parameters.set(param, value)
     }
 
-    // Determine the number of output ports for a block.
+    // Determine the number of output ports for a kernel.
     private[autopipe] def getOutputCount(n: String): Int =
-        blockTypes.get(n) match {
-            case Some(l) => l.head.outputs.size
-            case None => Error.raise("no block with name " + n); 0
+        kernelDecls.get(n) match {
+            case Some(kd)   => kd.outputs.size
+            case None       => Error.raise("no kernel with name " + n); 0
         }
 
-    private[autopipe] def createBlock(apb: AutoPipeBlock): Block = {
-        val block = new Block(this, apb.name)
-        blocks += block
-
-        addBlockType(apb)
-        val bts = blockTypes(apb.name)
-        if (bts.size == 1) {
-            block.blockType = bts.head
+    private[autopipe] def createKernel(apb: AutoPipeBlock): Kernel = {
+        kernelDecls.get(apb.name) match {
+            case Some(kd) =>
+                if (kd != apb) {
+                    Error.raise("multiple kernels with name " + apb.name)
+                }
+            case None =>
+                kernelDecls = kernelDecls + (apb.name -> apb)
         }
-
-        block
+        val kernel = new Kernel(this, apb)
+        kernels += kernel
+        kernel
     }
 
-    private[autopipe] def getBlockTypes(): Seq[BlockType] = {
-        val btl = new ListBuffer[BlockType]
-        for (l <- blockTypes) {
-            btl ++= l._2
-        }
-        btl
+    private[autopipe] def createStream(sourceKernel: Kernel,
+                                       sourcePort: PortName): Stream = {
+        val stream = new Stream(this, sourceKernel, sourcePort)
+        streams = streams + stream
+        stream
     }
+
+    private[autopipe] def getKernelTypes(d: Device = null) = {
+        val ks = if (d != null) kernels.filter(_.device == d) else kernels
+        val kts = ks.map { k =>
+            addKernelType(k.apb, k.device.platform)
+        }
+        val funcs = kts.flatMap { kt =>
+            kt.functions.map(f => addKernelType(f, kt.platform))
+        }
+        kts.toSet ++ funcs
+    }
+
+    private[autopipe] def kernelType(name: String, p: Platforms.Value) =
+        kernelTypes((name, p))
 
     private[autopipe] def threadCount: Int = deviceManager.threadCount
 
-    private def insertEdges() {
+    private def insertEdges {
 
         for (e <- edges) {
-            val fromBlock = e.fromBlock.name
-            val toBlock = e.toBlock.name
-            for (b <- blocks) {
-                for (s <- b.getOutputs) {
-                    val sname = s.sourceBlock.name
-                    val dname = s.destBlock.name
-                    if ((sname == fromBlock || fromBlock == "any") &&
-                         (dname == toBlock || toBlock == "any")) {
+            val fromKernel = e.fromKernel.name
+            val toKernel = e.toKernel.name
+            for (k <- kernels) {
+                for (s <- k.getOutputs) {
+                    val sname = s.sourceKernel.name
+                    val dname = s.destKernel.name
+                    if ((sname == fromKernel || fromKernel == "any") &&
+                         (dname == toKernel || toKernel == "any")) {
                         s.setEdge(e.edge)
                     }
                 }
@@ -127,20 +134,20 @@ private[autopipe] class AutoPipe {
 
     }
 
-    private def insertMeasures() {
+    private def insertMeasures {
 
         // Insert measures specified using edge aspects.
         for (m <- measures) {
-            val fromBlock = m.fromBlock.name
-            val toBlock = m.toBlock.name
+            val fromKernel = m.fromKernel.name
+            val toKernel = m.toKernel.name
             val stat = m.stat
             val metric = m.metric
-            for (b <- blocks) {
-                for (s <- b.getOutputs) {
-                    val sname = s.sourceBlock.name
-                    val dname = s.destBlock.name
-                    if ((sname == fromBlock || fromBlock == "any") &&
-                         (dname == toBlock || toBlock == "any")) {
+            for (k <- kernels) {
+                for (s <- k.getOutputs) {
+                    val sname = s.sourceKernel.name
+                    val dname = s.destKernel.name
+                    if ((sname == fromKernel || fromKernel == "any") &&
+                         (dname == toKernel || toKernel == "any")) {
                         s.addMeasure(stat, metric)
                     }
                 }
@@ -169,8 +176,8 @@ private[autopipe] class AutoPipe {
 
         // Assign activity monitor IDs (index "1" in the array).
         for (m <- ml.filter { !_.useQueueMonitor }) {
-            val source = m.stream.sourceBlock.device
-            val dest    = m.stream.destBlock.device
+            val source = m.stream.sourceKernel.device
+            val dest    = m.stream.destKernel.device
             val sourceArray = getIndexArray(source)
             val destArray = getIndexArray(dest)
             m.setSourceOffsets(sourceArray)
@@ -213,8 +220,8 @@ private[autopipe] class AutoPipe {
 
         // Assign queue monitor IDs (index "2" in the array).
         for (m <- ml) {
-            val source = m.stream.sourceBlock.device
-            val dest    = m.stream.destBlock.device
+            val source = m.stream.sourceKernel.device
+            val dest    = m.stream.destKernel.device
             val sourceArray = getIndexArray(source)
             val destArray = getIndexArray(dest)
 
@@ -241,8 +248,8 @@ private[autopipe] class AutoPipe {
 
         // Assign inter monitor IDs (index "3" in the array).
         for (m <- ml) {
-            val source = m.stream.sourceBlock.device
-            val dest    = m.stream.destBlock.device
+            val source = m.stream.sourceKernel.device
+            val dest    = m.stream.destKernel.device
             val sourceArray = getIndexArray(source)
             val destArray = getIndexArray(dest)
 
@@ -269,21 +276,21 @@ private[autopipe] class AutoPipe {
 
     }
 
-    // Get a list of strongly connected blocks.
-    private def getConnectedBlocks(block: Block): Seq[Block] = {
+    // Get a list of strongly connected kernels.
+    private def getConnectedKernels(kernel: Kernel): Seq[Kernel] = {
 
-        val connected = new HashSet[Block]
+        val connected = new HashSet[Kernel]
 
-        def visit(b: Block) {
-            b.getOutputs.filter(_.edge == null).foreach { o =>
-                val dest = o.destBlock
+        def visit(k: Kernel) {
+            k.getOutputs.filter(_.edge == null).foreach { o =>
+                val dest = o.destKernel
                 if(!connected.contains(dest)) {
                     connected += dest
                     visit(dest)
                 }
             }
-            b.getInputs.filter(_.edge == null).foreach { i =>
-                val src = i.sourceBlock
+            k.getInputs.filter(_.edge == null).foreach { i =>
+                val src = i.sourceKernel
                 if (!connected.contains(src)) {
                     connected += src
                     visit(src)
@@ -291,25 +298,23 @@ private[autopipe] class AutoPipe {
             }
         }
 
-        connected += block
-        visit(block)
+        connected += kernel
+        visit(kernel)
         connected.toList
 
     }
 
-    // Determine the device to use for a list of connected blocks.
-    private def getDevice(bl: Seq[Block]): Device = {
+    // Determine the device to use for a list of connected kernels.
+    private def getDevice(kl: Seq[Kernel]): Device = {
 
 
-        // Check if any of the blocks already have a device assigned.
-        for (b <- bl) {
-            if (b.device != null) {
-                return b.device
-            }
+        // Check if any of the kernels already have a device assigned.
+        for (k <- kl if k.device != null) {
+            return k.device
         }
 
         // Look for an incoming edge.
-        val inputs = bl.flatMap(_.getInputs)
+        val inputs = kl.flatMap(_.getInputs)
         val inEdges = inputs.filter(_.edge != null).map(_.edge)
         if (!inEdges.isEmpty) {
 
@@ -332,7 +337,7 @@ private[autopipe] class AutoPipe {
 
         // No incoming edges.
         // Check output edges.
-        val outputs = bl.flatMap(_.getOutputs)
+        val outputs = kl.flatMap(_.getOutputs)
         val outEdges = outputs.filter(_.edge != null).map(_.edge)
         if (!outEdges.isEmpty) {
 
@@ -352,101 +357,60 @@ private[autopipe] class AutoPipe {
 
         }
 
-        // No edges in either direction.
-        // Get a list of potential block platforms.
-        val platformSet = new HashSet[Platforms.Value]
-        for (bt <- blockTypes(bl.head.name)) {
-            platformSet += bt.platform
-        }
-        for (b <- bl) {
-            val pl = blockTypes(b.name).map { _.platform }
-            platformSet.retain { pl.contains(_) }
-        }
-
-        // We need exactly one platform to match.
-        if (platformSet.size > 1) {
-            if (platformSet.contains(Platforms.C)) {
-                platformSet.clear
-                platformSet += Platforms.C
-            } else {
-                val t = platformSet.head
-                platformSet.clear
-                platformSet += t
-            }
-        }
-        if (platformSet.size == 0) {
-            Error.raise("device assignment error: " +
-                        "no device assignments possible")
-        }
-
-        // Create the default device.
-        return deviceManager.getDefault(platformSet.head)
+        // No edges in either direction; assume the default.
+        return deviceManager.getDefault(Platforms.C)
 
     }
 
     private def assignDevices {
 
-        // Loop over each block to assign devices.
-        for (b <- blocks) {
+        // Loop over each kernel to assign devices.
+        for (k <- kernels) {
 
-            // Get a list of blocks that are strongly connected to this block.
-            val connected = getConnectedBlocks(b)
+            // Get a list of kernels that are strongly connected to
+            // this kernel.
+            val connected = getConnectedKernels(k)
 
-            // Determine the device to use for the blocks.
+            // Determine the device to use for the kernels.
             val device = getDevice(connected)
 
-            // Assign the blocks to the device.
+            // Assign the kernels to the device.
             for (x <- connected) {
                 if (x.device == null) {
                     x.device = device
-                    device.addBlock(x)
+                    device.addKernel(x)
                     devices += device
                 } else if (x.device != device) {
                     Error.raise("device assignment error: " +
-                                "blocks assignd to conflicting devices")
+                                "kernels assignd to conflicting devices")
                 }
             }
         }
     }
 
-    private def loadBlockTypes {
-        for (b <- blocks) {
-            val platform = b.device.platform
-            val bt = blockTypes(b.name).filter(_.platform == platform)
-            bt.size match {
-                case 0 => Error.raise("block " + b.name +
-                                      " not available on " + platform)
-                case 1 => b.blockType = bt.head
-                          b.blockType.addBlock(b)
-                case _ => Error.raise("multiple implementations for block " +
-                                      b.name + " on " + platform)
+    private def createKernelTypes {
+        val kts = kernels.map { k =>
+            addKernelType(k.apb, k.device.platform)
+        }.distinct
+        kts.foreach { kt =>
+            kt.functions.foreach { f =>
+                addKernelType(f, kt.platform)
             }
         }
-    }
-
-    private def loadStreams {
-        streams ++= blocks.flatMap(b => b.blockType.streams)
     }
 
     private def checkStreams {
         streams.foreach { _.checkType }
     }
 
-    private def checkBlocks {
-        blocks.foreach { _.validate }
+    private def checkKernels {
+        kernels.foreach { _.validate }
     }
 
-    private def emitBlocks(dir: File) {
-        blockTypes.values.flatten.filter(t => !t.blocks.isEmpty).foreach { t =>
-            t.emit(dir)
+    private def emitKernels(dir: File) {
+        kernelTypes.values.foreach { kt =>
+            kt.emit(dir)
         }
-    }
-
-    private def emitFunctions(dir: File) {
-        blockTypes.values.flatten.filter(t => !t.blocks.isEmpty).foreach { t =>
-            t.functions.foreach(f => addFunctionType(f, t.platform))
-        }
-        functions.foreach(t => t.emit(dir))
     }
 
     private def emitDescription(dir: File) {
@@ -457,7 +421,7 @@ private[autopipe] class AutoPipe {
     private[autopipe] def getRules: String = {
         import scala.collection.immutable.HashSet
         val gens = HashSet(devices.toList.map(d => resourceManager.get(d)): _*)
-        gens.foldLeft("") { (a, g) => a ++ g.getRules }
+        gens.map(_.getRules).mkString
     }
 
     private def emitResources(dir: File) {
@@ -467,9 +431,8 @@ private[autopipe] class AutoPipe {
     }
 
     private def emitMakefile(dir: File) {
-        val generator = new MakefileGenerator
-        generator.emit(this)
-        generator.writeFile(dir, "Makefile")
+        val generator = new MakefileGenerator(this)
+        generator.emit(dir)
     }
 
     private def emitTimeTrial(dir: File) {
@@ -489,11 +452,10 @@ private[autopipe] class AutoPipe {
 
         insertEdges
         assignDevices
+        createKernelTypes
         deviceManager.reassignIndexes
-        loadBlockTypes
-        loadStreams
         checkStreams
-        checkBlocks
+        checkKernels
         insertMeasures
 
         // Create the directory.
@@ -514,8 +476,7 @@ private[autopipe] class AutoPipe {
         }
 
         emitTimeTrial(dir)
-        emitBlocks(dir)
-        emitFunctions(dir)
+        emitKernels(dir)
         emitDescription(dir)
         emitResources(dir)
         emitMakefile(dir)

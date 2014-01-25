@@ -1,4 +1,3 @@
-
 package autopipe.gen
 
 import autopipe._
@@ -8,13 +7,14 @@ import scala.collection.mutable.HashSet
 import scala.collection.mutable.ListBuffer
 import java.io.File
 
-private[autopipe] class CPUResourceGenerator(val ap: AutoPipe,
-                                                            val host: String)
-    extends ResourceGenerator {
+private[autopipe] class CPUResourceGenerator(
+        val ap: AutoPipe,
+        val host: String
+    ) extends ResourceGenerator {
 
     private val edgeGenerators = new HashMap[EdgeGenerator, HashSet[Stream]]
-    private val emittedBlockTypes = new HashSet[BlockType]
-    private val threadIds = new HashMap[Block, Int]
+    private val emittedKernelTypes = new HashSet[KernelType]
+    private val threadIds = new HashMap[Kernel, Int]
 
     private lazy val openCLEdgeGenerator = new OpenCLEdgeGenerator(ap)
     private lazy val smartFusionEdgeGenerator = new SmartFusionEdgeGenerator(ap)
@@ -35,8 +35,8 @@ private[autopipe] class CPUResourceGenerator(val ap: AutoPipe,
 
     private def addEdgeGenerator(stream: Stream) {
 
-        val dest = stream.destBlock.device
-        val src = stream.sourceBlock.device
+        val dest = stream.destKernel.device
+        val src = stream.sourceKernel.device
 
         val generator: EdgeGenerator = stream.edge match {
             case c2f: CPU2FPGA                          => getHDLEdgeGenerator
@@ -58,19 +58,19 @@ private[autopipe] class CPUResourceGenerator(val ap: AutoPipe,
         device.platform == Platforms.C && device.host == host
     }
 
-    private def emitBlockHeader(block: Block) {
-        val blockType = block.blockType
-        if (!emittedBlockTypes.contains(blockType)) {
-            emittedBlockTypes += blockType
-            write("#include \"" + blockType.name + "-dir/" +
-                  blockType.name + ".h\"")
+    private def emitKernelHeader(kernel: Kernel) {
+        val kernelType = kernel.kernelType
+        if (!emittedKernelTypes.contains(kernelType)) {
+            emittedKernelTypes += kernelType
+            write("#include \"" + kernelType.name + "/" +
+                  kernelType.name + ".h\"")
         }
     }
 
-    private def emitBlockStruct(block: Block) {
+    private def emitKernelStruct(kernel: Kernel) {
 
-        val inputCount = block.getInputs.size
-        val outputCount = block.getOutputs.size
+        val inputCount = kernel.getInputs.size
+        val outputCount = kernel.getOutputs.size
 
         write("static struct {")
         enter
@@ -79,22 +79,23 @@ private[autopipe] class CPUResourceGenerator(val ap: AutoPipe,
         write("AP_input_port inputs[" + inputCount + "];")
         write("AP_output_port outputs[" + outputCount + "];")
         write("AP_block_data data;")
-        write("struct ap_" + block.blockType.name + "_data priv;")
+        write("struct ap_" + kernel.kernelType.name + "_data priv;")
         leave
-        write("} " + block.label + ";")
+        write("} " + kernel.label + ";")
 
     }
 
-    private def emitBlockInit(block: Block) {
+    private def emitKernelInit(kernel: Kernel) {
 
-        val name = block.blockType.name
-        val instance = block.label
+        val name = kernel.name
+        val kernelType = kernel.kernelType
+        val instance = kernel.label
 
         var minDepth = 0
 
         // Input ports
-        for (stream <- block.getInputs) {
-            val index = block.inputIndex(stream.destPort)
+        for (stream <- kernel.getInputs) {
+            val index = kernel.inputIndex(stream.destPort)
             write(instance + ".inputs[" + index + "].data = NULL;")
             write(instance + ".inputs[" + index + "].count = 0;")
             write(instance + ".inputs[" + index + "].credit = 0;")
@@ -103,13 +104,13 @@ private[autopipe] class CPUResourceGenerator(val ap: AutoPipe,
                 minDepth = stream.depth
             }
         }
-        val inPortCount = block.getInputs.size
+        val inPortCount = kernel.getInputs.size
         val activeInputs = inPortCount + 1
         write(instance + ".active_inputs = " + activeInputs + ";")
 
         // Output ports
-        for (stream <- block.getOutputs) {
-            val index = block.outputIndex(stream.sourcePort)
+        for (stream <- kernel.getOutputs) {
+            val index = kernel.outputIndex(stream.sourcePort)
             write(instance + ".outputs[" + index + "].data = NULL;")
             write(instance + ".outputs[" + index + "].count = 0;")
             write(instance + ".outputs[" + index + "].credit = 0;")
@@ -117,7 +118,7 @@ private[autopipe] class CPUResourceGenerator(val ap: AutoPipe,
                 minDepth = stream.depth
             }
         }
-        val outPortCount = block.getOutputs.size
+        val outPortCount = kernel.getOutputs.size
 
         // AP_block_data
         val maxSendCount = minDepth / 2
@@ -131,17 +132,17 @@ private[autopipe] class CPUResourceGenerator(val ap: AutoPipe,
         write(instance + ".data.send = " + instance + "_send;")
         write(instance + ".data.release = " + instance + "_release;")
         write(instance + ".data.send_signal = " + instance + "_send_signal;")
-        write(instance + ".data.instance = " + block.index + ";")
+        write(instance + ".data.instance = " + kernel.index + ";")
 
         // Default config options.
-        for (c <- block.blockType.configs) {
+        for (c <- kernel.kernelType.configs) {
             val name = c.name
             val t = c.valueType.baseType
-            val custom = block.getConfig(name)
+            val custom = kernel.getConfig(name)
             val value = if (custom != null) custom else c.value
             if (value != null) {
                 write(instance + ".priv." + name + " = (" + t + ")" +
-                        block.blockType.getLiteral(value) + ";")
+                      kernel.kernelType.getLiteral(value) + ";")
             }
         }
 
@@ -151,16 +152,16 @@ private[autopipe] class CPUResourceGenerator(val ap: AutoPipe,
 
     }
 
-    private def emitBlockGetFree(block: Block) {
+    private def emitKernelGetFree(kernel: Kernel) {
 
-        val instance = block.label
+        val instance = kernel.label
 
         write("static int " + instance + "_get_free(int out_port)")
         write("{")
         enter
         write("switch(out_port) {")
-        for (stream <- block.getOutputs) {
-            val index = block.outputIndex(stream.sourcePort)
+        for (stream <- kernel.getOutputs) {
+            val index = kernel.outputIndex(stream.sourcePort)
             write("case " + index + ":")
             enter
             write("return " + stream.label + "_get_free();")
@@ -173,24 +174,24 @@ private[autopipe] class CPUResourceGenerator(val ap: AutoPipe,
 
     }
 
-    private def emitBlockAllocate(block: Block) {
+    private def emitKernelAllocate(kernel: Kernel) {
 
-        val instance = block.label
-        val rid = threadIds(block)
+        val instance = kernel.label
+        val rid = threadIds(kernel)
 
         write("static void *" + instance + "_allocate(int out_port, int count)")
         write("{")
         enter
         write("void *ptr = NULL;")
-        if (!block.getOutputs.filter { _.useFull }.isEmpty) {
+        if (!kernel.getOutputs.filter { _.useFull }.isEmpty) {
             write("bool first = true;")
         }
         write("while(ptr == NULL) {")
         enter
 
         write("switch(out_port) {")
-        for (stream <- block.getOutputs) {
-            val index = block.outputIndex(stream.sourcePort)
+        for (stream <- kernel.getOutputs) {
+            val index = kernel.outputIndex(stream.sourcePort)
             write("case " + index + ":")
             enter
             write("ptr = " + stream.label + "_allocate(count);")
@@ -224,22 +225,22 @@ private[autopipe] class CPUResourceGenerator(val ap: AutoPipe,
 
     }
 
-    private def emitBlockSend(block: Block) {
+    private def emitKernelSend(kernel: Kernel) {
 
-        val instance = block.label
-        val minDepth = block.getOutputs.foldLeft(Int.MaxValue) {
+        val instance = kernel.label
+        val minDepth = kernel.getOutputs.foldLeft(Int.MaxValue) {
             (a, s) => scala.math.min(a, s.depth)
         }
-        val rid = threadIds(block)
+        val rid = threadIds(kernel)
 
         write("static void " + instance + "_send(int out_port, int count)")
         write("{")
         enter
-        val outputCount = block.getOutputs.size
+        val outputCount = kernel.getOutputs.size
         if (outputCount > 0) {
             write("switch(out_port) {")
-            for (stream <- block.getOutputs) {
-                val index = block.outputIndex(stream.sourcePort)
+            for (stream <- kernel.getOutputs) {
+                val index = kernel.outputIndex(stream.sourcePort)
                 write("case " + index + ":")
                 enter
                 if (stream.usePush) {
@@ -263,21 +264,21 @@ private[autopipe] class CPUResourceGenerator(val ap: AutoPipe,
 
     }
 
-    private def emitBlockRelease(block: Block) {
+    private def emitKernelRelease(kernel: Kernel) {
 
-        val name = block.blockType.name
-        val instance = block.label
+        val name = kernel.kernelType.name
+        val instance = kernel.label
 
         write("static void " + instance + "_release(int in_port, int count)")
         write("{")
         enter
         write("switch(in_port) {")
-        for (stream <- block.getInputs) {
-            val index = block.inputIndex(stream.destPort)
+        for (stream <- kernel.getInputs) {
+            val index = kernel.inputIndex(stream.destPort)
             write("case " + index + ":")
             enter
             if (stream.usePop) {
-                val rid = threadIds(block)
+                val rid = threadIds(kernel)
                 write("for(int i = 0; i < count; i++) {")
                 enter
                 write("tta.LogEvent(" + rid + ", " + stream.index + ", " +
@@ -297,9 +298,9 @@ private[autopipe] class CPUResourceGenerator(val ap: AutoPipe,
 
     }
 
-    private def emitBlockSendSignal(block: Block) {
+    private def emitKernelSendSignal(kernel: Kernel) {
 
-        val instance = block.label
+        val instance = kernel.label
 
         write("static void " + instance + "_send_signal(int out_port, " +
                 "int type, int value)")
@@ -308,8 +309,8 @@ private[autopipe] class CPUResourceGenerator(val ap: AutoPipe,
         write("UNSIGNED64 temp = (UNSIGNED64)type << 56;")
         write("temp |= *(UNSIGNED32*)&value;")
         write("switch(out_port) {")
-        for (stream <- block.getOutputs) {
-            val index = block.outputIndex(stream.sourcePort)
+        for (stream <- kernel.getOutputs) {
+            val index = kernel.outputIndex(stream.sourcePort)
             write("case " + index + ":")
             enter
             write(stream.label + "_send_signal(temp);")
@@ -322,15 +323,15 @@ private[autopipe] class CPUResourceGenerator(val ap: AutoPipe,
 
     }
 
-    private def emitBlockDestroy(block: Block) {
-        val name = block.blockType.name
-        val instance = block.label
+    private def emitKernelDestroy(kernel: Kernel) {
+        val name = kernel.kernelType.name
+        val instance = kernel.label
         write("ap_" + name + "_destroy(&" + instance + ".priv);")
     }
 
-    private def emitCheckRunning(block: Block) {
-        val id = threadIds(block)
-        val instance = block.label
+    private def emitCheckRunning(kernel: Kernel) {
+        val id = threadIds(kernel)
+        val instance = kernel.label
         write("static char is_running" + id + "()")
         write("{")
         enter
@@ -339,8 +340,8 @@ private[autopipe] class CPUResourceGenerator(val ap: AutoPipe,
         write("return 1;")
         leave
         write("}")
-        for (stream <- block.getInputs) {
-            if (stream.sourceBlock.device == block.device) {
+        for (stream <- kernel.getInputs) {
+            if (stream.sourceKernel.device == kernel.device) {
                 write("if(!" + stream.label + "_is_empty()) {")
                 enter
                 write("return 1;")
@@ -353,11 +354,11 @@ private[autopipe] class CPUResourceGenerator(val ap: AutoPipe,
         write("}")
     }
 
-    private def emitThread(block: Block) {
+    private def emitThread(kernel: Kernel) {
 
-        val id = threadIds(block)
-        val name = block.blockType.name
-        val instance = block.label
+        val id = threadIds(kernel)
+        val name = kernel.kernelType.name
+        val instance = kernel.label
 
         write("static void *run_thread" + id + "(void *arg)")
         write("{")
@@ -379,8 +380,8 @@ private[autopipe] class CPUResourceGenerator(val ap: AutoPipe,
         leave
         write("}")
         write("count += 1;")
-        if (!block.getInputs.isEmpty) {
-            for (stream <- block.getInputs) {
+        if (!kernel.getInputs.isEmpty) {
+            for (stream <- kernel.getInputs) {
                 write("if(" + stream.label + "_process()) {")
                 enter
                 write("count = 0;")
@@ -398,9 +399,9 @@ private[autopipe] class CPUResourceGenerator(val ap: AutoPipe,
         leave
         write("}")
         write("APC_Stop(&" + instance + ".clock);")
-        for (stream <- block.getOutputs) {
-            if (stream.destBlock.device == block.device) {
-                val dest = stream.destBlock.label
+        for (stream <- kernel.getOutputs) {
+            if (stream.destKernel.device == kernel.device) {
+                val dest = stream.destKernel.label
                 write(dest + ".active_inputs -= 1;")
             }
         }
@@ -410,25 +411,25 @@ private[autopipe] class CPUResourceGenerator(val ap: AutoPipe,
 
     }
 
-    private def writeShutdown(blocks: Traversable[Block],
-                                      edgeStats: ListBuffer[Generator]) {
+    private def writeShutdown(kernels: Traversable[Kernel],
+                              edgeStats: ListBuffer[Generator]) {
 
-        def writeBlockStats(b: Block) {
-            write("ticks = " + b.label + ".clock.total_ticks;");
-            write("pushes = " + b.label + ".clock.count;")
+        def writeKernelStats(k: Kernel) {
+            write("ticks = " + k.label + ".clock.total_ticks;");
+            write("pushes = " + k.label + ".clock.count;")
             write("us = (ticks * total_us) / total_ticks;")
-            write("run = " + b.label + ".active_inputs > 0;")
-            write("fprintf(stderr, \"     " + b.blockType.name + "(" +
-                  b.label + "): %llu ticks, %llu pushes, %llu us (%s)\\n\", " +
+            write("run = " + k.label + ".active_inputs > 0;")
+            write("fprintf(stderr, \"     " + k.kernelType.name + "(" +
+                  k.label + "): %llu ticks, %llu pushes, %llu us (%s)\\n\", " +
                   "ticks, pushes, us, run ? \"run\" : \"stop\");")
-            if (b.blockType.parameters.get('profile)) {
+            if (k.kernelType.parameters.get('profile)) {
                 write("fprintf(stderr, \"        HDL Clocks: %lu\\n\", " +
-                      b.label + ".priv.ap_clocks);")
+                      k.label + ".priv.ap_clocks);")
             }
             write("if (show_extra_stats) {")
             enter
-            b.getInputs.foreach { i =>
-                val index = b.inputIndex(i)
+            k.getInputs.foreach { i =>
+                val index = k.inputIndex(i)
                 write("q_size = q_" + i.label + "->depth;")
                 write("q_usage = APQ_GetUsed(q_" + i.label + ");")
                 write("fprintf(stderr, \"          Input " + index + ": " +
@@ -458,7 +459,7 @@ private[autopipe] class CPUResourceGenerator(val ap: AutoPipe,
         write("""fprintf(stderr, "Statistics:\n");""")
         write("fprintf(stderr, \"Total CPU ticks: %llu\\n\", total_ticks);")
         write("fprintf(stderr, \"Total time:        %llu us\\n\", total_us);")
-        blocks.foreach(b => writeBlockStats(b))
+        kernels.foreach(k => writeKernelStats(k))
         write(edgeStats)
         leave
         write("}")
@@ -479,14 +480,13 @@ private[autopipe] class CPUResourceGenerator(val ap: AutoPipe,
     override def emit(dir: File) {
 
         // Get devices on this host.
-        val allBlocks = ap.getBlockTypes.flatMap { _.blocks }
-        val localBlocks = allBlocks.filter { b =>
-            b.device != null && b.device.host == host
+        val localKernels = ap.kernels.filter { k =>
+            k.device != null && k.device.host == host
         }
-        val cpuBlocks = localBlocks.filter {
-            b => shouldEmit(b.device)
+        val cpuKernels = localKernels.filter {
+            k => shouldEmit(k.device)
         }
-        threadIds ++= cpuBlocks.zipWithIndex
+        threadIds ++= cpuKernels.zipWithIndex
 
         // Write include files that we need.
         write("#include \"X.h\"")
@@ -502,7 +502,7 @@ private[autopipe] class CPUResourceGenerator(val ap: AutoPipe,
 
         // Get streams on this host.
         val localStreams = ap.streams.filter { s =>
-            shouldEmit(s.sourceBlock.device) || shouldEmit(s.destBlock.device)
+            shouldEmit(s.sourceKernel.device) || shouldEmit(s.destKernel.device)
         }
 
         // Create edge generators for local streams.
@@ -511,8 +511,8 @@ private[autopipe] class CPUResourceGenerator(val ap: AutoPipe,
         // Determine if we need TimeTrial.
         // Note that we need to check every stream on this host.
         val needTimeTrial = ap.streams.filter { s =>
-            s.sourceBlock.device.host == host ||
-            s.destBlock.device.host == host
+            s.sourceKernel.device.host == host ||
+            s.destKernel.device.host == host
         }.exists { s => !s.measures.isEmpty }
 
         if (needTimeTrial) {
@@ -557,16 +557,16 @@ private[autopipe] class CPUResourceGenerator(val ap: AutoPipe,
 
         }
 
-        // Include block headers.
+        // Include kernel headers.
         write("extern \"C\" {")
-        cpuBlocks.foreach { emitBlockHeader(_) }
+        cpuKernels.foreach { emitKernelHeader(_) }
         write("}")
 
         // Write the top edge code.
         write(edgeTop)
 
-        // Create block structures.
-        cpuBlocks.foreach { emitBlockStruct(_) }
+        // Create kernel structures.
+        cpuKernels.foreach { emitKernelStruct(_) }
 
         write("static unsigned long long start_ticks;")
         write("static struct timeval start_time;")
@@ -574,16 +574,16 @@ private[autopipe] class CPUResourceGenerator(val ap: AutoPipe,
         // Write the edge globals.
         write(edgeGlobals)
 
-        writeShutdown(cpuBlocks, edgeStats)
+        writeShutdown(cpuKernels, edgeStats)
 
-        // Write the block functions.
-        cpuBlocks.foreach { emitBlockGetFree(_) }
-        cpuBlocks.foreach { emitBlockAllocate(_) }
-        cpuBlocks.foreach { emitBlockSendSignal(_) }
-        cpuBlocks.foreach { emitBlockSend(_) }
-        cpuBlocks.foreach { emitBlockRelease(_) }
-        cpuBlocks.foreach { emitCheckRunning(_) }
-        cpuBlocks.foreach { emitThread(_) }
+        // Write the kernel functions.
+        cpuKernels.foreach { emitKernelGetFree(_) }
+        cpuKernels.foreach { emitKernelAllocate(_) }
+        cpuKernels.foreach { emitKernelSendSignal(_) }
+        cpuKernels.foreach { emitKernelSend(_) }
+        cpuKernels.foreach { emitKernelRelease(_) }
+        cpuKernels.foreach { emitCheckRunning(_) }
+        cpuKernels.foreach { emitThread(_) }
 
         // Create the main function.
         write("int main(int argc, char **argv)")
@@ -610,8 +610,8 @@ private[autopipe] class CPUResourceGenerator(val ap: AutoPipe,
                     ttAffinity + ");")
 
             val sl = localStreams.filter { s =>
-                shouldEmit(s.sourceBlock.device) &&
-                shouldEmit(s.destBlock.device)
+                shouldEmit(s.sourceKernel.device) &&
+                shouldEmit(s.destKernel.device)
             }
             for (measure <- sl.flatMap { s => s.measures }) {
 
@@ -630,8 +630,8 @@ private[autopipe] class CPUResourceGenerator(val ap: AutoPipe,
         // Initialize the edges.
         write(edgeInit)
 
-        // Call the block init functions.
-        cpuBlocks.foreach { emitBlockInit(_) }
+        // Call the kernel init functions.
+        cpuKernels.foreach { emitKernelInit(_) }
 
         write("atexit(showStats);")
 
@@ -644,8 +644,8 @@ private[autopipe] class CPUResourceGenerator(val ap: AutoPipe,
             write("pthread_join(thread" + t + ", NULL);")
         }
 
-        // Call the block destroy functions.
-        cpuBlocks.foreach { emitBlockDestroy(_) }
+        // Call the kernel destroy functions.
+        cpuKernels.foreach { emitKernelDestroy(_) }
 
         // Destroy the edges.
         write(edgeDestroy)

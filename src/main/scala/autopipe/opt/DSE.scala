@@ -22,7 +22,7 @@ private[opt] object DSE extends Pass {
         // Compute a set of definitions that are used.
         // Note that reaching contains a mapping from block to defining
         // (symbol, block).
-        val reaching = ReachingDefs.solve(context.co, graph)
+        val reaching = ReachingDefs.solve(context.kt, graph)
         val defs = new HashSet[IRNode]
         graph.blocks.foreach { sb =>
             reaching(sb.label).foreach { case (s, d) =>

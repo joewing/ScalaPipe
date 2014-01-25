@@ -15,11 +15,11 @@ private[opt] object StateCompression extends Pass {
     private def compress(context: IRContext, graph: IRGraph): IRGraph = {
 
         // Compute the dominator tree.
-        val dom = new Dominators(context.co, graph)
-        val pdom = new PostDominators(context.co, graph)
+        val dom = new Dominators(context.kt, graph)
+        val pdom = new PostDominators(context.kt, graph)
 
         // Get a mapping from node to nodes that are runnable at that state.
-        val runnable = RunnableExpressions.solve(context.co, graph)
+        val runnable = RunnableExpressions.solve(context.kt, graph)
 
         // Get a list of nodes that can be combined into another state.
         val canCombine = graph.blocks.view.flatMap { sb =>

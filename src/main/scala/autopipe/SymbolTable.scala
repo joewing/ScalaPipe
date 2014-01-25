@@ -96,52 +96,44 @@ private[autopipe] class SymbolTable(apb: AutoPipeBlock) {
         case _                  => false
     }
 
-    def getInput(pn: PortName): InputSymbol = {
-        if (pn.isIndex) {
-            if (pn.index >= 0 && pn.index < inputs.size) {
-                inputs(pn.index)
+    def getInput(pn: PortName): InputSymbol = pn match {
+        case ip: IntPortName =>
+            if (ip.name >= 0 && ip.name < inputs.size) {
+                inputs(ip.name)
             } else {
                 null
             }
-        } else {
+        case _ =>
             symbols.get(pn.toString) match {
                 case Some(s) if s.isInstanceOf[InputSymbol] =>
                     s.asInstanceOf[InputSymbol]
                 case _ => null
             }
-        }
     }
 
-    def getOutput(pn: PortName): OutputSymbol = {
-        if (pn.isIndex) {
-            if (pn.index >= 0 && pn.index < outputs.size) {
-                outputs(pn.index)
+    def getOutput(pn: PortName): OutputSymbol = pn match {
+        case ip: IntPortName =>
+            if (ip.name >= 0 && ip.name < outputs.size) {
+                outputs(ip.name)
             } else {
                 null
             }
-        } else {
+        case _ =>
             symbols.get(pn.toString) match {
                 case Some(s) if s.isInstanceOf[OutputSymbol] =>
                     s.asInstanceOf[OutputSymbol]
                 case _ => null
             }
-        }
     }
 
-    def inputIndex(pn: PortName): Int = {
-        if (pn.isIndex) {
-            pn.index
-        } else {
-            inputs.indexOf(getInput(pn))
-        }
+    def inputIndex(pn: PortName): Int = pn match {
+        case ip: IntPortName => ip.name
+        case _ => inputs.indexOf(getInput(pn))
     }
 
-    def outputIndex(pn: PortName): Int = {
-        if (pn.isIndex) {
-            pn.index
-        } else {
-            outputs.indexOf(getOutput(pn))
-        }
+    def outputIndex(pn: PortName): Int = pn match {
+        case ip: IntPortName => ip.name
+        case _ => outputs.indexOf(getOutput(pn))
     }
 
     def getBaseOffset(s: String): Int = {

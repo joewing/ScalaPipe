@@ -1,19 +1,19 @@
-
 package autopipe.gen
 
 import autopipe._
 
-private[autopipe] abstract class EdgeGenerator(val platform: Platforms.Value)
-     extends Generator {
+private[autopipe] abstract class EdgeGenerator(
+        val platform: Platforms.Value
+    ) extends Generator {
 
     protected def getDevices(streams: Traversable[Stream]):
         Traversable[Device] = {
 
         streams.map { s =>
-            if (s.sourceBlock.device.platform == platform) {
-                s.sourceBlock.device
+            if (s.sourceKernel.device.platform == platform) {
+                s.sourceKernel.device
             } else {
-                s.destBlock.device
+                s.destKernel.device
             }
         }
 
@@ -22,21 +22,21 @@ private[autopipe] abstract class EdgeGenerator(val platform: Platforms.Value)
     protected def getSenderStreams(device: Device,
         streams: Traversable[Stream]): Traversable[Stream] = {
         streams.filter { s =>
-            s.destBlock.device == device && s.sourceBlock.device != device
+            s.destKernel.device == device && s.sourceKernel.device != device
         }
     }
 
     protected def getReceiverStreams(device: Device,
         streams: Traversable[Stream]): Traversable[Stream] = {
         streams.filter { s =>
-            s.sourceBlock.device == device && s.destBlock.device != device
+            s.sourceKernel.device == device && s.destKernel.device != device
         }
     }
 
     protected def getInternalStreams(device: Device,
         streams: Traversable[Stream]): Traversable[Stream] = {
         streams.filter { s =>
-            s.sourceBlock.device == device && s.destBlock.device == device
+            s.sourceKernel.device == device && s.destKernel.device == device
         }
     }
 
@@ -45,9 +45,9 @@ private[autopipe] abstract class EdgeGenerator(val platform: Platforms.Value)
         getSenderStreams(device, streams) ++ getReceiverStreams(device, streams)
     }
 
-    protected def getBlocks(device: Device, blocks: Traversable[Block]):
-        Traversable[Block] = {
-        blocks.filter { _.device == device }
+    protected def getKernels(device: Device,
+                             kernels: Traversable[Kernel]) = {
+        kernels.filter(_.device == device)
     }
 
     /** Emit common code. */
@@ -71,4 +71,3 @@ private[autopipe] abstract class EdgeGenerator(val platform: Platforms.Value)
     }
 
 }
-

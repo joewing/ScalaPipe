@@ -1,4 +1,3 @@
-
 package autopipe.opt
 
 import autopipe._
@@ -11,7 +10,7 @@ object ReachingDefs extends DataFlowProblem {
 
     def forward = true
 
-    def init(co: CodeObject, graph: IRGraph) = HashSet[T]()
+    def init(kt: KernelType, graph: IRGraph) = HashSet[T]()
 
     def gen(sb: StateBlock, in: Set[T]): Set[T] =
         HashSet[T](sb.dests.map(d => ((d, sb.label))): _*)
@@ -32,4 +31,3 @@ object ReachingDefs extends DataFlowProblem {
     def meet(a: Set[T], b: Set[T]) = a.union(b)
 
 }
-

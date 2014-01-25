@@ -1,5 +1,3 @@
-
-
 package autopipe
 
 import scala.collection.mutable.ListBuffer
@@ -20,8 +18,8 @@ private[autopipe] object TypeChecker {
         ValueType.float96
     )
 
-    def check(co: CodeObject, root: ASTNode): ASTNode = {
-        val checker = new TypeChecker(co)
+    def check(kt: KernelType, root: ASTNode): ASTNode = {
+        val checker = new TypeChecker(kt)
         checker.check(root, false)
     }
 
@@ -53,7 +51,7 @@ private[autopipe] object TypeChecker {
 
 }
 
-private[autopipe] class TypeChecker(co: CodeObject) {
+private[autopipe] class TypeChecker(kt: KernelType) {
 
     private def getWidestType(an: ASTNode, b: ValueType): ValueType = {
         val a = TypeChecker.widestType(getType(an), b)
@@ -118,7 +116,7 @@ private[autopipe] class TypeChecker(co: CodeObject) {
     def getType(node: ASTNode): ValueType = {
 
         def getSymbolType(sn: ASTSymbolNode): ValueType = {
-            val stype = co.getType(sn)
+            val stype = kt.getType(sn)
             if (sn.index != null) {
                 val lit: SymbolLiteral = sn.index match {
                     case sl: SymbolLiteral => sl
@@ -203,7 +201,7 @@ private[autopipe] class TypeChecker(co: CodeObject) {
         }
         dest match {
             case sn: ASTSymbolNode =>
-                if (co.isInput(sn)) {
+                if (kt.isInput(sn)) {
                     Error.raise("assignment to input port not allowed", node)
                 }
             case _ =>
@@ -267,7 +265,7 @@ private[autopipe] class TypeChecker(co: CodeObject) {
     }
 
     private def checkSymbol(node: ASTSymbolNode, lhs: Boolean): ASTNode = {
-        if (!lhs && co.isOutput(node)) {
+        if (!lhs && kt.isOutput(node)) {
             Error.raise("reading from output port not allowed", node)
         }
         val result = ASTSymbolNode(node.symbol)

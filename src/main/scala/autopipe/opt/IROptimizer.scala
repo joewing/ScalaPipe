@@ -1,19 +1,18 @@
-
 package autopipe.opt
 
 import autopipe._
 
 private[autopipe] case class IROptimizer(
-        val co: CodeObject,
+        val kt: KernelType,
         val context: IRContext
     ) {
 
-    private val parameters = co.parameters
+    private val parameters = kt.parameters
 
     def optimize(graph: IRGraph): IRGraph = {
-        println("Optimizing " + co.name)
+        println("Optimizing " + kt.name)
         val initialStateCount = countStates(graph)
-        val initialVarCount = co.states.size + co.temps.size
+        val initialVarCount = kt.states.size + kt.temps.size
 
         val passes = Array[Pass](
             ExpandExpressions,
@@ -34,7 +33,7 @@ private[autopipe] case class IROptimizer(
         }
 
         val finalStateCount = countStates(newGraph)
-        val finalVarCount = co.states.size + co.temps.size
+        val finalVarCount = kt.states.size + kt.temps.size
         println("\tStates:    " + initialStateCount + " -> " + finalStateCount)
         println("\tVariables: " + initialVarCount + " -> " + finalVarCount)
         println("\tScore:     " + computeScore(newGraph))
@@ -59,4 +58,3 @@ private[autopipe] case class IROptimizer(
     }
 
 }
-

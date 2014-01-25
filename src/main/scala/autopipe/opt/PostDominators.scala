@@ -1,4 +1,3 @@
-
 package autopipe.opt
 
 import autopipe._
@@ -6,7 +5,7 @@ import scala.collection.mutable.HashMap
 import scala.collection.mutable.HashSet
 import scala.collection.mutable.Stack
 
-private[autopipe] class PostDominators(co: CodeObject, graph: IRGraph)
+private[autopipe] class PostDominators(kt: KernelType, graph: IRGraph)
 //        extends DominatorBase(_co, _graph) {
 {
 
@@ -44,4 +43,3 @@ private[autopipe] class PostDominators(co: CodeObject, graph: IRGraph)
     }
 
 }
-
