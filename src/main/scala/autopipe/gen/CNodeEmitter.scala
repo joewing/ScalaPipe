@@ -5,7 +5,7 @@ import autopipe._
 private[autopipe] abstract class CNodeEmitter(
         _kt: KernelType,
         val timing: Map[ASTNode, Int]
-    ) extends NodeEmitter(_kt) {
+    ) extends NodeEmitter(_kt) with CGenerator {
 
     private var usedTimings = Set[ASTNode]()
 

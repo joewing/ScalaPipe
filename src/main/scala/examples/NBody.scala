@@ -1,4 +1,3 @@
-
 package examples
 
 import blocks._
@@ -12,7 +11,7 @@ object NBody {
     def main(args: Array[String]) {
 
         val maxParticles = 1000
-        val useX = false
+        val useX = true
         val hw = false
 
         val VTYPE = FLOAT32
@@ -458,12 +457,6 @@ object NBody {
 
         val app = new AutoPipeApp {
 
-//            param('queueDepth, 4)
-//            param('share, 1)
-//            param('fpga, "SmartFusion")
-            param('fpga, "Simulation")
-            param('trace, true)
-
             val source = Source()
             val buffer = Buffer(source(0), Loop.output())
             val stream = Streamer(buffer(0))
@@ -488,4 +481,3 @@ object NBody {
     }
 
 }
-

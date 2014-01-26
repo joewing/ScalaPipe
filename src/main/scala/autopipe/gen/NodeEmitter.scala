@@ -1,4 +1,3 @@
-
 package autopipe.gen
 
 import scala.collection.immutable.ListSet
@@ -45,4 +44,3 @@ private[gen] abstract class NodeEmitter(
     }
 
 }
-

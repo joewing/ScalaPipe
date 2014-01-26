@@ -1,7 +1,6 @@
 package autopipe.test
 
 import blocks._
-import autopipe._
 import autopipe.dsl._
 
 object FunctionTest {

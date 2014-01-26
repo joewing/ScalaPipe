@@ -20,12 +20,12 @@ private[autopipe] class CFunctionGenerator(
         typeEmitter.emit(ft.returnType)
         write(typeEmitter)
 
-        write
         val prof = optional(ft.parameters.get('profile), "unsigned long*")
-        val args = prof.toList ++ ft.inputs.map(_.valueType.toString)
+        val args = prof.toSeq ++ ft.inputs.map(_.valueType.toString)
         val argString = args.mkString(", ")
-        write(ft.returnType.toString + " " + ft.name + "(" + argString + ");")
-        write
+        val fname = ft.name
+        val rtype = ft.returnType
+        write(s"$rtype $fname($argString);")
 
     }
 
@@ -42,29 +42,21 @@ private[autopipe] class CFunctionGenerator(
 
         val prof = optional(ft.parameters.get('profile),
                             "unsigned long *clocks")
-        val args = prof.toList ++ ft.inputs.map { a =>
+        val args = prof.toSeq ++ ft.inputs.map { a =>
             a.valueType.toString + " " + a.name
         }
         val argString = args.mkString(", ")
-        write(ft.returnType.toString + " " + ft.name + "(" + argString + ")")
-        write("{")
+        val rtype = ft.returnType
+        val fname = ft.name
+        write(s"$rtype $fname($argString)")
         enter
-
-        // Declare locals.
-        ft.states.foreach { l =>
-            write(l.valueType + " " + l.name + ";")
+        for ((name, vtype) <- ft.states.map(l => (l.name, l.valueType))) {
+            write(s"$vtype $name;")
         }
-        write
-
-        // Emit the code.
         val nodeEmitter = new CFunctionNodeEmitter(ft, timing)
         nodeEmitter.emit(ft.expression)
         write(nodeEmitter)
-        write
-
         leave
-        write("}")
-        write
 
     }
 

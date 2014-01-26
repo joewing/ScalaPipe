@@ -1,4 +1,3 @@
-
 package autopipe.gen
 
 import autopipe._
@@ -20,31 +19,32 @@ private[autopipe] class CFunctionNodeEmitter(
         }
 
         val name = node.symbol
-        if (node.index == null) {
-            name
-        } else if (isNative(node.valueType)) {
-            if (node.index.isInstanceOf[SymbolLiteral]) {
-                name + "." + node.index.toString
-            } else {
-                name + "[" + emitExpr(node.index) + "]"
-            }
-        } else if (isNativePointer(node.valueType)) {
-            if (node.index.isInstanceOf[SymbolLiteral]) {
-                name + "->" + node.index.toString
-            } else {
-                "(*" + name + ")[" + emitExpr(node.index) + "]"
-            }
-        } else {
-            if (node.index.isInstanceOf[SymbolLiteral]) {
-                name + "." + node.index.toString
-            } else {
-                name + ".values[" + emitExpr(node.index) + "]"
-            }
+        val index = node.index
+        if (index == null) {
+            return name
         }
+
+        val expr = index match {
+            case sl: SymbolLiteral  => "." + index
+            case _                  => "[" + emitExpr(index) + "]"
+        }
+
+        if (isNative(node.valueType)) {
+            return s"$name$index"
+        } else if (isNativePointer(node.valueType)) {
+            return s"(*$name)$index"
+        } else if (index.isInstanceOf[SymbolLiteral]) {
+            return s"$name.$index"
+        } else {
+            return s"$name.values$expr"
+        }
+
     }
 
     override def emitAssign(node: ASTAssignNode) {
-        write(emitExpr(node.dest) + " = " + emitExpr(node.src) + ";")
+        val dest = emitExpr(node.dest)
+        val src = emitExpr(node.src)
+        write(s"$dest = $src;")
         updateClocks(getTiming(node))
     }
 
@@ -54,16 +54,12 @@ private[autopipe] class CFunctionNodeEmitter(
 
     override def emitReturn(node: ASTReturnNode) {
         updateClocks(getTiming(node))
-        if (node.a != null) {
-            write("return " + emitExpr(node.a) + ";")
-        } else {
-            write("return;")
-        }
+        writeReturn(emitExpr(node.a))
     }
 
     override def updateClocks(count: Int) {
         if (count > 0) {
-            write("*clocks += " + count + ";")
+            write(s"*clocks += $count;")
         }
     }
 
@@ -73,4 +69,3 @@ private[autopipe] class CFunctionNodeEmitter(
     }
 
 }
-
