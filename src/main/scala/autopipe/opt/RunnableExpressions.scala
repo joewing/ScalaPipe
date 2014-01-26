@@ -2,8 +2,6 @@ package autopipe.opt
 
 import autopipe._
 
-import scala.collection.immutable.HashSet
-
 object RunnableExpressions extends DataFlowProblem {
 
     type T = IRNode
@@ -59,10 +57,10 @@ object RunnableExpressions extends DataFlowProblem {
     }
 
     def init(kt: KernelType, graph: IRGraph) =
-        HashSet[T](graph.nodes.filter(isExpression): _*)
+        Set[T](graph.nodes.filter(isExpression): _*)
 
     def gen(sb: StateBlock, in: Set[T]): Set[T] =
-        HashSet[T](sb.nodes.filter(isExpression): _*)
+        Set[T](sb.nodes.filter(isExpression): _*)
 
     def kill(sb: StateBlock, in: Set[T]): Set[T] = {
         in.filter { i => hasConflict(i, sb) }

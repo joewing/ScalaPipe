@@ -2,18 +2,16 @@ package autopipe.opt
 
 import autopipe._
 
-import scala.collection.immutable.HashSet
-
 object LiveVariables extends DataFlowProblem {
 
     type T = BaseSymbol
 
     def forward = false
 
-    def init(kt: KernelType, graph: IRGraph) = HashSet[T]()
+    def init(kt: KernelType, graph: IRGraph) = Set[T]()
 
     def gen(sb: StateBlock, in: Set[T]): Set[T] =
-        HashSet(sb.srcs.filter(isVariable): _*)
+        Set(sb.srcs.filter(isVariable): _*)
 
     def kill(sb: StateBlock, in: Set[T]): Set[T] = {
         val dests = sb.nodes.flatMap { node =>
@@ -23,7 +21,7 @@ object LiveVariables extends DataFlowProblem {
                 case _ => node.dests.filter(isVariable)
             }
         }
-        HashSet[T](dests: _*)
+        Set[T](dests: _*)
     }
 
     def meet(a: Set[T], b: Set[T]) = a.union(b)

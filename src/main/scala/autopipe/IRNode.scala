@@ -1,7 +1,4 @@
-
 package autopipe
-
-import scala.collection.immutable.TreeMap
 
 private object IRNodeCounter {
 
@@ -18,9 +15,9 @@ private[autopipe] trait IRNode {
 
     val op: NodeType.Value = NodeType.invalid
 
-    def links        = List[Int]()
-    def srcs         = List[BaseSymbol]()
-    def dests        = List[BaseSymbol]()
+    def links        = Seq[Int]()
+    def srcs         = Seq[BaseSymbol]()
+    def dests        = Seq[BaseSymbol]()
 
     final def symbols = dests ++ srcs
 
@@ -45,7 +42,7 @@ private[autopipe] case class IRStart(
         val id:      Int = IRNodeCounter.getId
     ) extends IRNode {
 
-    override def links = List(next)
+    override def links = Seq(next)
 
     override def replaceLink(o: Int, n: Int): IRNode = {
         if (next == o) {
@@ -75,9 +72,9 @@ private[autopipe] case class IRInstruction(
         val id:                  Int = IRNodeCounter.getId
     ) extends IRNode {
 
-    override def srcs = List(srca, srcb).filter(_ != null)
+    override def srcs = Seq(srca, srcb).filter(_ != null)
 
-    override def dests = List(dest)
+    override def dests = Seq(dest)
 
     override def replaceSources(o: BaseSymbol, n: BaseSymbol): IRNode = {
         val a = if (this.srca == o) this.copy(srca = n) else this
@@ -111,8 +108,8 @@ private[autopipe] case class IRVectorStore(
 
     val arrayType = dest.valueType.asInstanceOf[ArrayValueType]
 
-    override def dests = List(dest)
-    override def srcs = List(src, offset)
+    override def dests = Seq(dest)
+    override def srcs = Seq(src, offset)
 
     override def replaceSources(o: BaseSymbol, n: BaseSymbol): IRNode = {
         val a = if (this.offset == o) this.copy(offset = n) else this
@@ -137,8 +134,8 @@ private[autopipe] case class IRVectorLoad(
 
     val arrayType = src.valueType.asInstanceOf[ArrayValueType]
 
-    override def dests = List(dest)
-    override def srcs = List(src, offset)
+    override def dests = Seq(dest)
+    override def srcs = Seq(src, offset)
 
     override def replaceSources(o: BaseSymbol, n: BaseSymbol): IRNode = {
         val a = if (this.offset == o) this.copy(offset = n) else this
@@ -163,8 +160,8 @@ private[autopipe] case class IRArrayStore(
 
     val arrayType = dest.valueType.asInstanceOf[ArrayValueType]
 
-    override def dests = List(dest)
-    override def srcs = List(src, offset)
+    override def dests = Seq(dest)
+    override def srcs = Seq(src, offset)
 
     override def replaceSources(o: BaseSymbol, n: BaseSymbol): IRNode = {
         val a = if (this.offset == o) this.copy(offset = n) else this
@@ -189,8 +186,8 @@ private[autopipe] case class IRArrayLoad(
 
     val arrayType = src.valueType.asInstanceOf[ArrayValueType]
 
-    override def dests = List(dest)
-    override def srcs = List(src, offset)
+    override def dests = Seq(dest)
+    override def srcs = Seq(src, offset)
 
     override def replaceSources(o: BaseSymbol, n: BaseSymbol): IRNode = {
         val a = if (this.offset == o) this.copy(offset = n) else this
@@ -211,7 +208,7 @@ private[autopipe] case class IRGoto(
         val id:      Int = IRNodeCounter.getId
     ) extends IRNode {
 
-    override def links = List(next)
+    override def links = Seq(next)
 
     override def replaceLink(o: Int, n: Int): IRNode = {
         if (next == o) {
@@ -238,7 +235,7 @@ private[autopipe] case class IRReturn(
         val id:      Int = IRNodeCounter.getId
     ) extends IRNode {
 
-    override def srcs = List(result)
+    override def srcs = Seq(result)
 
     override def replaceSources(o: BaseSymbol, n: BaseSymbol): IRNode = {
         if (result == o) copy(result = n) else this
@@ -264,7 +261,7 @@ private[autopipe] case class IRConditional(
         if (test == o) copy(test = n) else this
     }
 
-    override def links = List(iTrue, iFalse)
+    override def links = Seq(iTrue, iFalse)
 
     override def replaceLink(o: Int, n: Int): IRNode = {
         if (iTrue == o && iFalse == o) {
@@ -278,7 +275,7 @@ private[autopipe] case class IRConditional(
         }
     }
 
-    override def srcs = List(test)
+    override def srcs = Seq(test)
 
     override def toString = "if " + test +
         " then " + iTrue.toString +
@@ -287,8 +284,8 @@ private[autopipe] case class IRConditional(
 }
 
 private[autopipe] case class IRSwitch(
-        val test:        BaseSymbol,
-        val targets:    List[(BaseSymbol, Int)]
+        val test: BaseSymbol,
+        val targets: Seq[(BaseSymbol, Int)]
     ) extends IRNode {
 
     override def replaceSources(o: BaseSymbol, n: BaseSymbol): IRNode = {
@@ -316,7 +313,7 @@ private[autopipe] case class IRSwitch(
         }
     }
 
-    override def srcs = test :: targets.filter(_._1 != null).map(_._1)
+    override def srcs = test +: targets.filter(_._1 != null).map(_._1)
 
     override def toString = "switch " + test +
         targets.foldLeft("") { (a, b) =>
@@ -330,12 +327,12 @@ private[autopipe] case class IRSwitch(
 }
 
 private[autopipe] case class IRCall(
-        val func:    String,
-        val args:    List[BaseSymbol] = Nil,
-        val dest:    BaseSymbol = null
+        val func: String,
+        val args: Seq[BaseSymbol] = Seq(),
+        val dest: BaseSymbol = null
     ) extends IRNode {
 
-    override def dests = List(dest)
+    override def dests = Seq(dest)
     override def srcs = args
 
     override def replaceSources(o: BaseSymbol, n: BaseSymbol): IRNode = {
@@ -357,12 +354,12 @@ private[autopipe] case class IRCall(
 
 private[autopipe] case class IRPhi(
         val symbol: BaseSymbol,
-        val dest:    BaseSymbol = null,
-        val inputs: TreeMap[Int, BaseSymbol] = TreeMap[Int, BaseSymbol]()
+        val dest: BaseSymbol = null,
+        val inputs: Map[Int, BaseSymbol] = Map()
     ) extends IRNode {
 
-    override def dests = List(dest)
-    override def srcs = inputs.map(_._2).toList
+    override def dests = Seq(dest)
+    override def srcs = inputs.map(_._2).toSeq
 
     override def replaceSources(o: BaseSymbol, n: BaseSymbol): IRNode = {
         if (srcs.contains(o)) {
@@ -385,5 +382,3 @@ private[autopipe] case class IRPhi(
         } + ")"
 
 }
-
-

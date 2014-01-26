@@ -1,4 +1,3 @@
-
 package autopipe
 
 private[autopipe] trait IRContext {
@@ -17,4 +16,3 @@ private[autopipe] trait IRContext {
     }
 
 }
-

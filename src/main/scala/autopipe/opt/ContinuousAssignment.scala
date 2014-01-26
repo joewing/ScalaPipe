@@ -1,9 +1,6 @@
-
 package autopipe.opt
 
 import autopipe._
-
-import scala.collection.mutable.HashMap
 
 private[opt] object ContinuousAssignment extends Pass {
 
@@ -96,7 +93,7 @@ private[opt] object ContinuousAssignment extends Pass {
         case _ => 0
     }
 
-    type REACHING = HashMap[Int, Set[(BaseSymbol, Int)]]
+    type REACHING = Map[Int, Set[(BaseSymbol, Int)]]
 
     private def getPathCost(graph: IRGraph, label: Int, defs: REACHING): Int = {
 
@@ -174,4 +171,3 @@ private[opt] object ContinuousAssignment extends Pass {
     }
 
 }
-

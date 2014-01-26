@@ -1,7 +1,5 @@
 package autopipe.opt
 
-import scala.collection.immutable.ListSet
-import scala.math.max
 import autopipe._
 
 private[autopipe] case class ASTOptimizer(val kt: KernelType) {

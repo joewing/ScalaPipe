@@ -1,4 +1,3 @@
-
 package autopipe.opt
 
 import autopipe._
@@ -42,4 +41,3 @@ private[opt] object StateCompression extends Pass {
     }
 
 }
-

@@ -1,9 +1,6 @@
-
 package autopipe.opt
 
 import autopipe._
-
-import scala.collection.immutable.HashMap
 
 private[opt] object ReassignStates extends Pass {
 
@@ -26,4 +23,3 @@ private[opt] object ReassignStates extends Pass {
     }
 
 }
-

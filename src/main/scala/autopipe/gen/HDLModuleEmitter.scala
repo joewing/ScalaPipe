@@ -11,19 +11,21 @@ private[gen] class HDLModuleEmitter(
         val graph: IRGraph
     ) extends HDLGenerator {
 
-    private class Part(val state: Int, val args: List[String])
+    private class Part(val state: Int, val args: Seq[String])
 
-    private class Component(val name: String,
-                                    val instanceName: String,
-                                    val argCount: Int,
-                                    val width: Int) {
+    private class Component(
+        val name: String,
+        val instanceName: String,
+        val argCount: Int,
+        val width: Int
+    ) {
         val parts = new ListBuffer[Part]
     }
 
     private class SimpleComponent(val name: String,
-                                            val instanceName: String,
-                                            val args: List[String],
-                                            val width: Int)
+                                  val instanceName: String,
+                                  val args: Seq[String],
+                                  val width: Int)
 
     private class StateCondition(val state: Int)
 
@@ -54,7 +56,7 @@ private[gen] class HDLModuleEmitter(
     private val guards = new HashMap[Int, ArrayBuffer[String]]
 
     def create(name: String, width: Int, state: Int,
-                  args: List[String]): String = {
+               args: Seq[String]): String = {
         val baseIndex = name
         val instanceName: String = share match {
             case 0 =>    // No sharing
@@ -78,7 +80,7 @@ private[gen] class HDLModuleEmitter(
         return instanceName + "_result"
     }
 
-    def createSimple(name: String, width: Int, args: List[String]): String = {
+    def createSimple(name: String, width: Int, args: Seq[String]): String = {
         val i = componentIds.getOrElseUpdate(name, 0)
         componentIds.update(name, i + 1)
         val instanceName = name + "x" + i.toString
@@ -224,7 +226,7 @@ private[gen] class HDLModuleEmitter(
 
     private def emitAssignments {
 
-        def select(lst: List[AssignState]): String = lst match {
+        def select(lst: Seq[AssignState]): String = lst match {
             case h :: Nil => h.value
             case h :: t =>
                 " state == " + h.state + " ? " + h.value + " : (" + select(t) + ")"
@@ -237,7 +239,7 @@ private[gen] class HDLModuleEmitter(
         writeStates.values.foreach { s =>
             write("assign write_" + s.port + " = " + getCondition(s.states) + ";")
             write("assign output_" + s.port + " = " +
-                    select(s.states.toList) + ";")
+                    select(s.states.toSeq) + ";")
         }
         write
 
@@ -254,14 +256,14 @@ private[gen] class HDLModuleEmitter(
 
     private def emitRAMUpdates {
 
-        def value(lst: List[RAMState]): String = lst match {
+        def value(lst: Seq[RAMState]): String = lst match {
             case h :: Nil => h.value
             case h :: t =>
                 " state == " + h.state + " ? " + h.value + " : (" + value(t) + ")"
             case Nil => ""
         }
 
-        def index(lst: List[RAMState]): String = lst match {
+        def index(lst: Seq[RAMState]): String = lst match {
             case h :: Nil => h.offset
             case h :: t =>
                 " state == " + h.state + " ? " + h.offset + " : (" + index(t) + ")"
@@ -270,12 +272,12 @@ private[gen] class HDLModuleEmitter(
 
         ramWrites.values.foreach { s =>
             write("assign " + s.port + "_we = " + getCondition(s.states) + ";")
-            write("assign " + s.port + "_in = " + value(s.states.toList) + ";")
-            write("assign " + s.port + "_wix = " + index(s.states.toList) + ";")
+            write("assign " + s.port + "_in = " + value(s.states.toSeq) + ";")
+            write("assign " + s.port + "_wix = " + index(s.states.toSeq) + ";")
         }
 
         ramReads.values.foreach { s =>
-            write("assign " + s.port + "_rix = " + index(s.states.toList) + ";")
+            write("assign " + s.port + "_rix = " + index(s.states.toSeq) + ";")
         }
 
     }

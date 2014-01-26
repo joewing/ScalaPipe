@@ -36,9 +36,9 @@ private[autopipe] abstract class DominatorBase(
     semidominators()
     dominators()
 
-    def inputs(a: StateBlock): List[StateBlock]
+    def inputs(a: StateBlock): Seq[StateBlock]
 
-    def outputs(a: StateBlock): List[StateBlock]
+    def outputs(a: StateBlock): Seq[StateBlock]
 
     def root: StateBlock
 

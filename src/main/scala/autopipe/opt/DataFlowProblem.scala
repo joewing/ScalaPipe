@@ -2,14 +2,10 @@ package autopipe.opt
 
 import autopipe._
 
-import scala.collection.immutable.Set
-import scala.collection.mutable.HashMap
-import scala.collection.mutable.HashSet
-
 abstract class DataFlowProblem {
 
     type T
-    type Result = HashMap[Int, Set[T]]
+    type Result = Map[Int, Set[T]]
 
     def forward: Boolean
 
@@ -35,7 +31,7 @@ abstract class DataFlowProblem {
         case _                        => false
     }
 
-    private def inputs(sb: StateBlock, graph: IRGraph): List[StateBlock] = {
+    private def inputs(sb: StateBlock, graph: IRGraph): Seq[StateBlock] = {
         if (forward) {
             graph.inLinks(sb)
         } else {
@@ -43,7 +39,7 @@ abstract class DataFlowProblem {
         }
     }
 
-    private def outputs(sb: StateBlock, graph: IRGraph): List[StateBlock] = {
+    private def outputs(sb: StateBlock, graph: IRGraph): Seq[StateBlock] = {
         if (forward) {
             graph.links(sb)
         } else {
@@ -53,20 +49,20 @@ abstract class DataFlowProblem {
 
     final def solve(kt: KernelType, graph: IRGraph): Result = {
 
-        val before = new Result
-        val after = new Result
-        val work = new HashSet[StateBlock]
+        var before = Map[Int, Set[T]]()
+        var after = Map[Int, Set[T]]()
+        var work = Set[StateBlock]()
         val top = init(kt, graph)
 
         graph.blocks.foreach { block =>
-            before += ((block.label, top))
-            after += ((block.label, top))
+            before += (block.label -> top)
+            after += (block.label -> top)
             work += block
         }
 
         while (!work.isEmpty) {
             val block = work.head
-            work.remove(block)
+            work = work.filterNot(_ == block)
             val in = inputs(block, graph)
             val temp = if (!in.isEmpty) {
                 in.tail.foldLeft(after(in.head.label)) { (a, b) =>
@@ -78,8 +74,8 @@ abstract class DataFlowProblem {
             val tempSet = temp.toSet
             val updated = transfer(block, tempSet)
             if (after(block.label) != updated) {
-                before(block.label) = tempSet
-                after(block.label) = updated
+                before += (block.label -> tempSet)
+                after += (block.label -> updated)
                 work ++= outputs(block, graph)
             }
         }

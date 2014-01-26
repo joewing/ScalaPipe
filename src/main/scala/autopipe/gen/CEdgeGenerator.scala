@@ -1,4 +1,3 @@
-
 package autopipe.gen
 
 import autopipe._
@@ -153,4 +152,3 @@ private[autopipe] class CEdgeGenerator extends EdgeGenerator(Platforms.C) {
     }
 
 }
-

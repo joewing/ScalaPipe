@@ -1,4 +1,3 @@
-
 package autopipe.opt
 
 import scala.annotation.tailrec
@@ -56,4 +55,3 @@ private[opt] object CSE extends Pass {
     }
 
 }
-

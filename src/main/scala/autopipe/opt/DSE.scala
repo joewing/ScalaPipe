@@ -1,9 +1,6 @@
-
 package autopipe.opt
 
 import autopipe._
-
-import scala.collection.mutable.HashSet
 
 private[opt] object DSE extends Pass {
 
@@ -23,7 +20,7 @@ private[opt] object DSE extends Pass {
         // Note that reaching contains a mapping from block to defining
         // (symbol, block).
         val reaching = ReachingDefs.solve(context.kt, graph)
-        val defs = new HashSet[IRNode]
+        var defs = Set[IRNode]()
         graph.blocks.foreach { sb =>
             reaching(sb.label).foreach { case (s, d) =>
 

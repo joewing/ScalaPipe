@@ -1,4 +1,3 @@
-
 package autopipe.opt
 
 import autopipe. _
@@ -235,4 +234,3 @@ private[opt] object StrengthReduction extends Pass {
     }
 
 }
-

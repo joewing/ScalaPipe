@@ -1,9 +1,6 @@
-
 package autopipe.opt
 
 import autopipe._
-
-import scala.collection.mutable.HashSet
 
 private[opt] object CombineVariables extends Pass {
 
@@ -17,10 +14,10 @@ private[opt] object CombineVariables extends Pass {
         val vars = graph.blocks.flatMap(_.symbols).toSet.filter { s =>
             s.isInstanceOf[StateSymbol] || s.isInstanceOf[TempSymbol]
         }
-        val removed = new HashSet[BaseSymbol]
+        var removed = Set[BaseSymbol]()
 
         // Get live variables for each state.
-        val live = LiveVariables.solve(context.kt, graph)
+        var live = LiveVariables.solve(context.kt, graph)
 
         // Determine if two variables can be combined.
         def canCombine(g: IRGraph, a: BaseSymbol, b: BaseSymbol): Boolean = {
@@ -76,7 +73,7 @@ private[opt] object CombineVariables extends Pass {
             val updated = g.blocks.map(sb => sb.replace(a, b))
             updated.foldLeft(g) { (ng, sb) =>
                 if (live(sb.label).contains(a)) {
-                    live(sb.label) = (live(sb.label) - a) + b
+                    live += (sb.label -> ((live(sb.label) - a) + b))
                 }
                 ng.update(sb)
             }

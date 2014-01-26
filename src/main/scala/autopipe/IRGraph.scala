@@ -1,32 +1,30 @@
 package autopipe
 
-import scala.collection.immutable.HashMap
-
-private[autopipe] case class IRGraph(val blocks: List[StateBlock] = Nil) {
+private[autopipe] case class IRGraph(val blocks: Seq[StateBlock] = Seq()) {
 
     def nodes = blocks.view.flatMap(_.nodes)
 
     def root = blocks.view.filter(_.label == 0).head
 
     // Compute a mapping from labels to blocks.
-    private[this] lazy val labelMap = HashMap[Int, StateBlock](
+    private[this] lazy val labelMap = Map[Int, StateBlock](
         blocks.map(b => (b.label, b)): _*
     )
 
     // Compute a mapping from nodes to blocks.
-    private[this] lazy val nodeMap = HashMap[IRNode, StateBlock](
+    private[this] lazy val nodeMap = Map[IRNode, StateBlock](
         blocks.flatMap(b => b.nodes.map(n => (n, b))): _*
     )
 
     // Compute links.
-    private[this] lazy val linkMap = HashMap[Int, List[StateBlock]](
+    private[this] lazy val linkMap = Map[Int, Seq[StateBlock]](
         blocks.map(b =>
             (b.label, blocks.filter(o => b.links.contains(o.label)))
         ): _*
     )
 
     // Compute inLinks.
-    private[this] lazy val inLinkMap = HashMap[Int, List[StateBlock]](
+    private[this] lazy val inLinkMap = Map[Int, Seq[StateBlock]](
         blocks.map(b =>
             (b.label, blocks.filter(o => o.links.contains(b.label)))
         ): _*
@@ -36,13 +34,13 @@ private[autopipe] case class IRGraph(val blocks: List[StateBlock] = Nil) {
 
     def block(node: IRNode): StateBlock = nodeMap(node)
 
-    def links(label: Int): List[StateBlock] = linkMap(label)
+    def links(label: Int): Seq[StateBlock] = linkMap(label)
 
-    def links(b: StateBlock): List[StateBlock] = links(b.label)
+    def links(b: StateBlock): Seq[StateBlock] = links(b.label)
 
-    def inLinks(label: Int): List[StateBlock] = inLinkMap(label)
+    def inLinks(label: Int): Seq[StateBlock] = inLinkMap(label)
 
-    def inLinks(b: StateBlock): List[StateBlock] = inLinks(b.label)
+    def inLinks(b: StateBlock): Seq[StateBlock] = inLinks(b.label)
 
     def remove(b: StateBlock): IRGraph = {
         val next = b.links.head

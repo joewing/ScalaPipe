@@ -1,5 +1,3 @@
-
-
 package autopipe.opt
 
 import autopipe._
@@ -103,5 +101,3 @@ private[opt] object ExpandExpressions extends Pass {
     }
 
 }
-
-
