@@ -1,4 +1,3 @@
-
 package autopipe.gen
 
 private[autopipe] trait StateTrait {
@@ -11,4 +10,3 @@ private[autopipe] trait StateTrait {
     }
 
 }
-

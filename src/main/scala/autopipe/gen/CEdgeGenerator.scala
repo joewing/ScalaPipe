@@ -4,151 +4,114 @@ import autopipe._
 
 /** Edge generator for edges mapped to CPUs on the same host.
  * Note that the sending and receiving sides will always be in
- * the same process.
+ * the same process (but likely in different threads).
  */
-private[autopipe] class CEdgeGenerator extends EdgeGenerator(Platforms.C) {
+private[autopipe] class CEdgeGenerator
+    extends EdgeGenerator(Platforms.C) with CGenerator {
 
-    private def getQueueName(stream: Stream) = "q_" + stream.label
+    private def queueName(stream: Stream) = "q_" + stream.label
 
     override def emitGlobals(streams: Traversable[Stream]) {
-        for (s <- streams) {
-            writeGlobals(s)
-        }
+        streams.foreach { s => writeGlobals(s) }
     }
 
     override def emitInit(streams: Traversable[Stream]) {
-        for (s <- streams) {
-            writeInit(s)
-        }
+        streams.foreach { s => writeInit(s) }
     }
 
     override def emitDestroy(streams: Traversable[Stream]) {
-        for (s <- streams) {
-            writeDestroy(s)
-        }
+        streams.foreach { s => writeDestroy(s) }
     }
 
     private def writeInit(stream: Stream) {
 
-        val queueName = getQueueName(stream)
-
+        val qname = queueName(stream)
         val depth = stream.depth
-        val valueType = stream.valueType
+        val vtype = stream.valueType
 
         // Initialize the queue.
-        write(queueName + " = (APQ*)malloc(APQ_GetSize(" + depth +
-              ", sizeof(" + valueType + ")));")
-        write("APQ_Initialize(" + queueName + ", " + depth +
-              ", sizeof(" + valueType + "));")
+        write(s"$qname = (APQ*)malloc(APQ_GetSize($depth, sizeof($vtype)));")
+        write(s"APQ_Initialize($qname, $depth, sizeof($vtype));")
 
     }
 
     private def writeGlobals(stream: Stream) {
 
-        val queueName = getQueueName(stream)
+        val qname = queueName(stream)
+        val label = stream.label
         val destIndex = stream.destIndex
         val destKernel = stream.destKernel
-        val sourceKernel = stream.sourceKernel
+        val destLabel = destKernel.label
+        val destName = destKernel.name
         val sourceIndex = stream.sourceIndex
+        val sourceKernel = stream.sourceKernel
+        val sourceLabel = sourceKernel.label
+        val sourceName = sourceKernel.name
         val destDevice = stream.destKernel.device
         val sourceDevice = stream.sourceKernel.device
+        val vtype = stream.valueType
 
         // Define the queue data structure.
-        write("static APQ *" + queueName + ";")
+        write(s"static APQ *$qname;")
 
         // "process" - Run on the consumer thread (dest).
-        write("static void " + sourceKernel.label +
-              "_send_signal(int,int,int);")
-        write("static void " + destKernel.label + "_send_signal(int,int,int);")
-        write("static bool " + stream.label + "_process()")
-        write("{")
+        write(s"static bool ${label}_process()")
         enter
-        write("if(" + destKernel.label + ".inputs[" + destIndex +
-              "].data == NULL) {")
-        enter
-        write("char *buf;")
-        write("uint32_t c = APQ_StartRead(" + queueName + ", &buf);")
-        write("if(c > 0) {")
-        enter
-        write(destKernel.label + ".inputs[" + destIndex + "].data = (" +
-              stream.valueType + "*)buf;")
-        write(destKernel.label + ".inputs[" + destIndex + "].count = c;")
+        writeIf(s"$destLabel.inputs[$destIndex].data == NULL")
+        write(s"char *buf;")
+        write(s"uint32_t c = APQ_StartRead($qname, &buf);")
+        writeIf(s"c > 0")
+        write(s"$destLabel.inputs[$destIndex].data = ($vtype*)buf;")
+        write(s"$destLabel.inputs[$destIndex].count = c;")
+        writeEnd
+        writeEnd
 
+        writeIf(s"$destLabel.inputs[$destIndex].data")
+        write(s"$destLabel.clock.count += 1;")
+        write(s"ap_${destName}_push(&$destLabel.priv, $destIndex, " +
+              s"$destLabel.inputs[$destIndex].data, " +
+              s"$destLabel.inputs[$destIndex].count);")
+        writeReturn("true")
+        writeElse
+        writeReturn("false")
+        writeEnd
         leave
-        write("}")
-        leave
-        write("}")
-
-        write("if(" + destKernel.label + ".inputs[" + destIndex + "].data) {")
-        enter
-        write(destKernel.label + ".clock.count += 1;")
-        write("ap_" + destKernel.name + "_push(&" +
-              destKernel.label + ".priv, " +
-              destIndex + ", " +
-              destKernel.label + ".inputs[" + destIndex + "].data, " +
-              destKernel.label + ".inputs[" + destIndex + "].count);")
-        write("return true;")
-        leave
-        write("} else {")
-        enter
-        write("return false;")
-        leave
-        write("}")
-        leave
-        write("}")
 
         // "release" - Run on the consumer thread (dest).
-        write("static void " + stream.label + "_release(int count)")
-        write("{")
+        write(s"static void ${label}_release(int count)")
         enter
-        write("APQ_FinishRead(q_" + stream.label + ", count);")
+        write(s"APQ_FinishRead($qname, count);")
         leave
-        write("}")
 
         // "get_free" - Run on the producer thread (source).
-        write("static int " + stream.label + "_get_free()")
-        write("{")
+        write(s"static int ${label}_get_free()")
         enter
-        write("return APQ_GetFree(" + queueName + ");")
+        writeReturn(s"APQ_GetFree($qname)")
         leave
-        write("}")
 
         // "is_empty" - Run on the consumer thread (dest).
-        write("static int " + stream.label + "_is_empty()")
-        write("{")
+        write(s"static int ${label}_is_empty()")
         enter
-        write("return APQ_IsEmpty(" + queueName + ");")
+        writeReturn(s"APQ_IsEmpty($qname)")
         leave
-        write("}")
 
         // "allocate" - Run on the producer thread (source).
-        write("static void *" + stream.label + "_allocate(int count)")
-        write("{")
+        write(s"static void *${label}_allocate(int count)")
         enter
-        write("return APQ_StartWrite(" + queueName + ", count);")
+        writeReturn(s"APQ_StartWrite($qname, count)")
         leave
-        write("}")
 
         // "send" - Run on the producer thread (source).
-        write("static void " + stream.label + "_send(int count)")
-        write("{")
+        write(s"static void ${label}_send(int count)")
         enter
-        write("APQ_FinishWrite(" + queueName + ", count);")
+        write(s"APQ_FinishWrite($qname, count);")
         leave
-        write("}")
-
-        // "send_signal" - Run on the producer thread (source).
-        write("static void " + stream.label + "_send_signal(UNSIGNED64 s)")
-        write("{")
-        enter
-        leave
-        write("}")
 
     }
 
     private def writeDestroy(stream: Stream) {
-        val queueName = getQueueName(stream)
-        write("free(" + queueName + ");")
+        val qname = queueName(stream)
+        write(s"free($qname);")
     }
 
 }

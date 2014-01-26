@@ -157,14 +157,6 @@ private[autopipe] class SmartFusionEdgeGenerator(val ap: AutoPipe)
             leave
             write("}")
 
-            // "send_signal"
-            write("static void " + stream.label + "_send_signal(UNSIGNED64 s)")
-            write("{")
-            enter
-            // TODO
-            leave
-            write("}")
-
         }
 
     }

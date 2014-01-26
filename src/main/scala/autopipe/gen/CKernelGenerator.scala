@@ -1,7 +1,5 @@
 package autopipe.gen
 
-import scala.collection.mutable.ListBuffer
-import scala.collection.mutable.HashSet
 import java.io.File
 
 import autopipe._
@@ -9,8 +7,8 @@ import autopipe.opt.IROptimizer
 
 private[autopipe] class CKernelGenerator(
         _kt: InternalKernelType
-    ) extends KernelGenerator(_kt)
-    with CLike with StateTrait with CTypeEmitter {
+    ) extends KernelGenerator(_kt) with CGenerator
+      with StateTrait with ASTUtils {
 
     protected def emitFunctionHeader {
     }
@@ -20,101 +18,92 @@ private[autopipe] class CKernelGenerator(
 
     private def emitHeader: String = {
 
-        val bname = "ap_" + kt.name
-        val sname = "struct " + bname + "_data"
+        val kname = "ap_" + kt.name
+        val sname = s"struct ${kname}_data"
 
-        write
-        write("#ifndef " + kt.name + "_H_")
-        write("#define " + kt.name + "_H_")
-        write
+        write(s"#ifndef ${kname}_H_")
+        write(s"#define ${kname}_H_")
         write("#include \"X.h\"")
-        for (i <- kt.dependencies.get(DependencySet.Include)) {
-            write("#include <" + i + ">")
+        kt.dependencies.get(DependencySet.Include).foreach { i =>
+            write(s"#include <$i>")
         }
-        write
 
-        kt.configs.foreach { c => emitType(c.valueType) }
-        kt.states.foreach { s => emitType(s.valueType) }
-        kt.inputs.foreach { i => emitType(i.valueType) }
-        kt.outputs.foreach { o => emitType(o.valueType) }
+        val typeEmitter = new CTypeEmitter
+        kt.configs.foreach { c => typeEmitter.emit(c.valueType) }
+        kt.states.foreach { s => typeEmitter.emit(s.valueType) }
+        kt.inputs.foreach { i => typeEmitter.emit(i.valueType) }
+        kt.outputs.foreach { o => typeEmitter.emit(o.valueType) }
+        write(typeEmitter)
 
-        write
-        write(sname + " {")
+        write(s"$sname")
         enter
-        for (c <- kt.configs) {
-            val tname = c.valueType
-            write(tname + " " + c.name + ";")
+        kt.configs.foreach { c =>
+            val cname = c.name
+            val vtype = c.valueType
+            write(s"$vtype $cname;")
         }
-        for (s <- kt.states if !s.isLocal) {
-            val tname = s.valueType
-            write(tname + " " + s.name + ";")
+        kt.states.filter(!_.isLocal).foreach { s =>
+            val sname = s.name
+            val vtype = s.valueType
+            write(s"$vtype $sname;")
         }
-        write("int ap_state_index;")
+        write(s"int ap_state_index;")
         if (kt.parameters.get('profile)) {
-            write("unsigned long ap_clocks;")
+            write(s"unsigned long ap_clocks;")
         }
         if (kt.parameters.get('trace)) {
-            write("FILE *trace_fd;")
+            write(s"FILE *trace_fd;")
         }
         leave
-        write("};")
+        write(";")
 
-        write("void " + bname + "_init(" + sname + " *block);")
-        write("void " + bname + "_destroy(" + sname + " *block);")
-        write("void " + bname + "_push(" + sname + " *block,")
-        write("    int port, void *ptr, int count);")
-        write("int " + bname + "_go(" + sname + " *block);")
-        write("void " + bname + "_push_signal(" + sname + " *block,")
-        write("     int port, int type, int value);")
-
+        write(s"void ${kname}_init($sname*);")
+        write(s"void ${kname}_destroy($sname*);")
+        write(s"void ${kname}_push($sname*,int,void*,int);")
+        write(s"int ${kname}_go($sname*);")
         emitFunctionHeader
-
-        write("#endif")
-        write
+        write(s"#endif")
 
         getOutput
 
     }
 
     private def emitInit {
-        write("void ap_" + kt.name + "_init(struct ap_" +
-            kt.name + "_data *block)")
-        write("{")
+
+        val kname = kt.name
+        val sname = s"ap_${kname}_data"
+
+        write(s"void ap_${kname}_init(struct $sname *block)")
         enter
         if (kt.parameters.get('trace)) {
-            write("char file_name[128];")
+            write(s"char file_name[128];")
         }
-        for (s <- kt.states if !s.isLocal) {
-            val name = s.name
-            val literal = s.value
-            if (literal != null) {
-                write("block->" + name + " = " + kt.getLiteral(literal) + ";")
-            }
+        for (s <- kt.states if !s.isLocal && s.value != null) {
+            val field = s.name
+            val value = kt.getLiteral(s.value)
+            write(s"block->$field = $value;")
         }
-        write("block->ap_state_index = 0;")
+        write(s"block->ap_state_index = 0;")
         if (kt.parameters.get('profile)) {
             // We initialize the clocks to one to account for the start state.
-            write("block->ap_clocks = 1;")
+            write(s"block->ap_clocks = 1;")
         }
         if (kt.parameters.get('trace)) {
-            write("sprintf(file_name, \"" + kt.name + "%d\", " +
-                    "ap_get_instance(block));")
-            write("block->trace_fd = fopen(file_name, \"w\");")
+            write(s"""sprintf(file_name, "$kname%d", """ +
+                  s"""ap_get_instance(block));""")
+            write(s"""block->trace_fd = fopen(file_name, "w");""")
         }
         leave
-        write("}")
     }
 
     private def emitDestroy {
-        write("void ap_" + kt.name + "_destroy(struct ap_" +
-                kt.name + "_data *block)")
-        write("{")
+        val kname = kt.name
+        write(s"void ap_${kname}_destroy(struct ap_${kname}_data *block)")
         enter
         if (kt.parameters.get('trace)) {
-            write("fclose(block->trace_fd);")
+            write(s"fclose(block->trace_fd);")
         }
         leave
-        write("}")
     }
 
     private def emitRun {
@@ -128,24 +117,30 @@ private[autopipe] class CKernelGenerator(
                 HDLTiming.computeAST(graph)
             } else null
 
-        write("static int run(struct ap_" + kt.name + "_data *block)")
-        write("{")
+        val kname = kt.name
+        write(s"static int run(struct ap_${kname}_data *block)")
         enter
 
         // Declare locals.
         for (l <- kt.states if l.isLocal) {
-            write(l.valueType + " " + l.name + ";")
+            val name = l.name
+            val vtype = l.valueType
+            write(s"$vtype $name;")
         }
 
         // Declare outputs.
         for (o <- kt.outputs) {
-            write(o.valueType + " *" + o.name + ";")
+            val name = o.name
+            val vtype = o.valueType
+            write(s"$vtype *$name;")
         }
 
         // Get all the inputs.
         for (i <- kt.inputs) {
-            write(i.valueType + " *" + i.name + " = (" + i.valueType +
-                "*)ap_get_input_data(block, " + i.id + ");")
+            val name = i.name
+            val vtype = i.valueType
+            val id = i.id
+            write(s"$vtype *$name = ($vtype*)ap_get_input_data(block, $id);")
         }
 
         // Generate the code to emit.
@@ -154,66 +149,47 @@ private[autopipe] class CKernelGenerator(
         nodeEmitter.emit(kt.expression)
 
         // Jump to the appropriate place to resume.
-        write("switch(block->ap_state_index) {")
+        writeSwitch("block->ap_state_index")
         for (i <- 1 to currentState) {
-            write("case " + i + ": goto AP_STATE_" + i + ";")
+            write(s"case $i: goto AP_STATE_$i;")
         }
-        write("case -1: return 1;")
-        write("default: break;")
-        write("}")
+        write(s"case -1: return 1;")
+        write(s"default: break;")
+        writeEnd
 
         // Output the code.
         write(nodeEmitter)
 
         // Continue running by default.
-        write("block->ap_state_index = 0;")
-        write("return 0;")
+        write(s"block->ap_state_index = 0;")
+        writeReturn("0")
 
         leave
-        write("}")
 
     }
 
     private def emitPush {
 
-        write("void ap_" + kt.name + "_push(struct ap_" +
-            kt.name + "_data *block,")
-        write("    int port, void *ptr, int count)")
-        write("{")
+        val kname = kt.name
+        write(s"void ap_${kname}_push(struct ap_${kname}_data *block,")
+        write(s"    int port, void *ptr, int count)")
         enter
-
-        write("run(block);")
-
+        write(s"run(block);")
         leave
-        write("}")
 
     }
 
     private def emitGo {
 
-        write("int ap_" + kt.name + "_go(struct ap_" +
-            kt.name + "_data *block)")
-        write("{")
+        val kname = kt.name
+        write(s"int ap_${kname}_go(struct ap_${kname}_data *block)")
         enter
-
         if (requiresInput(kt.expression)) {
-            write("return 1;")
+            writeReturn("1")
         } else {
-            write("return run(block);")
+            writeReturn("run(block)")
         }
-
         leave
-        write("}")
-    }
-
-    private def emitPushSignal {
-        write("void ap_" + kt.name + "_push_signal(struct ap_" +
-            kt.name + "_data *block,")
-        write("    int port, int type, int value)")
-        write("{")
-        enter
-        leave
-        write("}")
     }
 
     private def emitSource: String = {
@@ -222,7 +198,6 @@ private[autopipe] class CKernelGenerator(
         emitDestroy
         emitPush
         emitGo
-        emitPushSignal
         emitFunctionSource
         getOutput
     }
@@ -251,4 +226,3 @@ private[autopipe] class CKernelGenerator(
     }
 
 }
-

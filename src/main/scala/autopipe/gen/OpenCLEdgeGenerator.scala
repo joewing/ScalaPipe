@@ -205,13 +205,6 @@ private[autopipe] class OpenCLEdgeGenerator(val ap: AutoPipe)
         leave
         write("}")
 
-        // "send_signal" - Run on the producer thread (source).
-        write("static void " + stream.label + "_send_signal(UNSIGNED64 s)")
-        write("{")
-        enter
-        leave
-        write("}")
-
     }
 
     private def writeReceiveFunctions(stream: Stream) {

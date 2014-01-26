@@ -6,7 +6,7 @@ private[autopipe] class OpenCLKernelNodeEmitter(
         _kt: InternalKernelType,
         val gen: StateTrait,
         _timing: Map[ASTNode, Int]
-    ) extends CNodeEmitter(_kt, _timing) with CLike {
+    ) extends CNodeEmitter(_kt, _timing) with ASTUtils {
 
     private def setState(state: Int): String =
         "control->ap_state_index = " + state + ";"
@@ -172,7 +172,7 @@ private[autopipe] class OpenCLKernelNodeEmitter(
 
     override def emitAssign(node: ASTAssignNode) {
 
-        var outputs = getLocalOutputs(node)
+        var outputs = localOutputs(node)
         for (o <- outputs) {
             val oindex = kt.outputIndex(o)
             val valueType = kt.outputs(oindex).valueType
@@ -231,7 +231,7 @@ private[autopipe] class OpenCLKernelNodeEmitter(
 
     override def checkInputs(node: ASTNode): Int = {
         beginScope
-        val portsToCheck = getBlockingInputs(node).filter { !isCheckedPort(_) }
+        val portsToCheck = blockingInputs(node).filter { !isCheckedPort(_) }
         if (!portsToCheck.isEmpty)  {
             addCheckedPorts(portsToCheck)
             writeLeft("AP_STATE_" + gen.nextState + ":")

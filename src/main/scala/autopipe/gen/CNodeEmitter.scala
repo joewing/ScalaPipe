@@ -1,7 +1,5 @@
 package autopipe.gen
 
-import scala.collection.immutable.ListSet
-import scala.collection.mutable.HashSet
 import autopipe._
 
 private[autopipe] abstract class CNodeEmitter(
@@ -9,7 +7,7 @@ private[autopipe] abstract class CNodeEmitter(
         val timing: Map[ASTNode, Int]
     ) extends NodeEmitter(_kt) {
 
-    private val usedTimings = new HashSet[ASTNode]
+    private var usedTimings = Set[ASTNode]()
 
     def emitAvailable(node: ASTAvailableNode): String
     def emitSymbol(node: ASTSymbolNode): String
@@ -345,4 +343,3 @@ private[autopipe] abstract class CNodeEmitter(
     }
 
 }
-

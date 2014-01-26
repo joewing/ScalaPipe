@@ -1,30 +1,24 @@
-
 package autopipe.gen
 
 import autopipe._
-import scala.collection.mutable.ListBuffer
-import scala.collection.mutable.HashMap
-import scala.collection.immutable.ListSet
 
+import scala.collection.mutable.ListBuffer
 import scala.util.parsing.combinator.syntactical._
 import scala.util.parsing.combinator.lexical._
-
-import java.io.FileOutputStream
-import java.io.PrintStream
-import java.io.File
+import java.io.{FileOutputStream, PrintStream, File}
 
 private[gen] class Generator {
 
-    private val values = new HashMap[String, String]
+    private var values = Map[String, String]()
     private val result = new ListBuffer[String]
     private var level = 0
 
     protected def reset {
-        values.clear
+        values = Map()
     }
 
     protected def set(name: String, value: Any) {
-        values += ((name, value.toString))
+        values += (name -> value.toString)
     }
 
     private object ExprParser extends StdTokenParsers {
@@ -163,4 +157,3 @@ private[gen] class Generator {
     }
 
 }
-

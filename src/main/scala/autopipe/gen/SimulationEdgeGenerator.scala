@@ -207,11 +207,6 @@ private[autopipe] class SimulationEdgeGenerator(val ap: AutoPipe)
         leave
         write("}")
 
-        //  "send_signal"
-        write("static void $label$_send_signal(UNSIGNED64 s)")
-        write("{")
-        write("}")
-
     }
 
     private def writeReceiveFunctions(device: Device,

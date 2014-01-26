@@ -1,4 +1,3 @@
-
 package autopipe.gen
 
 import autopipe._
@@ -15,9 +14,11 @@ private[autopipe] class CFunctionGenerator(
 
     protected override def emitFunctionHeader {
 
-        ft.states.foreach { s => emitType(s.valueType) }
-        ft.inputs.foreach { i => emitType(i.valueType) }
-        emitType(ft.returnType)
+        val typeEmitter = new CTypeEmitter
+        ft.states.foreach { s => typeEmitter.emit(s.valueType) }
+        ft.inputs.foreach { i => typeEmitter.emit(i.valueType) }
+        typeEmitter.emit(ft.returnType)
+        write(typeEmitter)
 
         write
         val prof = optional(ft.parameters.get('profile), "unsigned long*")
@@ -68,4 +69,3 @@ private[autopipe] class CFunctionGenerator(
     }
 
 }
-

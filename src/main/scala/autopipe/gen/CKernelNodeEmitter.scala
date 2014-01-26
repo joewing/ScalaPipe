@@ -6,7 +6,7 @@ private[autopipe] class CKernelNodeEmitter(
         _kt: InternalKernelType,
         val gen: StateTrait,
         _timing: Map[ASTNode, Int]
-    ) extends CNodeEmitter(_kt, _timing) with CLike {
+    ) extends CNodeEmitter(_kt, _timing) with ASTUtils {
 
     private def setState(state: Int): String =
         "block->ap_state_index = " + state + ";"
@@ -132,7 +132,7 @@ private[autopipe] class CKernelNodeEmitter(
 
     override def emitAssign(node: ASTAssignNode) {
 
-        var outputs = getLocalOutputs(node)
+        var outputs = localOutputs(node)
         for (o <- outputs) {
             val oindex = kt.outputIndex(o)
             val valueType = kt.outputs(oindex).valueType
@@ -198,7 +198,7 @@ private[autopipe] class CKernelNodeEmitter(
         }
 
         beginScope
-        val portsToCheck = getBlockingInputs(node).filter { !isCheckedPort(_) }
+        val portsToCheck = blockingInputs(node).filter { !isCheckedPort(_) }
         if (!portsToCheck.isEmpty)  {
             addCheckedPorts(portsToCheck)
             writeLeft("AP_STATE_" + gen.nextState + ":")
@@ -207,10 +207,10 @@ private[autopipe] class CKernelNodeEmitter(
             enter
         }
         if (kt.parameters.get('trace)) {
-            for ((r, index) <- getReads(node)) {
+            for ((r, index) <- reads(node)) {
                 emitAccess(true, r, index)
             }
-            for ((w, index) <- getWrites(node)) {
+            for ((w, index) <- writes(node)) {
                 emitAccess(false, w, index)
             }
         }

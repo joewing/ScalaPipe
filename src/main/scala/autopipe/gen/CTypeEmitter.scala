@@ -1,73 +1,76 @@
-
 package autopipe.gen
 
-import scala.collection.mutable.HashSet
 import autopipe._
 
-private[gen] trait CTypeEmitter extends Generator {
+private[gen] class CTypeEmitter extends CGenerator {
 
-    private val emittedTypes = new HashSet[ValueType]
+    private var emitted = Set[ValueType]()
 
-    def emitType(vt: ValueType) {
-        if (!emittedTypes.contains(vt)) {
-            emittedTypes += vt
-            vt.dependencies.foreach { t => emitType(t) }
+    def emit(vt: ValueType) {
+        if (!emitted.contains(vt)) {
+            emitted += vt
+            vt.dependencies.foreach(emit(_))
+            val name = vt.name
             vt match {
                 case at: ArrayValueType =>
-                    write("#ifndef DECLARED_" + vt.name)
-                    write("#define DECLARED_" + vt.name)
-                    write("typedef struct {")
+                    val itype = at.itemType
+                    val alength = at.length
+                    write(s"#ifndef DECLARED_$name")
+                    write(s"#define DECLARED_$name")
+                    write(s"typedef struct")
                     enter
-                    write(at.itemType + " values[" + at.length + "];")
+                    write(s"$itype values[$alength];")
                     leave
-                    write("} " + at.name + ";")
-                    write("#endif")
+                    write(s"$name;")
+                    write(s"#endif")
                 case td: TypeDefValueType =>
-                    write("#ifndef DECLARED_" + vt.name)
-                    write("#define DECLARED_" + vt.name)
-                    write("typedef " + td.value + " " + td.name + ";")
-                    write("#endif")
+                    val tvalue = td.value
+                    write(s"#ifndef DECLARED_$name")
+                    write(s"#define DECLARED_$name")
+                    write(s"typedef $tvalue $name;")
+                    write(s"#endif")
                 case pt: PointerValueType =>
-                    write("#ifndef DECLARED_" + vt.name)
-                    write("#define DECLARED_" + vt.name)
-                    write("typedef " + pt.itemType.name + " *" + pt.name + ";")
-                    write("#endif")
+                    val iname = pt.itemType.name
+                    write(s"#ifndef DECLARED_$name")
+                    write(s"#define DECLARED_$name")
+                    write(s"typedef $iname *$name;")
+                    write(s"#endif")
                 case ft: FixedValueType =>
-                    write("#ifndef DECLARED_" + vt.name)
-                    write("#define DECLARED_" + vt.name)
-                    write("typedef " + ft.baseType + " " + ft.name + ";")
-                    write("#endif")
+                    val btype = ft.baseType
+                    write(s"#ifndef DECLARED_$name")
+                    write(s"#define DECLARED_$name")
+                    write(s"typedef $btype $name;")
+                    write(s"#endif")
                 case st: StructValueType =>
-                    write("#ifndef DECLARED_" + vt.name)
-                    write("#define DECLARED_" + vt.name)
-                    write("typedef struct {")
+                    write(s"#ifndef DECLARED_$name")
+                    write(s"#define DECLARED_$name")
+                    write(s"typedef struct")
                     enter
-                    for (f <- st.fields) {
-                        val name = f._1
-                        val tname = f._2.name
-                        write(tname + " " + name + ";")
+                    st.fields.foreach { f =>
+                        val fname = f._1
+                        val ftype = f._2.name
+                        write(s"$ftype $fname;")
                     }
                     leave
-                    write("} " + st.name + ";")
-                    write("#endif")
+                    write(s"$name;")
+                    write(s"#endif")
                 case ut: UnionValueType =>
-                    write("#ifndef DECLARED_" + vt.name)
-                    write("#define DECLARED_" + vt.name)
-                    write("typedef union {")
+                    write(s"#ifndef DECLARED_$name")
+                    write(s"#define DECLARED_$name")
+                    write(s"typedef union")
                     enter
                     for (f <- ut.fields) {
-                        val name = f._1
-                        val tname = f._2.name
-                        write(tname + " " + name)
+                        val fname = f._1
+                        val ftype = f._2.name
+                        write("$ftype $fname;")
                     }
                     leave
-                    write("} " + ut.name + ";")
-                    write("#endif")
+                    write(s"$name;")
+                    write(s"#endif")
                 case _ =>
-                    write("// " + vt)
+                    write(s"/* $name */")
             }
         }
     }
 
 }
-

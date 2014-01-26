@@ -131,7 +131,6 @@ private[autopipe] class CPUResourceGenerator(
         write(instance + ".data.allocate = " + instance + "_allocate;")
         write(instance + ".data.send = " + instance + "_send;")
         write(instance + ".data.release = " + instance + "_release;")
-        write(instance + ".data.send_signal = " + instance + "_send_signal;")
         write(instance + ".data.instance = " + kernel.index + ";")
 
         // Default config options.
@@ -289,31 +288,6 @@ private[autopipe] class CPUResourceGenerator(
             write(stream.label + "_release(count);")
             write(instance + ".inputs[" + index + "].data = NULL;")
             write(instance + ".inputs[" + index + "].count = 0;")
-            write("break;")
-            leave
-        }
-        write("}")
-        leave
-        write("}")
-
-    }
-
-    private def emitKernelSendSignal(kernel: Kernel) {
-
-        val instance = kernel.label
-
-        write("static void " + instance + "_send_signal(int out_port, " +
-                "int type, int value)")
-        write("{")
-        enter
-        write("UNSIGNED64 temp = (UNSIGNED64)type << 56;")
-        write("temp |= *(UNSIGNED32*)&value;")
-        write("switch(out_port) {")
-        for (stream <- kernel.getOutputs) {
-            val index = kernel.outputIndex(stream.sourcePort)
-            write("case " + index + ":")
-            enter
-            write(stream.label + "_send_signal(temp);")
             write("break;")
             leave
         }
@@ -579,7 +553,6 @@ private[autopipe] class CPUResourceGenerator(
         // Write the kernel functions.
         cpuKernels.foreach { emitKernelGetFree(_) }
         cpuKernels.foreach { emitKernelAllocate(_) }
-        cpuKernels.foreach { emitKernelSendSignal(_) }
         cpuKernels.foreach { emitKernelSend(_) }
         cpuKernels.foreach { emitKernelRelease(_) }
         cpuKernels.foreach { emitCheckRunning(_) }
