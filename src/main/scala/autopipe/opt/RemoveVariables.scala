@@ -2,8 +2,6 @@ package autopipe.opt
 
 import autopipe._
 
-import scala.collection.mutable.HashSet
-
 private[opt] object RemoveVariables extends Pass {
 
     override def toString = "remove variables"
@@ -13,11 +11,11 @@ private[opt] object RemoveVariables extends Pass {
         if (context.eliminateVariables) {
 
             // Get the variables that are used.
-            val states = new HashSet[StateSymbol]
-            val temps  = new HashSet[TempSymbol]
-            graph.blocks.foreach { b =>
-                states ++= b.symbols.collect { case s: StateSymbol => s }
-                temps  ++= b.symbols.collect { case t: TempSymbol  => t }
+            val states = graph.blocks.flatMap { b =>
+                b.symbols.collect { case s: StateSymbol => s }
+            }
+            val temps = graph.blocks.flatMap { b =>
+                b.symbols.collect { case t: TempSymbol => t }
             }
 
             // Build up the list to remove.

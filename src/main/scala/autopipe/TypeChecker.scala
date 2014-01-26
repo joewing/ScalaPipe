@@ -1,7 +1,5 @@
 package autopipe
 
-import scala.collection.mutable.ListBuffer
-
 private[autopipe] object TypeChecker {
 
     private val primativeTypes = Array(
@@ -256,12 +254,10 @@ private[autopipe] class TypeChecker(kt: KernelType) {
     }
 
     private def checkBlock(node: ASTBlockNode, lhs: Boolean): ASTNode = {
-        val children = new ListBuffer[ASTNode]
-        node.children.foreach { children += check(_, false) }
         if (lhs) {
             Error.raise("invalid assignment", node)
         }
-        ASTBlockNode(children)
+        ASTBlockNode(node.children.map(check(_, false)))
     }
 
     private def checkSymbol(node: ASTSymbolNode, lhs: Boolean): ASTNode = {
@@ -284,8 +280,7 @@ private[autopipe] class TypeChecker(kt: KernelType) {
 
     private def checkCall(node: ASTCallNode, lhs: Boolean): ASTNode = {
         val result = ASTCallNode(node.func)
-        val children = new ListBuffer[ASTNode]
-        node.children.foreach { children += check(_, false) }
+        val children = node.children.map(check(_, false))
         result.apply(children: _*)
         if (lhs) {
             Error.raise("assignment to function call", node)
@@ -414,4 +409,3 @@ private[autopipe] class TypeChecker(kt: KernelType) {
     }
 
 }
-

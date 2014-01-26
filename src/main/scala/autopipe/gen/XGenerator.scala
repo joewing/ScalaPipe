@@ -96,9 +96,7 @@ private[autopipe] object XGenerator extends Generator {
             val count = streams.size
 
             def emitSHM(s: Stream) = {
-                "    ({ " + s.sourceKernel.device.procName +
-                ", " + s.destKernel.device.procName +
-                "}, queuelength=8192)"
+                "    ({ TODO, TODO }, queuelength=8192)"
             }
 
             edge match {
@@ -164,9 +162,6 @@ private[autopipe] object XGenerator extends Generator {
             mapStr += generator.emitMapping(e._2)
         }
 
-        for (d <- ap.devices) {
-            mapStr += d.emit
-        }
         val edgeStr = ap.streams.foldLeft("") { (a, s) =>
             val sourcePort = s.sourceKernel.outputName(s.sourcePort)
             val destPort = s.destKernel.inputName(s.destPort)

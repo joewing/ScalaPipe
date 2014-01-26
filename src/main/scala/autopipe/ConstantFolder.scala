@@ -1,7 +1,6 @@
 package autopipe
 
 import scala.language.implicitConversions
-import scala.collection.mutable.ListBuffer
 
 private[autopipe] object ConstantFolder {
 
@@ -116,15 +115,12 @@ private[autopipe] class ConstantFolder(kt: KernelType) {
         ASTWhileNode(fold(node.cond), fold(node.body))
 
     private def foldBlock(node: ASTBlockNode): ASTNode = {
-        val children = new ListBuffer[ASTNode]
-        node.children.foreach { children += fold(_) }
-        ASTBlockNode(children)
+        ASTBlockNode(node.children.map(fold(_)))
     }
 
     private def foldCall(node: ASTCallNode): ASTNode = {
         val result = new ASTCallNode(node.func)
-        val children = new ListBuffer[ASTNode]
-        node.children.foreach { children += fold(_) }
+        val children = node.children.map(fold(_))
         result.apply(children: _*)
         result.valueType = node.valueType
         result

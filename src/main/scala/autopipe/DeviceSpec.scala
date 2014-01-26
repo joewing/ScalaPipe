@@ -1,4 +1,3 @@
-
 package autopipe
 
 private[autopipe] class DeviceSpec(
@@ -17,7 +16,6 @@ private[autopipe] class DeviceSpec(
     def combine(other: DeviceSpec): DeviceSpec = {
 
         // This combine operation is assumed to be valid.
-
         if (other != null) {
             val newPlatform = platform
             val newHost = if (host != null) host else other.host
@@ -41,4 +39,3 @@ private[autopipe] class DeviceSpec(
         }
 
 }
-

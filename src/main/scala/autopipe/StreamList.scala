@@ -1,15 +1,13 @@
 package autopipe
 
-import scala.collection.mutable.ListBuffer
-
 class StreamList(
         val ap: AutoPipe,
         val kernel: Kernel
     ) {
 
-    private[autopipe] val streams = new ListBuffer[Stream]
-    private val measures = new ListBuffer[(Symbol, Symbol)]
-    private val edges = new ListBuffer[Edge]
+    private[autopipe] var streams = Seq[Stream]()
+    private var measures = Seq[(Symbol, Symbol)]()
+    private var edges = Seq[Edge]()
 
     def apply(): Stream = apply(0)
 
@@ -18,7 +16,7 @@ class StreamList(
         val stream = ap.createStream(kernel, port_name)
         measures.foreach { m => stream.addMeasure(m._1, m._2) }
         edges.foreach { stream.edge = _ }
-        streams += stream
+        streams = streams :+ stream
         kernel.setOutput(port_name, stream)
         stream
     }
@@ -28,7 +26,7 @@ class StreamList(
         val stream = ap.createStream(kernel, port_name)
         measures.foreach { m => stream.addMeasure(m._1, m._2) }
         edges.foreach { stream.edge = _ }
-        streams += stream
+        streams = streams :+ stream
         kernel.setOutput(port_name, stream)
         stream
     }
@@ -38,12 +36,12 @@ class StreamList(
     private[autopipe] def edgeCount = edges.length
 
     private[autopipe] def addMeasure(stat: Symbol, metric: Symbol) {
-        measures += ((stat, metric))
+        measures = measures :+ ((stat, metric))
         streams.foreach { _.addMeasure(stat, metric) }
     }
 
     private[autopipe] def setEdge(e: Edge) {
-        edges += e
+        edges = edges :+ e
         streams.foreach { _.edge = e }
     }
 

@@ -1,7 +1,5 @@
 package autopipe
 
-import scala.collection.mutable.HashSet
-
 private[autopipe] case class StateBlock(
         val nodes: List[IRNode] = Nil,
         val label: Int          = 0,

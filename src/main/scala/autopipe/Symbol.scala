@@ -1,4 +1,3 @@
-
 package autopipe
 
 import scala.math.Ordered
@@ -17,8 +16,8 @@ private[autopipe] object TempSymbol {
 
 private[autopipe] abstract class BaseSymbol(
         val name: String,
-        val valueType: ValueType)
-    extends Ordered[BaseSymbol] {
+        val valueType: ValueType
+    ) extends Ordered[BaseSymbol] {
 
     var isRegister = true
 
@@ -33,8 +32,8 @@ private[autopipe] abstract class BaseSymbol(
 private[autopipe] abstract class PortSymbol(
         _name: String,
         _valueType: ValueType,
-        val id: Int)
-    extends BaseSymbol(_name, _valueType) {
+        val id: Int
+    ) extends BaseSymbol(_name, _valueType) {
 
     val index = LabelMaker.getPortIndex
 
@@ -43,8 +42,8 @@ private[autopipe] abstract class PortSymbol(
 private[autopipe] class InputSymbol(
         _name: String,
         _valueType: ValueType,
-        _id: Int)
-    extends PortSymbol(_name, _valueType, _id) {
+        _id: Int
+    ) extends PortSymbol(_name, _valueType, _id) {
 
     override def toString = "input" + _id
 
@@ -53,8 +52,8 @@ private[autopipe] class InputSymbol(
 private[autopipe] class OutputSymbol(
         _name: String,
         _valueType: ValueType,
-        _id: Int)
-    extends PortSymbol(_name, _valueType, _id) {
+        _id: Int
+    ) extends PortSymbol(_name, _valueType, _id) {
 
     override def toString = "output" + id
 
@@ -103,4 +102,3 @@ private[autopipe] class ImmediateSymbol(
     }
 
 }
-

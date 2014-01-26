@@ -1,14 +1,11 @@
-
 package autopipe
-
-import scala.collection.mutable.HashMap
 
 private[autopipe] class DeviceType(val platform: Platforms.Value) {
 
     private val startingIndex = 1 << 16
-    private val devices = new HashMap[(String, Int), Device]
+    private var devices = Map[(String, Int), Device]()
 
-    def count: Int = devices.size
+    def count = devices.size
 
     def get(host: String, index: Int): Device = {
 
@@ -25,9 +22,9 @@ private[autopipe] class DeviceType(val platform: Platforms.Value) {
 
         devices.get((host, newIndex)) match {
             case Some(d)    => d
-            case None        =>
+            case None       =>
                 val d = new Device(this, host, newIndex)
-                devices += (((host, newIndex), d))
+                devices += ((host, newIndex) -> d)
                 d
         }
     }
@@ -53,5 +50,3 @@ private[autopipe] class DeviceType(val platform: Platforms.Value) {
     }
 
 }
-
-

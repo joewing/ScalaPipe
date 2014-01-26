@@ -1,7 +1,4 @@
-
 package autopipe
-
-import scala.collection.immutable.ListSet
 
 private[autopipe] object LocalExtractor {
 

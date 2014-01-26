@@ -1,4 +1,3 @@
-
 package autopipe
 
 private[autopipe] abstract class Edge(
@@ -20,8 +19,8 @@ private[autopipe] class EdgeObject[T <: Edge](
     )(implicit m: Manifest[T]) {
 
     def apply(host: String = null,
-                 id: Int = Int.MaxValue,
-                 queueSize: Int = 0): T = {
+              id: Int = Int.MaxValue,
+              queueSize: Int = 0): T = {
         val c = m.runtimeClass.getConstructor(classOf[DeviceSpec])
         val o = c.newInstance(new DeviceSpec(platform, host, id))
         val t = o.asInstanceOf[T]
@@ -31,28 +30,12 @@ private[autopipe] class EdgeObject[T <: Edge](
 
 }
 
-object CPU2FPGA extends EdgeObject[CPU2FPGA](Platforms.HDL)
+class CPU2FPGA(_dest: DeviceSpec) extends Edge(Platforms.C, _dest)
 
-private[autopipe] class CPU2FPGA(_dest: DeviceSpec)
-    extends Edge(Platforms.C, _dest)
+class FPGA2CPU(_dest: DeviceSpec) extends Edge(Platforms.HDL, _dest)
 
-object FPGA2CPU extends EdgeObject[FPGA2CPU](Platforms.C)
+class CPU2CPU(_dest: DeviceSpec) extends Edge(Platforms.C, _dest)
 
-private[autopipe] class FPGA2CPU(_dest: DeviceSpec)
-    extends Edge(Platforms.HDL, _dest)
+class CPU2GPU(_dest: DeviceSpec) extends Edge(Platforms.C, _dest)
 
-object CPU2CPU extends EdgeObject[CPU2CPU](Platforms.C)
-
-private[autopipe] class CPU2CPU(_dest: DeviceSpec)
-    extends Edge(Platforms.C, _dest)
-
-object CPU2GPU extends EdgeObject[CPU2GPU](Platforms.OpenCL)
-
-private[autopipe] class CPU2GPU(_dest: DeviceSpec)
-    extends Edge(Platforms.C, _dest)
-
-object GPU2CPU extends EdgeObject[GPU2CPU](Platforms.C)
-
-private[autopipe] class GPU2CPU(_dest: DeviceSpec)
-    extends Edge(Platforms.OpenCL, _dest)
-
+class GPU2CPU(_dest: DeviceSpec) extends Edge(Platforms.OpenCL, _dest)

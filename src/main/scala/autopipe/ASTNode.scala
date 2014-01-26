@@ -1,10 +1,8 @@
-
 package autopipe
 
 import autopipe.dsl.AutoPipeBlock
 import autopipe.dsl.AutoPipeFunction
 import autopipe.dsl.AutoPipeObject
-import scala.collection.mutable.ListBuffer
 
 abstract class ASTNode(
         val op: NodeType.Value,
@@ -22,8 +20,6 @@ abstract class ASTNode(
     if (apb != null) {
         collectDebugInfo
     }
-
-    final def :=[T <% ASTNode](o: T) = ASTAssignNode(this, o, apb)
 
     final def unary_- = ASTOpNode(NodeType.neg, this, null, apb)
 
@@ -123,10 +119,10 @@ private[autopipe] case class ASTOpNode(
         _op: NodeType.Value,
         val a: ASTNode,
         val b: ASTNode = null,
-        _apb: AutoPipeBlock = null)
-    extends ASTNode(_op, _apb) {
+        _apb: AutoPipeBlock = null
+    ) extends ASTNode(_op, _apb) {
 
-    override private[autopipe] def children = List(a, b).filter { _ != null }
+    override private[autopipe] def children = Seq(a, b).filter(_ != null)
 
     a.parent = this
     if (b != null) {
@@ -138,10 +134,10 @@ private[autopipe] case class ASTOpNode(
 private[autopipe] case class ASTAssignNode(
         val dest: ASTNode,
         val src: ASTNode,
-        _apb: AutoPipeBlock = null)
-    extends ASTNode(NodeType.assign, _apb) with ASTStartNode {
+        _apb: AutoPipeBlock = null
+    ) extends ASTNode(NodeType.assign, _apb) with ASTStartNode {
 
-    override private[autopipe] def children = List(dest, src)
+    override private[autopipe] def children = Seq(dest, src)
 
     dest.parent = this
     src.parent = this
@@ -152,11 +148,11 @@ private[autopipe] case class ASTIfNode(
         val cond: ASTNode,
         val iTrue: ASTNode,
         val iFalse: ASTNode,
-        _apb: AutoPipeBlock = null)
-    extends ASTNode(NodeType.IF, _apb) with ASTStartNode {
+        _apb: AutoPipeBlock = null
+    ) extends ASTNode(NodeType.IF, _apb) with ASTStartNode {
 
     override private[autopipe] def children =
-        List(cond, iTrue, iFalse).filter { _ != null }
+        Seq(cond, iTrue, iFalse).filter(_ != null)
 
 
     cond.parent = this
@@ -171,14 +167,14 @@ private[autopipe] case class ASTIfNode(
 
 private[autopipe] case class ASTSwitchNode(
         val cond: ASTNode,
-        _apb: AutoPipeBlock = null)
-    extends ASTNode(NodeType.SWITCH, _apb) with ASTStartNode {
+        _apb: AutoPipeBlock = null
+    ) extends ASTNode(NodeType.SWITCH, _apb) with ASTStartNode {
 
-    private[autopipe] val cases = new ListBuffer[(ASTNode, ASTNode)]
+    private[autopipe] var cases = Seq[(ASTNode, ASTNode)]()
 
     override private[autopipe] def children =
-        List(cond) ++ cases.flatMap { case (a, b) =>
-            List(a, b).filter(_ != null)
+        Seq(cond) ++ cases.flatMap { case (a, b) =>
+            Seq(a, b).filter(_ != null)
         }
 
     cond.parent = this
@@ -188,29 +184,30 @@ private[autopipe] case class ASTSwitchNode(
 private[autopipe] case class ASTWhileNode(
         val cond: ASTNode,
         val body: ASTNode,
-        _apb: AutoPipeBlock = null)
-    extends ASTNode(NodeType.WHILE, _apb) with ASTStartNode {
+        _apb: AutoPipeBlock = null
+    ) extends ASTNode(NodeType.WHILE, _apb) with ASTStartNode {
 
-    override private[autopipe] def children = List(cond, body)
+    override private[autopipe] def children = Seq(cond, body)
 
     cond.parent = this
     body.parent = this
 
 }
 
-private[autopipe] case class ASTStopNode(_apb: AutoPipeBlock = null)
-    extends ASTNode(NodeType.STOP, _apb) with ASTStartNode {
+private[autopipe] case class ASTStopNode(
+        _apb: AutoPipeBlock = null
+    ) extends ASTNode(NodeType.STOP, _apb) with ASTStartNode {
 
-    override private[autopipe] def children = List()
+    override private[autopipe] def children = Seq()
 
 }
 
 private[autopipe] case class ASTBlockNode(
-        _nodes: Seq[ASTNode],
-        _apb: AutoPipeBlock = null)
-    extends ASTNode(NodeType.BLOCK, _apb) with ASTStartNode {
+        nodes: Seq[ASTNode],
+        _apb: AutoPipeBlock = null
+    ) extends ASTNode(NodeType.BLOCK, _apb) with ASTStartNode {
 
-    override private[autopipe] def children = _nodes
+    override private[autopipe] def children = nodes
 
     children.foreach { n => n.parent = this }
 
@@ -218,21 +215,21 @@ private[autopipe] case class ASTBlockNode(
 
 private[autopipe] case class ASTAvailableNode(
         val symbol: String,
-        _apb: AutoPipeBlock = null)
-    extends ASTNode(NodeType.avail, _apb) {
+        _apb: AutoPipeBlock = null
+    ) extends ASTNode(NodeType.avail, _apb) {
 
-    override private[autopipe] def children = List()
+    override private[autopipe] def children = Seq()
 
 }
 
 private[autopipe] case class ASTSymbolNode(
         val symbol: String,
-        _apb: AutoPipeBlock = null)
-    extends ASTNode(NodeType.symbol, _apb) {
+        _apb: AutoPipeBlock = null
+    ) extends ASTNode(NodeType.symbol, _apb) {
 
     var index: ASTNode = null
 
-    override def children = if (index == null) List() else List(index)
+    override def children = Seq(index).filter(_ != null)
 
     private[autopipe] override def isPure =
         if (index != null) index.isPure else valueType.isPure
@@ -263,9 +260,9 @@ private[autopipe] case class ASTCallNode(
         case None       => ValueType.void
     }
 
-    var args: Seq[ASTNode] = null
+    var args = Seq[ASTNode]()
 
-    override def children = if (args == null) List() else args
+    override def children = args
 
     def apply(l: ASTNode*): ASTNode = {
         args = l
@@ -280,10 +277,10 @@ private[autopipe] case class ASTCallNode(
 private[autopipe] case class ASTSpecial(
         val obj: AutoPipeObject,
         val method: String,
-        _apb: AutoPipeBlock = null)
-    extends ASTNode(NodeType.special, _apb) with ASTStartNode {
+        _apb: AutoPipeBlock = null
+    ) extends ASTNode(NodeType.special, _apb) with ASTStartNode {
 
-    var args: List[ASTNode] = Nil
+    var args = Seq[ASTNode]()
 
     override def children = args
 
@@ -294,16 +291,16 @@ private[autopipe] case class ASTSpecial(
 private[autopipe] case class ASTConvertNode(
         val a: ASTNode,
         _valueType: ValueType,
-        _apb: AutoPipeBlock = null)
-    extends ASTNode(NodeType.convert, _apb) {
+        _apb: AutoPipeBlock = null
+    ) extends ASTNode(NodeType.convert, _apb) {
 
     valueType = _valueType
-    if (_apb == null) {
+    if (apb == null) {
         lineNumber = a.lineNumber
         fileName = a.fileName
     }
 
-    override private[autopipe] def children = List(a)
+    override private[autopipe] def children = Seq(a)
 
     a.parent = this
 
@@ -311,10 +308,10 @@ private[autopipe] case class ASTConvertNode(
 
 private[autopipe] case class ASTReturnNode(
         val a: ASTNode, 
-        _apb: AutoPipeBlock = null)
-    extends ASTNode(NodeType.RETURN, _apb) with ASTStartNode {
+        _apb: AutoPipeBlock = null
+    ) extends ASTNode(NodeType.RETURN, _apb) with ASTStartNode {
 
-    override private[autopipe] def children = List(a).filter(_ != null)
+    override private[autopipe] def children = Seq(a).filter(_ != null)
 
     if (a != null) {
         a.parent = this

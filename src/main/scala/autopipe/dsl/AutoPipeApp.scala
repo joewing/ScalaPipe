@@ -1,9 +1,7 @@
-
 package autopipe.dsl
 
 import language.implicitConversions
 import autopipe._
-import scala.collection.mutable.HashSet
 
 /** ScalaPipe Application DSL. */
 class AutoPipeApp {
@@ -100,4 +98,3 @@ class AutoPipeApp {
     }
 
 }
-

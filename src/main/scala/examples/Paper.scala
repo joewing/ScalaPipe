@@ -184,7 +184,7 @@ object Paper {
             val y = local(UNSIGNED32, 0)
 
             if (fd == 0) {
-                fd := stdio.fopen(filename, "w")
+                fd = stdio.fopen(filename, "w")
                 if (fd == 0) {
                     stdio.printf("""Could not open %s\n""", filename)
                 }

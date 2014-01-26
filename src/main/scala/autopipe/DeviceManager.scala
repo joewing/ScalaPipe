@@ -1,27 +1,23 @@
-
 package autopipe
-
-import scala.collection.mutable.HashMap
 
 private[autopipe] class DeviceManager(param: Parameters) {
 
-    private val deviceTypes = new HashMap[Platforms.Value, DeviceType]
+    private var deviceTypes = Map[Platforms.Value, DeviceType]()
 
     private def defaultHost = param.get[String]('defaultHost)
     private def defaultIndex = 0
 
     def get(platform: Platforms.Value, host: String, index: Int): Device = {
         deviceTypes.get(platform) match {
-            case Some(dt)  => dt.get(host, index)
-            case None        =>
+            case Some(dt)   => dt.get(host, index)
+            case None       =>
                 val dt = new DeviceType(platform)
-                deviceTypes += ((platform, dt))
+                deviceTypes += (platform -> dt)
                 dt.get(host, index)
         }
     }
 
-    def getDefault(platform: Platforms.Value): Device =
-        get(platform, defaultHost, 0)
+    def getDefault(platform: Platforms.Value) = get(platform, defaultHost, 0)
 
     def create(spec: DeviceSpec): Device = {
         val host = if (spec.host == null) defaultHost else spec.host
@@ -37,4 +33,3 @@ private[autopipe] class DeviceManager(param: Parameters) {
         deviceTypes.filter(_._1 == Platforms.C).map(_._2.count).sum
 
 }
-

@@ -136,7 +136,7 @@ object Search {
 
             if (configured == 0) {
                 term = conf
-                configured := 1
+                configured = 1
             } else {
                 last = (last << 8) | data
                 offset = offset + 1

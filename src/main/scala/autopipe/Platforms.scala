@@ -1,4 +1,3 @@
-
 package autopipe
 
 private[autopipe] object Platforms extends Enumeration {
@@ -8,4 +7,3 @@ private[autopipe] object Platforms extends Enumeration {
     val HDL      = Value("HDL")
 
 }
-

@@ -1,8 +1,5 @@
 package autopipe
 
-import scala.collection.mutable.HashMap
-import scala.collection.mutable.ListBuffer
-
 import autopipe.dsl._
 
 private[autopipe] abstract class KernelType(
@@ -63,8 +60,6 @@ private[autopipe] abstract class KernelType(
     }
 
     private[autopipe] def functions: Seq[AutoPipeFunction] = Seq()
-
-    private[autopipe] def objects: Seq[AutoPipeObject] = Seq()
 
     private[autopipe] def createTemp(vt: ValueType): TempSymbol =
         symbols.createTemp(vt)

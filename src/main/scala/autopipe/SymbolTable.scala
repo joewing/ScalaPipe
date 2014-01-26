@@ -1,26 +1,23 @@
-
 package autopipe
 
-import scala.collection.mutable.HashMap
 import scala.collection.mutable.ListBuffer
-
 import autopipe.dsl.AutoPipeBlock
 
 private[autopipe] class SymbolTable(apb: AutoPipeBlock) {
 
-    private val symbols = new HashMap[String, BaseSymbol]
+    private var symbols = Map[String, BaseSymbol]()
+    private var freeTemps = Set[TempSymbol]()
     private[autopipe] val inputs = new ListBuffer[InputSymbol]
     private[autopipe] val outputs = new ListBuffer[OutputSymbol]
     private[autopipe] val configs = new ListBuffer[ConfigSymbol]
     private[autopipe] val states = new ListBuffer[StateSymbol]
     private[autopipe] val temps = new ListBuffer[TempSymbol]
-    private[autopipe] val freeTemps = new ListBuffer[TempSymbol]
 
     private def add(n: String, s: BaseSymbol) {
         if (symbols.contains(n)) {
             Error.raise("duplicate symbol: " + n, apb)
         } else {
-            symbols += ((n, s))
+            symbols += (n -> s)
         }
     }
 
@@ -50,7 +47,7 @@ private[autopipe] class SymbolTable(apb: AutoPipeBlock) {
     def addConfig(name: String, vt: ValueType, value: Literal) {
         val s = new ConfigSymbol(name, vt, value)
         add(s)
-        configs += s
+        configs +=  s
     }
 
     def addState(name: String, vt: ValueType, value: Literal) {
@@ -60,7 +57,7 @@ private[autopipe] class SymbolTable(apb: AutoPipeBlock) {
     }
 
     def createTemp(vt: ValueType): TempSymbol = {
-        val tl = freeTemps.filter { t => t.valueType == vt }
+        val tl = freeTemps.filter(_.valueType == vt)
         if (tl.isEmpty) {
             val t = new TempSymbol(vt)
             temps += t

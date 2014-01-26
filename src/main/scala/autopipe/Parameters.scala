@@ -1,7 +1,4 @@
-
 package autopipe
-
-import scala.collection.mutable.HashMap
 
 private[autopipe] class Parameters {
 
@@ -18,10 +15,10 @@ private[autopipe] class Parameters {
 
     }
 
-    private val params = new HashMap[Symbol, Param[_]]
+    private var params = Map[Symbol, Param[_]]()
 
     private def add[T : Manifest](name: Symbol, value: T) {
-        params += ((name, new Param[T](name, value)))
+        params += (name -> new Param[T](name, value))
     }
 
     // Parameters and defaults.
@@ -54,4 +51,3 @@ private[autopipe] class Parameters {
     def get[T](name: Symbol): T = params(name).value.asInstanceOf[T]
 
 }
-

@@ -10,8 +10,8 @@ import java.io.File
 private[autopipe] class InternalKernelType(
         ap: AutoPipe,
         apb: AutoPipeBlock,
-        p: Platforms.Value)
-    extends KernelType(ap, apb, p) {
+        p: Platforms.Value
+    ) extends KernelType(ap, apb, p) {
 
     private val root = apb.getRoot
     private val checked = TypeChecker.check(this, root)
@@ -43,7 +43,5 @@ private[autopipe] class InternalKernelType(
     }
 
     override def functions = FunctionExtractor.functions(expression)
-
-    override def objects = FunctionExtractor.objects(expression)
 
 }

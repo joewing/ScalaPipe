@@ -1,9 +1,5 @@
-
 package autopipe
 
-import scala.collection.mutable.HashSet
-import scala.collection.mutable.HashMap
-import scala.collection.mutable.ListBuffer
 import java.io.File
 
 import autopipe.dsl._
@@ -13,14 +9,14 @@ import autopipe.gen.RawFileGenerator
 
 private[autopipe] class AutoPipe {
 
-    private[autopipe] val kernels = new ListBuffer[Kernel]
+    private[autopipe] var kernels = Seq[Kernel]()
     private[autopipe] var streams = Set[Stream]()
-    private[autopipe] val devices = new HashSet[Device]
+    private[autopipe] var devices = Set[Device]()
     private[autopipe] val parameters = new Parameters
     private var kernelDecls = Map[String, AutoPipeBlock]()
     private var kernelTypes = Map[(String, Platforms.Value), KernelType]()
-    private val edges = new HashSet[EdgeMapping]
-    private val measures = new HashSet[EdgeMeasurement]
+    private var edges = Set[EdgeMapping]()
+    private var measures = Set[EdgeMeasurement]()
     private val deviceManager = new DeviceManager(parameters)
     private val resourceManager = new ResourceManager(this)
 
@@ -88,7 +84,7 @@ private[autopipe] class AutoPipe {
                 kernelDecls = kernelDecls + (apb.name -> apb)
         }
         val kernel = new Kernel(this, apb)
-        kernels += kernel
+        kernels = kernels :+ kernel
         kernel
     }
 
@@ -163,13 +159,13 @@ private[autopipe] class AutoPipe {
         // ID starting from 0.
         // Activity monitors come first, then queue monitors, and finally,
         // inter monitors.
-        val deviceMap = new HashMap[Device, Array[Int]]
+        var deviceMap = Map[Device, Array[Int]]()
         def getIndexArray(d: Device): Array[Int] = {
             if (deviceMap.contains(d)) {
                 deviceMap(d)
             } else {
                 val a = Array(0, 0, 0, 0)
-                deviceMap += ((d, a))
+                deviceMap = deviceMap + (d -> a)
                 a
             }
         }
@@ -279,28 +275,28 @@ private[autopipe] class AutoPipe {
     // Get a list of strongly connected kernels.
     private def getConnectedKernels(kernel: Kernel): Seq[Kernel] = {
 
-        val connected = new HashSet[Kernel]
+        var connected = Set[Kernel]()
 
         def visit(k: Kernel) {
             k.getOutputs.filter(_.edge == null).foreach { o =>
                 val dest = o.destKernel
                 if(!connected.contains(dest)) {
-                    connected += dest
+                    connected = connected + dest
                     visit(dest)
                 }
             }
             k.getInputs.filter(_.edge == null).foreach { i =>
                 val src = i.sourceKernel
                 if (!connected.contains(src)) {
-                    connected += src
+                    connected = connected + src
                     visit(src)
                 }
             }
         }
 
-        connected += kernel
+        connected = connected + kernel
         visit(kernel)
-        connected.toList
+        connected.toSeq
 
     }
 
@@ -378,7 +374,6 @@ private[autopipe] class AutoPipe {
             for (x <- connected) {
                 if (x.device == null) {
                     x.device = device
-                    device.addKernel(x)
                     devices += device
                 } else if (x.device != device) {
                     Error.raise("device assignment error: " +
@@ -419,14 +414,12 @@ private[autopipe] class AutoPipe {
     }
 
     private[autopipe] def getRules: String = {
-        import scala.collection.immutable.HashSet
-        val gens = HashSet(devices.toList.map(d => resourceManager.get(d)): _*)
+        val gens = devices.map(d => resourceManager.get(d))
         gens.map(_.getRules).mkString
     }
 
     private def emitResources(dir: File) {
-        import scala.collection.immutable.HashSet
-        val gens = HashSet(devices.toList.map(d => resourceManager.get(d)): _*)
+        val gens = devices.map(d => resourceManager.get(d))
         gens.foreach(g => g.emit(dir))
     }
 
@@ -485,4 +478,3 @@ private[autopipe] class AutoPipe {
     }
 
 }
-

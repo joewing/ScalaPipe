@@ -1,7 +1,6 @@
 package autopipe
 
 import autopipe.dsl.AutoPipeBlock
-import scala.collection.mutable.ListBuffer
 
 private[autopipe] class Scope(
         val apb: AutoPipeBlock,
@@ -9,56 +8,43 @@ private[autopipe] class Scope(
         _cond: ASTNode = null
     ) {
 
-    var conditions = new ListBuffer[ASTNode]
-    var bodies = new ListBuffer[ASTNode]
-
-    var currentBody = new ListBuffer[ASTNode]
-    var gotElse = false
-
-    if (_cond != null) {
-        conditions += _cond
-    }
+    private[autopipe] var conditions = Seq(_cond).filter(_ != null)
+    private[autopipe] var bodies = Seq[ASTNode]()
+    private var currentBody = Seq[ASTNode]()
+    private var gotElse = false
 
     def +=(n: ASTNode) {
-        currentBody += n
-    }
-
-    def handleElseIf(cond: ASTNode) {
-        if (gotElse) Error.raise("ELSEIF after ELSE", cond)
-        if (nodeType != NodeType.IF) Error.raise("ELSEIF without IF", cond)
-        conditions += cond
-        currentBody -= cond
-        bodies += getTop(cond)
+        currentBody = currentBody :+ n
     }
 
     def handleElse() {
         if (gotElse) Error.raise("multiple ELSE statements", apb)
         if (nodeType != NodeType.IF) Error.raise("ELSE without IF", apb)
         gotElse = true
-        bodies += getTop()
+        bodies = bodies :+ getTop()
     }
 
     def handleWhen(cond: ASTNode) {
         if (nodeType != NodeType.SWITCH) {
             Error.raise("'when' without 'switch'", apb)
         }
-        conditions += cond
-        currentBody -= cond
-        bodies += getTop(cond)
+        conditions = conditions :+ cond
+        currentBody = currentBody.filterNot(_ == cond)
+        bodies = bodies :+ getTop(cond)
     }
 
     private def getTop(cond: ASTNode = null): ASTNode = {
-        val topList = new ListBuffer[ASTNode]
+        var topList = Seq[ASTNode]()
         for (e <- currentBody) {
             var node = e
             while (node.parent != null) {
                 node = node.parent;
             }
             if (!(node == cond) && !topList.exists(node.eq(_))) {
-                topList += node
+                topList = topList :+ node
             }
         }
-        currentBody.clear
+        currentBody = Seq()
         val top = topList.filter { _.parent == null }
         top.size match {
             case 1 => top.head
@@ -100,7 +86,7 @@ private[autopipe] class Scope(
     private def handleBlockEnd(): ASTNode = bodies.head
 
     def handleEnd(): ASTNode = {
-        bodies += getTop()
+        bodies = bodies :+ getTop()
         nodeType match {
             case NodeType.IF     => handleIfEnd
             case NodeType.SWITCH => handleSwitchEnd

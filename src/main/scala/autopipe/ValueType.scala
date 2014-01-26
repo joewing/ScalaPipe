@@ -1,8 +1,4 @@
-
 package autopipe
-
-import scala.collection.mutable.HashMap
-import scala.collection.immutable.HashSet
 
 import autopipe.dsl.AutoPipeType
 import autopipe.dsl.AutoPipeArray
@@ -15,7 +11,7 @@ import autopipe.dsl.AutoPipeNative
 
 private[autopipe] object ValueType {
 
-    private val valueTypes = new HashMap[String, ValueType]
+    private var valueTypes = Map[String, ValueType]()
 
     val unsigned8   = insert(new IntegerValueType("UNSIGNED8",    8, false))
     val signed8     = insert(new IntegerValueType("SIGNED8",      8, true))
@@ -35,17 +31,29 @@ private[autopipe] object ValueType {
     val bool        = signed8
 
     private def insert(vt: ValueType): ValueType = {
-        valueTypes += ((vt.name, vt))
+        valueTypes += (vt.name -> vt)
         vt
     }
 
     def create(apt: AutoPipeType, f: () => ValueType): ValueType = {
-        valueTypes.getOrElseUpdate(apt.name, f())
+        if (valueTypes.contains(apt.name)) {
+            valueTypes(apt.name)
+        } else {
+            val vt = f()
+            valueTypes += (apt.name -> vt)
+            vt
+        }
     }
 
     def getPointer(vt: ValueType): ValueType = {
         val name = vt.name + "*"
-        valueTypes.getOrElseUpdate(name, { new PointerValueType(name, vt) })
+        if (valueTypes.contains(name)) {
+            valueTypes(name)
+        } else {
+            val pt = new PointerValueType(name, vt)
+            valueTypes += (name -> pt)
+            pt
+        }
     }
 
 }
@@ -69,7 +77,7 @@ private[autopipe] class ValueType(
         }
     }
 
-    def dependencies: HashSet[ValueType] = HashSet[ValueType]()
+    def dependencies = Set[ValueType]()
 
 }
 
@@ -107,9 +115,7 @@ private[autopipe] class ArrayValueType(apa: AutoPipeArray)
 
     override def baseType = itemType
 
-    override def dependencies: HashSet[ValueType] = {
-        HashSet[ValueType](this) + itemType
-    }
+    override def dependencies = Set[ValueType](this) + itemType
 
 }
 
@@ -131,9 +137,7 @@ private[autopipe] class StructValueType(aps: AutoPipeStruct)
 
     override def isPure: Boolean = fields.forall(_._2.isPure)
 
-    override def dependencies: HashSet[ValueType] = {
-        fields.foldLeft(HashSet[ValueType]()) { (a, t) => a + t._2 }
-    }
+    override def dependencies = Set(fields.map(_._2).toSeq: _*)
 
 }
 
@@ -162,9 +166,7 @@ private[autopipe] class UnionValueType(apu: AutoPipeUnion)
 
     override def isPure: Boolean = fields.forall(_._2.isPure)
 
-    override def dependencies: HashSet[ValueType] = {
-        fields.foldLeft(HashSet[ValueType]()) { (a, t) => a + t._2 }
-    }
+    override def dependencies = Set(fields.map(_._2).toSeq: _*)
 
 }
 
@@ -191,4 +193,3 @@ private[autopipe] class FixedValueType(apf: AutoPipeFixed)
     }
 
 }
-

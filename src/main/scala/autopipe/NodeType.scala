@@ -1,4 +1,3 @@
-
 package autopipe
 
 private[autopipe] object NodeType extends Enumeration {
@@ -48,4 +47,3 @@ private[autopipe] object NodeType extends Enumeration {
     val cos          = Value("cos")
     val tan          = Value("tan")
 }
-

@@ -1,4 +1,3 @@
-
 package autopipe
 
 import autopipe.dsl.AutoPipeBlock
@@ -20,4 +19,3 @@ private[autopipe] class EdgeMeasurement(
         val stat: Symbol,
         val metric: Symbol
     ) extends EdgeAspect(_fk, _tk)
-

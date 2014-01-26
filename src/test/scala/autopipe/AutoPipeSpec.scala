@@ -1,7 +1,7 @@
 package autopipe
 
 import org.scalatest._
-import autopipe.dsl.AutoPipeBlock
+import autopipe.dsl._
 
 class AutoPipeSpec extends UnitSpec {
 

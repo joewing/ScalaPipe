@@ -1,4 +1,3 @@
-
 package autopipe
 
 import autopipe.dsl.AutoPipeBlock
@@ -21,8 +20,10 @@ object Literal {
 
 }
 
-abstract class Literal(_t: ValueType, _apb: AutoPipeBlock)
-    extends ASTNode(NodeType.literal, _apb) {
+abstract class Literal(
+        _t: ValueType,
+        _apb: AutoPipeBlock
+    ) extends ASTNode(NodeType.literal, _apb) {
 
     valueType = _t
 
@@ -71,8 +72,11 @@ object IntLiteral {
 
 }
 
-class IntLiteral(_t: ValueType, val value: Long,
-                 _apb: AutoPipeBlock) extends Literal(_t, _apb) {
+class IntLiteral(
+        _t: ValueType,
+        val value: Long,
+        _apb: AutoPipeBlock
+    ) extends Literal(_t, _apb) {
 
     override def long: Long = value
 
@@ -105,8 +109,11 @@ object FloatLiteral {
 
 }
 
-class FloatLiteral(_t: ValueType, val value: Double,
-                   _apb: AutoPipeBlock) extends Literal(_t, _apb) {
+class FloatLiteral(
+        _t: ValueType,
+        val value: Double,
+        _apb: AutoPipeBlock
+    ) extends Literal(_t, _apb) {
 
     def rawFloat: Int = {
         import java.nio.ByteBuffer
@@ -152,8 +159,11 @@ object StringLiteral {
 
 }
 
-class StringLiteral(_t: ValueType, val value: String,
-                    _apb: AutoPipeBlock) extends Literal(_t, _apb) {
+class StringLiteral(
+        _t: ValueType,
+        val value: String,
+        _apb: AutoPipeBlock
+    ) extends Literal(_t, _apb) {
 
     override def toString = "\"" + value + "\""
 

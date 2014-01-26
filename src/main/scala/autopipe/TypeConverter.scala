@@ -1,4 +1,3 @@
-
 package autopipe
 
 object TypeConverter {
@@ -60,4 +59,3 @@ object TypeConverter {
     }
 
 }
-

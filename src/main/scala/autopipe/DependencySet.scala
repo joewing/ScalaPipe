@@ -1,4 +1,3 @@
-
 package autopipe
 
 import scala.collection.mutable.HashMap
@@ -32,4 +31,3 @@ private[autopipe] class DependencySet {
     def get(t: Int): List[String] = getOrCreate(t).toList
 
 }
-

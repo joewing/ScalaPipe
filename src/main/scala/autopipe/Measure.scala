@@ -1,11 +1,10 @@
-
 package autopipe
 
-import scala.collection.mutable.HashMap
-
-private[autopipe] class Measure(val stream: Stream,
-                                          val stat: Symbol,
-                                          val metric: Symbol) {
+private[autopipe] class Measure(
+        val stream: Stream,
+        val stat: Symbol,
+        val metric: Symbol
+    ) {
 
     private[autopipe] var sourceOffset = -1
     private[autopipe] var sourceActivityOffset = -1
@@ -94,4 +93,3 @@ private[autopipe] class Measure(val stream: Stream,
     private[autopipe] def getName: String = stat.name + " " + metric.name
 
 }
-
