@@ -135,31 +135,39 @@ private[opt] object ContinuousAssignment extends Pass {
     private def writesPort(node: IRNode): Boolean =
         node.dests.exists(s => s.isInstanceOf[PortSymbol])
 
+    private def continuousFloat(in: IRInstruction) = in.op match {
+        case NodeType.avail     => !writesPort(in)
+        case NodeType.convert   => false
+        case NodeType.add       => false
+        case NodeType.sub       => false
+        case NodeType.mul       => false
+        case NodeType.div       => false
+        case NodeType.sqrt      => false
+        case _                  => !usesPort(in)
+    }
+
+    private def continuousInt(in: IRInstruction) = in.op match {
+        case NodeType.avail     => !writesPort(in)
+        case NodeType.convert   =>
+            in.srca.valueType.isInstanceOf[IntegerValueType]
+        case NodeType.mul       => false
+        case NodeType.div       => false
+        case NodeType.mod       => false
+        case NodeType.sqrt      => false
+        case _                  => !usesPort(in)
+    }
+
     /** Determine if an IRNode can be implemented as an assign statement. */
     private def continuous(node: IRNode): Boolean = node match {
-        case in: IRInstruction => in.dest.valueType match {
-                case ft: FloatValueType => in.op match {
-                    case NodeType.avail     => !writesPort(node)
-                    case NodeType.convert   => false
-                    case NodeType.add       => false
-                    case NodeType.sub       => false
-                    case NodeType.mul       => false
-                    case NodeType.div       => false
-                    case NodeType.sqrt      => false
-                    case _                  => !usesPort(node)
-                }
-                case _ => in.op match {
-                    case NodeType.avail     => !writesPort(node)
-                    case NodeType.convert   => false
-                    case NodeType.mul       => false
-                    case NodeType.div       => false
-                    case NodeType.mod       => false
-                    case NodeType.sqrt      => false
-                    case _                  => !usesPort(node)
-                }
+        case in: IRInstruction =>
+            in.dest.valueType match {
+                case ft: FloatValueType => continuousFloat(in)
+                case _                  => continuousInt(in)
             }
-        case gt: IRGoto => true
-        case _ => false
+        case ld: IRLoad     => ld.src.valueType.flat
+        case st: IRStore    => false
+        case gt: IRGoto     => true
+        case _              => false
     }
 
     /** Determine if a block can be implemented as an assign statement. */

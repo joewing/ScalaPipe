@@ -1,14 +1,12 @@
-
 package autopipe.gen
 
 import autopipe._
-import scala.collection.mutable.ListBuffer
 import scala.collection.mutable.ArrayBuffer
 import scala.collection.mutable.HashMap
 
 private[gen] class HDLModuleEmitter(
-        val kt: KernelType,
-        val graph: IRGraph
+        protected val kt: KernelType,
+        protected val graph: IRGraph
     ) extends HDLGenerator {
 
     private class Part(val state: Int, val args: Seq[String])
@@ -19,7 +17,7 @@ private[gen] class HDLModuleEmitter(
         val argCount: Int,
         val width: Int
     ) {
-        val parts = new ListBuffer[Part]
+        var parts = Set[Part]()
     }
 
     private class SimpleComponent(val name: String,
@@ -33,26 +31,30 @@ private[gen] class HDLModuleEmitter(
         extends StateCondition(_state)
 
     private class Assignment(val port: String) {
-        val states = new ListBuffer[AssignState]
+        var states = Set[AssignState]()
     }
 
     private class RAMState(_state: Int, val value: String, val offset: String)
         extends StateCondition(_state)
         
     private class RAMUpdate(val port: String) {
-        val states = new ListBuffer[RAMState]
+        var states = Set[RAMState]()
     }
 
     private val share = kt.parameters.get[Int]('share)
+
     private val components = new HashMap[String, Component]
     private val simpleComponents = new HashMap[String, SimpleComponent]
     private val componentIds = new HashMap[String, Int]
+
     private val readStates = new HashMap[String, Assignment]
     private val writeStates = new HashMap[String, Assignment]
+
     private val ramWrites = new HashMap[String, RAMUpdate]
     private val ramReads = new HashMap[String, RAMUpdate]
-    private val assignments = new ListBuffer[String]
-    private val phis = new ListBuffer[IRPhi]
+
+    private var assignments = Set[String]()
+    private var phis = Set[IRPhi]()
     private val guards = new HashMap[Int, ArrayBuffer[String]]
 
     def create(name: String, width: Int, state: Int,
@@ -96,7 +98,7 @@ private[gen] class HDLModuleEmitter(
     }
 
     private def guard(state: Int): String = {
-        val gl = guards.getOrElse(state, new ArrayBuffer[String]).sorted.distinct
+        val gl = guards.getOrElse(state, new ArrayBuffer[String]).toSet
         if (gl.isEmpty) {
             return "1"
         } else {
@@ -172,7 +174,7 @@ private[gen] class HDLModuleEmitter(
 
     private def emitMux(component: Component) {
 
-        val parts = component.parts
+        val parts = component.parts.toSeq
         val sortedParts = parts.sortWith { (a, b) => a.state > b.state }
         val width = component.width
         val instanceName = component.instanceName
@@ -180,13 +182,14 @@ private[gen] class HDLModuleEmitter(
         write("always @(*) begin")
         enter
 
-        write(instanceName + "_start <= 0;")
+        write(s"${instanceName}_start <= 0;")
         sortedParts.foreach { p =>
-            write ("if (state == " + p.state + ") begin")
+            val state = p.state
+            write(s"if (state == $state) begin")
             enter
-            write(instanceName + "_start <= last_state != state;")
+            write(s"${instanceName}_start <= last_state != state;")
             p.args.zipWithIndex.foreach { case (s, i) =>
-                write(instanceName + "_" + i + " <= " + s + ";")
+                write(s"${instanceName}_$i <= $s;")
             }
             leave
             write("end")
@@ -217,31 +220,35 @@ private[gen] class HDLModuleEmitter(
         }
     }
 
-    private def getCondition[A <: StateCondition](lst: ListBuffer[A]): String = {
-        lst.foldLeft("") { (a, b) =>
-            a + (if (a.isEmpty) "" else " | ") +
-            "((state == " + b.state + ") & guard_" + b.state + ")"
+    private def getCondition[A <: StateCondition](lst: Traversable[A]) = {
+        val strs = lst.map { s =>
+            val state = s.state
+            s"((state == $state) & guard_$state)"
         }
+        strs.mkString(" | ")
     }
 
     private def emitAssignments {
 
-        def select(lst: Seq[AssignState]): String = lst match {
-            case h :: Nil => h.value
-            case h :: t =>
-                " state == " + h.state + " ? " + h.value + " : (" + select(t) + ")"
-            case Nil => ""
+        def select(lst: Traversable[AssignState]) = lst.foldLeft("") { (a, s) =>
+            val state = s.state
+            val value = s.value
+            if (a.isEmpty) value.toString
+            else s" state == $state ? $value : ($a)"
         }
 
         readStates.values.foreach { s =>
-            write("assign read_" + s.port + " = " + getCondition(s.states) + ";")
+            val port = s.port
+            val cond = getCondition(s.states)
+            write(s"assign read_$port = $cond;")
         }
         writeStates.values.foreach { s =>
-            write("assign write_" + s.port + " = " + getCondition(s.states) + ";")
-            write("assign output_" + s.port + " = " +
-                    select(s.states.toSeq) + ";")
+            val port = s.port
+            val cond = getCondition(s.states)
+            val value = select(s.states)
+            write(s"assign write_$port = $cond;")
+            write(s"assign output_$port = $value;")
         }
-        write
 
         if (!assignments.isEmpty) {
             write("always @(*) begin")
@@ -249,35 +256,40 @@ private[gen] class HDLModuleEmitter(
             assignments.foreach { s => write(s) }
             leave
             write("end")
-            write
         }
 
     }
 
     private def emitRAMUpdates {
 
-        def value(lst: Seq[RAMState]): String = lst match {
-            case h :: Nil => h.value
-            case h :: t =>
-                " state == " + h.state + " ? " + h.value + " : (" + value(t) + ")"
-            case Nil => ""
+        def value(lst: Traversable[RAMState]) = lst.foldLeft("") { (a, s) =>
+            val state = s.state
+            val result = s.value
+            if (a.isEmpty) result.toString
+            else s" state == $state ? $result : ($a)"
         }
 
-        def index(lst: Seq[RAMState]): String = lst match {
-            case h :: Nil => h.offset
-            case h :: t =>
-                " state == " + h.state + " ? " + h.offset + " : (" + index(t) + ")"
-            case Nil => ""
+        def index(lst: Traversable[RAMState]) = lst.foldLeft("") { (a, s) =>
+            val state = s.state
+            val offset = s.offset
+            if (a.isEmpty) offset.toString
+            else s" state == $state ? $offset : ($a)"
         }
 
         ramWrites.values.foreach { s =>
-            write("assign " + s.port + "_we = " + getCondition(s.states) + ";")
-            write("assign " + s.port + "_in = " + value(s.states.toSeq) + ";")
-            write("assign " + s.port + "_wix = " + index(s.states.toSeq) + ";")
+            val port = s.port
+            val cond = getCondition(s.states)
+            val input = value(s.states)
+            val wix = index(s.states)
+            write(s"assign ${port}_we = $cond;")
+            write(s"assign ${port}_in = $input;")
+            write(s"assign ${port}_wix = $wix;")
         }
 
         ramReads.values.foreach { s =>
-            write("assign " + s.port + "_rix = " + index(s.states.toSeq) + ";")
+            val port = s.port
+            val rix = index(s.states)
+            write(s"assign ${port}_rix = $rix;")
         }
 
     }
@@ -307,9 +319,9 @@ private[gen] class HDLModuleEmitter(
 
     private def emitGuards {
         guards.keys.foreach { s =>
-            write("wire guard_" + s + " = " + guard(s) + ";")
+            val cond = guard(s)
+            write(s"wire guard_$s = $cond;")
         }
-        write
     }
 
     override def getOutput(): String = {
@@ -325,4 +337,3 @@ private[gen] class HDLModuleEmitter(
     }
 
 }
-

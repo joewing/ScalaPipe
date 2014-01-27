@@ -29,7 +29,7 @@ abstract class Literal(
 
     private[autopipe] override def children = List()
 
-    private[autopipe] override def isPure = true
+    private[autopipe] override def pure = true
 
     def long: Long = 0
 

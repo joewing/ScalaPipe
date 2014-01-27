@@ -91,11 +91,11 @@ private[gen] class Generator {
         }
     }
 
-    protected def enter() {
+    def enter() {
         level += 1
     }
 
-    protected def leave() {
+    def leave() {
         if (level <= 0) {
             sys.error("invalid nesting level")
         }
@@ -116,11 +116,11 @@ private[gen] class Generator {
         result.clear
     }
 
-    protected def write() {
+    def write() {
         result += "\n"
     }
 
-    protected def write(s: String) {
+    def write(s: String) {
         result += indent() + process(s) + "\n"
     }
 

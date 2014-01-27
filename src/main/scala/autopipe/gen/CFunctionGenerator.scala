@@ -32,7 +32,7 @@ private[autopipe] class CFunctionGenerator(
     protected override def emitFunctionSource {
 
         val timing: Map[ASTNode, Int] =
-            if (ft.expression.isPure && ft.parameters.get('profile)) {
+            if (ft.expression.pure && ft.parameters.get('profile)) {
                 val ir              = IRNodeEmitter(ft).emit(ft.expression)
                 val context         = new ProfileIRContext(ft)
                 val graph           = IROptimizer(ft, context).optimize(ir)

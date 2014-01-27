@@ -32,11 +32,17 @@ private[gen] class HDLFunctionNodeEmitter(
 
     override def emitAssign(block: StateBlock, node: IRInstruction) {
         val src = emitSymbol(node.srca)
-        val dest = emitSymbol(node.dest)
-        if (block.continuous) {
-            moduleEmitter.addAssignment(dest + " <= " + src + ";")
-        } else {
-            write(dest + " <= " + src + ";")
+        node.dest match {
+            case os: OutputSymbol =>
+                write(s"result_out <= $src;")
+                write(s"state <= 0;")
+            case _ =>
+                val dest = emitSymbol(node.dest)
+                if (block.continuous) {
+                    moduleEmitter.addAssignment(s"$dest <= $src;")
+                } else {
+                    write(s"$dest <= $src;")
+                }
         }
     }
 
@@ -46,8 +52,8 @@ private[gen] class HDLFunctionNodeEmitter(
 
     override def emitReturn(block: StateBlock, node: IRReturn) {
         val src = emitSymbol(node.result)
-        write("result_out <= " + src + ";")
-        write("state <= 0;")
+        write(s"result_out <= $src;")
+        write(s"state <= 0;")
     }
 
     override def start {

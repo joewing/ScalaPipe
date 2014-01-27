@@ -6,13 +6,13 @@ import autopipe.dsl._
 object StructTest {
 
     val Struct1 = new AutoPipeStruct {
-        field('a, SIGNED32)
-        field('b, BOOL)
+        field('a, SIGNED32)     // 0 .. 3
+        field('b, BOOL)         // 4 .. 4
     }
 
     val Struct2 = new AutoPipeStruct {
-        field('x, Struct1)
-        field('y, UNSIGNED32)
+        field('x, Struct1)      // 0 .. 7
+        field('y, UNSIGNED32)   // 8 .. 11
     }
 
     val Gen = new AutoPipeFunction("Gen") {

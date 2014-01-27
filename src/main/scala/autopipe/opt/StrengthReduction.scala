@@ -38,15 +38,15 @@ private[opt] object StrengthReduction extends Pass {
         val args = sortArgs(node)
         args._1 match {
             case im: ImmediateSymbol if im.value.long == 0 =>
-                new IRInstruction(NodeType.assign, node.dest, args._2)
+                IRInstruction(NodeType.assign, node.dest, args._2)
             case ts: TempSymbol if node.srca == node.srcb =>
                 val lit = IntLiteral(ts.valueType, 1, null)
                 val sym = new ImmediateSymbol(lit)
-                new IRInstruction(NodeType.shl, node.dest, node.srca, sym)
+                IRInstruction(NodeType.shl, node.dest, node.srca, sym)
             case ss: StateSymbol if node.srca == node.srcb =>
                 val lit = IntLiteral(ss.valueType, 1, null)
                 val sym = new ImmediateSymbol(lit)
-                new IRInstruction(NodeType.shl, node.dest, node.srca, sym)
+                IRInstruction(NodeType.shl, node.dest, node.srca, sym)
             case _ => null
         }
     }

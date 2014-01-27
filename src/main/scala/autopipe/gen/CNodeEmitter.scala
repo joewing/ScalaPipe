@@ -118,7 +118,7 @@ private[autopipe] abstract class CNodeEmitter(
         case NodeType.addr    => emitUnaryOp("&", node)
         case NodeType.sizeof => emitUnaryOp("sizeof", node)
         case _ =>
-            Error.raise("invalid operation: " + node, node)
+            Error.raise(s"invalid operation: $node", node)
     }
 
     private def emitOp(node: ASTOpNode): String = node.valueType match {
@@ -128,22 +128,16 @@ private[autopipe] abstract class CNodeEmitter(
         case a: ArrayValueType              => emitArrayOp(node)
         case p: PointerValueType            => emitPointerOp(node)
         case _ =>
-            Error.raise("invalid operation: " + node + " valueType: " +
+            Error.raise(s"invalid operation: $node, valueType: " +
                         node.valueType.getClass, node)
     }
 
     private def emitCall(node: ASTCallNode): String = {
-        val argString = node.args.foldLeft("") { (a, n) =>
-            if (a.isEmpty) {
-                emitExpr(n)
-            } else {
-                a + ", " + emitExpr(n)
-            }
-        }
+        val argString = node.args.map(emitExpr(_)).mkString(", ")
         if (kt.isInternal(node.func) && kt.parameters.get('profile)) {
-            node.symbol + "(&block->ap_clocks, " + argString + ")"
+            node.symbol + s"(&block->ap_clocks, $argString)"
         } else {
-            node.symbol + "(" + argString + ")"
+            node.symbol + s"($argString)"
         }
     }
 

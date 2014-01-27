@@ -6,6 +6,12 @@ private[opt] object ExpandExpressions extends Pass {
 
     override def toString = "expand expressions"
 
+    private def multipart(vt: ValueType) = vt match {
+        case at: ArrayValueType     => true
+        case st: StructValueType    => true
+        case _                      => false
+    }
+
     def run(context: IRContext, graph: IRGraph): IRGraph = {
 
         println("\tExpanding expressions")
@@ -16,11 +22,10 @@ private[opt] object ExpandExpressions extends Pass {
 
             // Get a list of all sources used in this basic block that we
             // can rename.
-            val srcs = bb.foldLeft(List[BaseSymbol]()) { (a, b) =>
+            val srcs = bb.foldLeft(Seq[BaseSymbol]()) { (a, b) =>
                 a ++ ng.block(b).srcs.filter {
-                    case st: StateSymbol =>
-                        !st.valueType.isInstanceOf[ArrayValueType]
-                    case _ => false
+                    case st: StateSymbol    => !multipart(st.valueType)
+                    case _                  => false
                 }
             }
 
@@ -39,10 +44,12 @@ private[opt] object ExpandExpressions extends Pass {
     private def rename(context: IRContext,
                        g: IRGraph,
                        sym: BaseSymbol,
-                       sb: List[Int]): IRGraph = {
+                       sb: Seq[Int]): IRGraph = {
 
         // Find the last index where the source is assigned.
-        val uses = sb.filter(b => g.block(b).symbols.contains(sym)).zipWithIndex
+        val uses = sb.filter { b =>
+            g.block(b).symbols.contains(sym)
+        }.zipWithIndex
         val assignments = uses.filter { case (b, i) =>
             g.block(b).dests.contains(sym)
         }

@@ -1,17 +1,18 @@
-
 package autopipe.gen
 
 import autopipe._
 
 private[gen] trait HDLGenerator extends Generator {
 
-    def hasState(node: ASTNode): Boolean = node match {
-        case in: ASTIfNode        => in.iFalse != null
-        case bn: ASTBlockNode    => bn.children.size > 1
-        case _                        => false
-    }
+    protected val kt: KernelType
 
-    def useFlatMemory(vt: ValueType): Boolean = vt.bits <= 1024
+    private val ramWidth = 32
+
+    def hasState(node: ASTNode): Boolean = node match {
+        case in: ASTIfNode      => in.iFalse != null
+        case bn: ASTBlockNode   => bn.children.size > 1
+        case _                  => false
+    }
 
     def getImmediate(s: ImmediateSymbol): String = s.value match {
         case f: FloatLiteral =>
@@ -31,7 +32,7 @@ private[gen] trait HDLGenerator extends Generator {
         case cs: ConfigSymbol       => cs.name
         case im: ImmediateSymbol    => getImmediate(im)
         case null                   => ""
-        case _ => sys.error("internal: " + sym)
+        case _ => sys.error(s"internal: $sym")
     }
 
     def getNextState(graph: IRGraph, label: Int): Int = {
@@ -43,43 +44,30 @@ private[gen] trait HDLGenerator extends Generator {
         }
     }
 
-    def getPortTypeString(name: String, vt: ValueType): String = {
+    def getTypeString(name: String, vt: ValueType): String = {
         val upper = vt.bits - 1
         if (vt.signed) {
-            "signed [" + upper + ":0] " + name
+            s"signed [$upper:0] $name"
         } else {
-            "[" + upper + ":0] " + name
+            s"[$upper:0] $name"
         }
     }
 
-    def getTypeString(name: String, vt: ValueType): String = vt match {
-        case at: ArrayValueType =>
-            getPortTypeString(name, at.itemType) + "[0:" + (at.length - 1) + "]"
-        case _ => getPortTypeString(name, vt)
-    }
-
-    def emitFlatMemory(name: String, vt: ArrayValueType) {
-        val ats = getPortTypeString(name, vt)
-        write("reg " + ats + ";")
-    }
-
-    def emitLocalArray(name: String, vt: ArrayValueType) {
-        val ats = getTypeString(name, vt)
-        val inStr = getPortTypeString(name + "_in", vt.itemType)
-        val outStr = getPortTypeString(name + "_out", vt.itemType)
-        write("reg " + ats + ";")
-        write("wire [31:0] " + name + "_wix;")
-        write("wire [31:0] " + name + "_rix;")
-        write("wire " + inStr + ";")
-        write("reg " + outStr + ";")
-        write("wire " + name + "_we;")
-        write
-        write("always @(posedge clk) begin")
+    def emitRAM(name: String, vt: ValueType) {
+        val top = ramWidth - 1
+        val size = (vt.bits + ramWidth - 1) / ramWidth
+        write(s"reg [$top:0] $name [0:$size];")
+        write(s"wire [31:0] ${name}_wix;")
+        write(s"wire [31:0] ${name}_rix;")
+        write(s"wire [$top:0] ${name}_in;")
+        write(s"reg [$top:0] ${name}_out;")
+        write(s"wire ${name}_we;")
+        write(s"always @(posedge clk) begin")
         enter
-        write(name + "_out <= " + name + "[" + name + "_rix];")
-        write("if (" + name + "_we) begin")
+        write(s"${name}_out <= $name[${name}_rix];")
+        write(s"if (${name}_we) begin")
         enter
-        write(name + "[" + name + "_wix] <= " + name + "_in;")
+        write(s"$name[${name}_wix] <= ${name}_in;")
         leave
         write("end")
         leave
@@ -88,22 +76,16 @@ private[gen] trait HDLGenerator extends Generator {
     }
 
     def emitLocal(name: String, s: BaseSymbol) {
-        s.valueType match {
-            case avt: ArrayValueType =>
-                if (useFlatMemory(avt)) {
-                    emitFlatMemory(name, avt)
-                } else {
-                    emitLocalArray(name, avt)
-                }
-            case _ =>
-                val ts = getTypeString(name, s.valueType)
-                if (s.isRegister) {
-                    write("reg " + ts + ";")
-                } else {
-                    write("wire " + ts + ";")
-                }
+        if (s.valueType.flat) {
+            val ts = getTypeString(name, s.valueType)
+            if (s.isRegister) {
+                write(s"reg $ts;")
+            } else {
+                write(s"wire $ts;")
+            }
+        } else {
+            emitRAM(name, s.valueType)
         }
     }
 
 }
-

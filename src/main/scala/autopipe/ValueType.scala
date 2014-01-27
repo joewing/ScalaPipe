@@ -65,9 +65,11 @@ private[autopipe] class ValueType(
 
     def baseType: ValueType = this
 
-    def isPure: Boolean = true
+    def pure = true
 
     def bytes: Int = (bits + 7) / 8
+
+    def flat = true
 
     override def toString: String = name
 
@@ -99,7 +101,7 @@ private[autopipe] class FloatValueType(_name: String, _bits: Int)
 private[autopipe] class PointerValueType(_name: String, val itemType: ValueType)
     extends ValueType(_name, 64, false) {
 
-    override def isPure: Boolean = false
+    override def pure = false
 
     def this(app: AutoPipePointer) = this(app.name, app.itemType.create())
 
@@ -113,62 +115,93 @@ private[autopipe] class ArrayValueType(apa: AutoPipeArray)
 
     bits = length * itemType.bits
 
-    override def isPure: Boolean = itemType.isPure
+    override def pure = itemType.pure
 
     override def baseType = itemType
 
-    override def dependencies = Set[ValueType](this) + itemType
+    override def flat = bits < 1024
+
+    override def dependencies = Set[ValueType](this, itemType)
 
 }
 
 private object StructValueType {
 
-    def getBits(aps: AutoPipeStruct) =
-        aps.fields.foldLeft(0) { (a, v) =>
-            a + v._2.create().bits
+    // TODO: This assumes 4-byte alignment
+    val alignment = 4
+
+    // Pad an offset for proper alignment.
+    def pad(offset: Int, vt: ValueType): Int = {
+        val align = math.min(alignment, vt.bytes)
+        val left = offset % align
+        if (left > 0) {
+            offset + alignment - left
+        } else {
+            offset
         }
+    }
+
+    // Get the total size of the structure, including padding.
+    def bits(aps: AutoPipeStruct): Int = {
+        val fields = aps.fields.map(_._2.create)
+        val bytes = fields.foldLeft(0) { (total, field) =>
+            pad(total, field) + field.bytes
+        }
+        bytes * 8
+    }
 
 }
 
 private[autopipe] class StructValueType(aps: AutoPipeStruct)
-    extends ValueType(aps.name, StructValueType.getBits(aps)) {
+    extends ValueType(aps.name, StructValueType.bits(aps)) {
 
     private[autopipe] val fields = aps.fields.map { case (k, v) =>
         (k.name, v.create())
     }
 
-    override def isPure: Boolean = fields.forall(_._2.isPure)
+    // Get the byte offset of a field in the structure.
+    def offset(name: String): Int = {
+        val ftype = fields.find(_._1 == name) match {
+            case Some(t) => t._2
+            case None =>
+                Error.raise(s"struct field not found: $name")
+                null
+        }
+        val skip = fields.takeWhile(_._1 != name).foldLeft(0) { (t, f) =>
+            StructValueType.pad(t, f._2) + f._2.bytes
+        }
+        StructValueType.pad(skip, ftype)
+    }
 
-    override def dependencies = Set(fields.map(_._2).toSeq: _*)
+    override def pure = fields.forall(_._2.pure)
+
+    override def dependencies = fields.map(_._2).toSet
 
 }
 
 private[autopipe] class NativeValueType(aps: AutoPipeNative)
     extends ValueType(aps.name, 0) {
 
-    override def isPure: Boolean = false
+    override def pure = false
 
 }
 
 private object UnionValueType {
 
-    def getBits(apu: AutoPipeUnion) =
-        apu.fields.foldLeft(0) { (a, v) =>
-            math.max(a, v._2.create().bits)
-        }
+    def bits(apu: AutoPipeUnion) = apu.fields.map(_._2.create.bits).max
 
 }
 
 private[autopipe] class UnionValueType(apu: AutoPipeUnion)
-    extends ValueType(apu.name, UnionValueType.getBits(apu)) {
+    extends ValueType(apu.name, UnionValueType.bits(apu)) {
 
     private[autopipe] val fields = apu.fields.map { case (k, v) =>
         (k.name, v.create())
     }
 
-    override def isPure: Boolean = fields.forall(_._2.isPure)
+    override def pure = fields.forall(_._2.pure)
 
-    override def dependencies = Set(fields.map(_._2).toSeq: _*)
+    override def dependencies = fields.map(_._2).toSet
 
 }
 

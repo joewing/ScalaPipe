@@ -109,6 +109,8 @@ private[autopipe] case class IRStore(
     override def dests = Seq(dest)
     override def srcs = Seq(src, offset)
 
+    def flat = dest.valueType.flat
+
     override def replaceSources(o: BaseSymbol, n: BaseSymbol): IRNode = {
         val a = if (this.offset == o) this.copy(offset = n) else this
         val b = if (   a.src    == o)    a.copy(src    = n) else a
@@ -119,7 +121,7 @@ private[autopipe] case class IRStore(
         if (dest == o) copy(dest = n) else this
     }
 
-    override def toString = dest + "[" + offset + "] <- " + src
+    override def toString = s"$dest[$offset] <- $src"
 
 }
 
@@ -133,6 +135,8 @@ private[autopipe] case class IRLoad(
     override def dests = Seq(dest)
     override def srcs = Seq(src, offset)
 
+    def flat = src.valueType.flat
+
     override def replaceSources(o: BaseSymbol, n: BaseSymbol): IRNode = {
         val a = if (this.offset == o) this.copy(offset = n) else this
         val b = if (   a.src    == o)    a.copy(src    = n) else a
@@ -143,7 +147,7 @@ private[autopipe] case class IRLoad(
         if (dest == o) copy(dest = n) else this
     }
 
-    override def toString = dest + " <- " + src + "[" + offset + "]"
+    override def toString = s"$dest <- $src[$offset]"
 
 }
 

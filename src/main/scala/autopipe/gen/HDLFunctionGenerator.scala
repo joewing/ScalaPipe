@@ -34,10 +34,10 @@ private[autopipe] class HDLFunctionGenerator(
         write("input wire clk;")
         write("input wire start;")
         for (i <- ft.inputs) {
-            val pts = getPortTypeString(emitSymbol(i), i.valueType)
+            val pts = getTypeString(emitSymbol(i), i.valueType)
             write("input wire " + pts + ";")
         }
-        val pts = getPortTypeString("result_out", ft.returnType)
+        val pts = getTypeString("result_out", ft.returnType)
         write("output reg " + pts + ";")
         write("output wire ready_out;")
         write

@@ -27,14 +27,32 @@ object RunnableExpressions extends DataFlowProblem {
         case _ => false
     }
 
-    private def hasConflict(a: IRNode, b: IRNode): Boolean = {
+    private def hasSymbolConflict(a: IRNode, b: IRNode) = {
         !a.dests.intersect(b.dests).isEmpty ||
         !b.srcs.intersect(a.dests).isEmpty ||
-        !a.srcs.intersect(b.dests).isEmpty ||
+        !a.srcs.intersect(b.dests).isEmpty
+    }
+
+    private def hasPortConflict(a: IRNode, b: IRNode) = {
         (a.dests.exists(_.isInstanceOf[OutputSymbol]) &&
          b.srcs.exists(_.isInstanceOf[InputSymbol])) ||
         (b.dests.exists(_.isInstanceOf[OutputSymbol]) &&
          a.srcs.exists(_.isInstanceOf[InputSymbol]))
+    }
+
+    private def hasConflict(a: IRNode, b: IRNode): Boolean = (a, b) match {
+        case (la: IRLoad, lb: IRLoad) if la.flat && lb.flat =>
+            la.offset == lb.dest || lb.offset == la.dest || la.dest == lb.dest
+        case (sa: IRStore, lb: IRLoad) if sa.flat && lb.flat =>
+            (sa.dest == lb.src && !disjoint(sa.offset, lb.offset)) ||
+            sa.src == lb.dest || sa.offset == lb.dest
+        case (la: IRLoad, sb: IRStore) if la.flat && sb.flat =>
+            (sb.dest == la.src && !disjoint(sb.offset, la.offset)) ||
+            sb.src == la.dest || sb.offset == la.dest
+        case (sa: IRStore, sb: IRStore) if sa.flat && sb.flat =>
+            sa.dest == sb.dest && !disjoint(sa.offset, sb.offset)
+        case _ =>
+            hasSymbolConflict(a, b) || hasPortConflict(a, b)
     }
 
     private def hasConflict(a: IRNode, b: StateBlock): Boolean = {

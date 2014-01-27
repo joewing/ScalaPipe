@@ -12,7 +12,7 @@ abstract class ASTNode(
     private[autopipe] var valueType = ValueType.void
     private[autopipe] var isStart = false
 
-    private[autopipe] def isPure: Boolean = children.forall(_.isPure)
+    private[autopipe] def pure: Boolean = children.forall(_.pure)
 
     // Dirty way to get the line number and file name in case of an error.
     if (apb != null) {
@@ -229,8 +229,8 @@ private[autopipe] case class ASTSymbolNode(
 
     override def children = indexes
 
-    private[autopipe] override def isPure =
-        valueType.isPure && indexes.forall(_.isPure)
+    private[autopipe] override def pure =
+        valueType.pure && indexes.forall(_.pure)
 
     def apply(l: ASTNode): ASTSymbolNode = {
         indexes = indexes :+ l
@@ -298,7 +298,7 @@ private[autopipe] case class ASTSpecial(
 
     override def children = args
 
-    private[autopipe] override def isPure = false
+    private[autopipe] override def pure = false
 
 }
 

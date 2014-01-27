@@ -49,13 +49,13 @@ private[autopipe] class HDLKernelGenerator(
 
         // I/O declarations.
         for (i <- kt.inputs) {
-            val pts = getPortTypeString("input_" + i.name, i.valueType)
+            val pts = getTypeString("input_" + i.name, i.valueType)
             write("input wire " + pts + ";")
             write("input wire avail_" + i.name + ";")
             write("output wire read_" + i.name + ";")
         }
         for (o <- kt.outputs) {
-            val pts = getPortTypeString("output_" + o.name, o.valueType)
+            val pts = getTypeString("output_" + o.name, o.valueType)
             write("output wire " + pts + ";")
             write("output wire write_" + o.name + ";")
             write("input wire afull_" + o.name + ";")

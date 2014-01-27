@@ -1,4 +1,3 @@
-
 package autopipe.gen
 
 import autopipe._
@@ -6,6 +5,9 @@ import autopipe._
 private[autopipe] class HDLIRContext(val kt: KernelType) extends IRContext {
 
     def eliminateVariables = true
+
+    val minRamBits = 1024
+    val ramWidth = 32
 
     private val share: Boolean = kt.parameters.get[Int]('share) > 1
 
@@ -50,4 +52,3 @@ private[autopipe] class HDLIRContext(val kt: KernelType) extends IRContext {
     }
 
 }
-

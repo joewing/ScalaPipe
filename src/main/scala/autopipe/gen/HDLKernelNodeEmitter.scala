@@ -74,7 +74,7 @@ private[gen] class HDLKernelNodeEmitter(
                 if (block.continuous) {
                     moduleEmitter.addAssignment(dest + " <= " + src + ";")
                 } else {
-                    write(dest + " <= " + src + ";")
+                    write(s"$dest <= $src;")
                 }
         }
     }

@@ -60,17 +60,20 @@ private[autopipe] case class IRNodeEmitter(
 
     private def emitAdd(ast: ASTNode,
                         a: BaseSymbol,
-                        b: BaseSymbol): BaseSymbol = {
-        val (_, srca, srcb) = sort(NodeType.add, a, b, NodeType.add)
-        val dest = kt.createTemp(a.valueType)
-        append(IRInstruction(NodeType.add, dest, srca, srcb), ast)
-        dest
+                        b: BaseSymbol): BaseSymbol = (a, b) match {
+        case (ai: ImmediateSymbol, bi: ImmediateSymbol) =>
+            emitS32(ai.value.long.toInt + bi.value.long.toInt)
+        case _ =>
+            val (_, srca, srcb) = sort(NodeType.add, a, b, NodeType.add)
+            val dest = kt.createTemp(a.valueType)
+            append(IRInstruction(NodeType.add, dest, srca, srcb), ast)
+            dest
     }
 
     private def emitMul(ast: ASTNode,
                         a: BaseSymbol,
                         b: BaseSymbol): BaseSymbol = {
-        val (_, srca, srcb) = sort(NodeType.add, a, b, NodeType.mul)
+        val (_, srca, srcb) = sort(NodeType.mul, a, b, NodeType.mul)
         val dest = kt.createTemp(a.valueType)
         append(IRInstruction(NodeType.mul, dest, srca, srcb), ast)
         dest
@@ -136,8 +139,8 @@ private[autopipe] case class IRNodeEmitter(
     private def emitLiteral(l: Literal): BaseSymbol = new ImmediateSymbol(l)
 
     private def emitOffset(vt: ValueType,
-                           base: BaseSymbol,
-                           comp: ASTNode): (BaseSymbol, ValueType) = {
+                           base: Option[BaseSymbol],
+                           comp: ASTNode): (Option[BaseSymbol], ValueType) = {
         val lit: SymbolLiteral = comp match {
             case sl: SymbolLiteral => sl
             case _ => null
@@ -147,29 +150,38 @@ private[autopipe] case class IRNodeEmitter(
             case st: StructValueType if lit != null => st.fields(lit.symbol)
             case ut: UnionValueType  if lit != null => ut.fields(lit.symbol)
             case nt: NativeValueType if lit != null => ValueType.any
-            case _                                  => sys.error("internal")
+            case _ => sys.error(s"internal: $vt")
         }
 
-        val multiplier = emitS32(vt.bytes)
-        val expr = emitExpr(comp)
-        val temp = emitMul(comp, multiplier, expr)
-        kt.releaseTemp(expr)
-        kt.releaseTemp(multiplier)
-        val offset = emitAdd(comp, base, temp)
-        kt.releaseTemp(temp)
+        val expr: BaseSymbol = vt match {
+            case st: StructValueType if lit != null =>
+                emitS32(st.offset(lit.symbol))
+            case ut: UnionValueType if lit != null =>
+                emitS32(0)
+            case _ =>
+                val multiplier = emitS32(vt.bytes)
+                val temp = emitMul(comp, multiplier, emitExpr(comp))
+                kt.releaseTemp(multiplier)
+                temp
+        }
+        val offset = base.foldLeft(expr) { (a, b) =>
+            val temp = emitAdd(comp, a, b)
+            kt.releaseTemp(a)
+            kt.releaseTemp(b)
+            temp
+        }
 
-        return (offset, nvt)
+        return (Option(offset), nvt)
     }
 
     private def emitOffset(node: ASTSymbolNode): BaseSymbol = {
-        val zero = emitS32(0)
-        val start = (zero, node.valueType)
+        val valueType = kt.getType(node)
+        val start = (Option.empty[BaseSymbol], valueType)
         val offset = node.indexes.foldLeft(start) { (a, index) =>
             val (base, vt) = a
             emitOffset(vt, base, index)
         }
-        kt.releaseTemp(zero)
-        return offset._1
+        return offset._1.head
     }
 
     private def emitSymbol(node: ASTSymbolNode): BaseSymbol = {
@@ -200,8 +212,24 @@ private[autopipe] case class IRNodeEmitter(
         val srcType = node.a.valueType
         (srcType, destType) match {
 
-            case (st: IntegerValueType, dt: IntegerValueType) => expr
-            case (st: FloatValueType, dt: FloatValueType) => expr
+            case (st: IntegerValueType, dt: IntegerValueType) =>
+                if (destType.bits != srcType.bits) {
+                    val dest = kt.createTemp(destType)
+                    append(IRInstruction(NodeType.convert, dest, expr), node)
+                    kt.releaseTemp(expr)
+                    dest
+                } else {
+                    expr
+                }
+            case (st: FloatValueType, dt: FloatValueType) =>
+                if (destType.bits != srcType.bits) {
+                    val dest = kt.createTemp(destType)
+                    append(IRInstruction(NodeType.convert, dest, expr), node)
+                    kt.releaseTemp(expr)
+                    dest
+                } else {
+                    expr
+                }
             case (st: IntegerValueType, dt: FloatValueType) =>
                 val dest = kt.createTemp(destType)
                 append(IRInstruction(NodeType.convert, dest, expr), node)

@@ -2,12 +2,12 @@ package autopipe.gen
 
 private[gen] trait CGenerator extends Generator {
 
-    protected override def enter {
+    override def enter {
         write("{")
         super.enter
     }
 
-    protected override def leave {
+    override def leave {
         super.leave
         write("}")
     }

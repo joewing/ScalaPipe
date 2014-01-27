@@ -109,7 +109,7 @@ private[autopipe] class CKernelGenerator(
     private def emitRun {
 
         val timing: Map[ASTNode, Int] =
-            if (kt.expression.isPure && kt.parameters.get('profile)) {
+            if (kt.expression.pure && kt.parameters.get('profile)) {
                 val ir                 = IRNodeEmitter(kt).emit(kt.expression)
                 val context          = new ProfileIRContext(kt)
                 val graph             = IROptimizer(kt, context).optimize(ir)

@@ -1,6 +1,5 @@
 package autopipe
 
-import scala.collection.mutable.HashMap
 import autopipe.dsl.AutoPipeBlock
 
 private[autopipe] class Kernel(
@@ -12,9 +11,9 @@ private[autopipe] class Kernel(
     private[autopipe] val index = LabelMaker.getInstanceIndex
     private[autopipe] val label = "instance" + index
     private[autopipe] var device: Device = null
-    private val outputs = new HashMap[PortName, Stream]
-    private val inputs = new HashMap[PortName, Stream]
-    private val configs = new HashMap[String, Literal]
+    private var outputs = Map[PortName, Stream]()
+    private var inputs = Map[PortName, Stream]()
+    private var configs = Map[String, Literal]()
 
     collectDebugInfo
 
@@ -56,14 +55,11 @@ private[autopipe] class Kernel(
     }
 
     private[autopipe] def replaceInput(os: Stream, ns: Stream) {
-        for (i <- inputs) {
+        for (i <- inputs if i._2 == os) {
             val portName = i._1
-            val stream = i._2
-            if (stream == os) {
-                inputs(portName) = ns
-                ns.setDest(this, portName)
-                return
-            }
+            inputs += (portName -> ns)
+            ns.setDest(this, portName)
+            return
         }
         sys.error("internal error: old stream not found")
     }
@@ -74,9 +70,7 @@ private[autopipe] class Kernel(
     }
 
     private[autopipe] def setConfigs(o: Kernel) {
-        for (c <- o.configs) {
-            configs += c
-        }
+        configs ++= o.configs
     }
 
     private[autopipe] def getConfig(n: String): Literal = {
