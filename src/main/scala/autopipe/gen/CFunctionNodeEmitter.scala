@@ -5,47 +5,61 @@ import autopipe._
 private[autopipe] class CFunctionNodeEmitter(
         val ft: InternalFunctionType,
         _timing: Map[ASTNode, Int]
-    ) extends CNodeEmitter(ft, _timing) {
+    ) extends CNodeEmitter(ft, _timing) with ASTUtils {
 
     override def emitAvailable(node: ASTAvailableNode): String = "1"
 
-    override def emitSymbol(node: ASTSymbolNode): String = {
-
-        def isNative(vt: ValueType) = vt.isInstanceOf[NativeValueType]
-
-        def isNativePointer(vt: ValueType) = vt match {
-            case p: PointerValueType if isNative(p.itemType) => true
-            case _ => false
+    private def emitComponent(base: String,
+                              vt: ValueType,
+                              comp: ASTNode): (String, ValueType) = {
+        val lit: SymbolLiteral = comp match {
+            case sl: SymbolLiteral => sl
+            case _ => null
         }
-
-        val name = node.symbol
-        val index = node.index
-        if (index == null) {
-            return name
-        }
-
-        val expr = index match {
-            case sl: SymbolLiteral  => "." + index
-            case _                  => "[" + emitExpr(index) + "]"
-        }
-
-        if (isNative(node.valueType)) {
-            return s"$name$index"
-        } else if (isNativePointer(node.valueType)) {
-            return s"(*$name)$index"
-        } else if (index.isInstanceOf[SymbolLiteral]) {
-            return s"$name.$index"
+        val expr = if (lit != null) {
+            "." + comp
         } else {
-            return s"$name.values$expr"
+            "[" + emitExpr(comp) + "]"
         }
+        val nvt = vt match {
+            case at: ArrayValueType                 => at.itemType
+            case st: StructValueType if lit != null => st.fields(lit.symbol)
+            case ut: UnionValueType  if lit != null => ut.fields(lit.symbol)
+            case nt: NativeValueType if lit != null => ValueType.any
+            case _                                  => sys.error("internal")
+        }
+        val str = if (isNative(vt)) {
+            s"$base$expr"
+        } else if (isNativePointer(vt)) {
+            s"$base(*$vt)$expr"
+        } else if (comp.isInstanceOf[SymbolLiteral]) {
+            s"$base$expr"
+        } else {
+            s"$base.values$expr"
+        }
+        return ((str, nvt))
+    }
 
+    override def emitSymbol(node: ASTSymbolNode): String = {
+        val valueType = kt.getType(node)
+        val start = ((node.symbol, valueType))
+        val result = node.indexes.foldLeft(start) { (a, index) =>
+            val (base, vt) = a
+            emitComponent(base, vt, index)
+        }
+        result._1
     }
 
     override def emitAssign(node: ASTAssignNode) {
-        val dest = emitExpr(node.dest)
         val src = emitExpr(node.src)
-        write(s"$dest = $src;")
-        updateClocks(getTiming(node))
+        if (kt.isOutput(node.dest.asInstanceOf[ASTSymbolNode])) {
+            updateClocks(getTiming(node))
+            writeReturn(src)
+        } else {
+            val dest = emitExpr(node.dest)
+            write(s"$dest = $src;")
+            updateClocks(getTiming(node))
+        }
     }
 
     override def emitStop(node: ASTStopNode) {

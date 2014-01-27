@@ -34,6 +34,11 @@ private[gen] trait CGenerator extends Generator {
         enter
     }
 
+    protected def writeWhile(cond: String) {
+        write(s"while($cond)")
+        enter
+    }
+
     protected def writeEnd = leave
 
     protected def writeReturn(value: String = null) {

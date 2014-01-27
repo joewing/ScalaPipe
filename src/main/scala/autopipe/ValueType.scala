@@ -67,6 +67,8 @@ private[autopipe] class ValueType(
 
     def isPure: Boolean = true
 
+    def bytes: Int = (bits + 7) / 8
+
     override def toString: String = name
 
     override def equals(other: Any): Boolean = {

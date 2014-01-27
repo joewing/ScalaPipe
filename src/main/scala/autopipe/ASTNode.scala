@@ -1,8 +1,6 @@
 package autopipe
 
-import autopipe.dsl.AutoPipeBlock
-import autopipe.dsl.AutoPipeFunction
-import autopipe.dsl.AutoPipeObject
+import autopipe.dsl.{AutoPipeBlock, AutoPipeFunction, AutoPipeObject}
 
 abstract class ASTNode(
         val op: NodeType.Value,
@@ -227,24 +225,40 @@ private[autopipe] case class ASTSymbolNode(
         _apb: AutoPipeBlock = null
     ) extends ASTNode(NodeType.symbol, _apb) {
 
-    var index: ASTNode = null
+    private[autopipe] var indexes = Seq[ASTNode]()
 
-    override def children = Seq(index).filter(_ != null)
+    override def children = indexes
 
     private[autopipe] override def isPure =
-        if (index != null) index.isPure else valueType.isPure
+        valueType.isPure && indexes.forall(_.isPure)
 
-    def apply(l: ASTNode): ASTNode = {
-        index = l
-        index.parent = this
+    def apply(l: ASTNode): ASTSymbolNode = {
+        indexes = indexes :+ l
+        l.parent = this
         this
     }
 
-    def apply(s: Symbol): ASTNode = {
-        index = SymbolLiteral(s.name, apb)
+    def apply(s: Symbol): ASTSymbolNode = {
+        val index = SymbolLiteral(s.name, apb)
         index.parent = this
+        indexes = indexes :+ index
         this
     }
+
+    def update(l: ASTNode, r: ASTNode): ASTAssignNode = {
+        indexes = indexes :+ l
+        l.parent = this
+        ASTAssignNode(this, r, apb)
+    }
+
+    def update(s: Symbol, r: ASTNode): ASTAssignNode = {
+        val index = SymbolLiteral(s.name, apb)
+        index.parent = this
+        indexes = indexes :+ index
+        ASTAssignNode(this, r, apb)
+    }
+
+    override def toString = symbol + "(" + indexes.mkString(",") + ")"
 
 }
 

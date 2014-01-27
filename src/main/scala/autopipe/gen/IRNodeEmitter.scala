@@ -35,7 +35,9 @@ private[autopipe] case class IRNodeEmitter(
 
     private def getPointer(ast: ASTNode): Int = append(IRGoto(), ast)
 
-    private def sort(op: NodeType.Value, a: BaseSymbol, b: BaseSymbol,
+    private def sort(op: NodeType.Value,
+                     a: BaseSymbol,
+                     b: BaseSymbol,
                      symmetric: NodeType.Value) = {
         if (a < b || symmetric == NodeType.invalid) {
             (op, a, b)
@@ -47,11 +49,30 @@ private[autopipe] case class IRNodeEmitter(
     private def emitBinaryOp(node: ASTOpNode,
                              symmetric: NodeType.Value = NodeType.invalid) = {
         val dest = kt.createTemp(node.valueType)
-        val (op, srca, srcb) =
-            sort(node.op, emitExpr(node.a), emitExpr(node.b), symmetric)
+        val a = emitExpr(node.a)
+        val b = emitExpr(node.b)
+        val (op, srca, srcb) = sort(node.op, a, b, symmetric)
         append(IRInstruction(op, dest, srca, srcb), node)
         kt.releaseTemp(srca)
         kt.releaseTemp(srcb)
+        dest
+    }
+
+    private def emitAdd(ast: ASTNode,
+                        a: BaseSymbol,
+                        b: BaseSymbol): BaseSymbol = {
+        val (_, srca, srcb) = sort(NodeType.add, a, b, NodeType.add)
+        val dest = kt.createTemp(a.valueType)
+        append(IRInstruction(NodeType.add, dest, srca, srcb), ast)
+        dest
+    }
+
+    private def emitMul(ast: ASTNode,
+                        a: BaseSymbol,
+                        b: BaseSymbol): BaseSymbol = {
+        val (_, srca, srcb) = sort(NodeType.add, a, b, NodeType.mul)
+        val dest = kt.createTemp(a.valueType)
+        append(IRInstruction(NodeType.mul, dest, srca, srcb), ast)
         dest
     }
 
@@ -114,6 +135,43 @@ private[autopipe] case class IRNodeEmitter(
 
     private def emitLiteral(l: Literal): BaseSymbol = new ImmediateSymbol(l)
 
+    private def emitOffset(vt: ValueType,
+                           base: BaseSymbol,
+                           comp: ASTNode): (BaseSymbol, ValueType) = {
+        val lit: SymbolLiteral = comp match {
+            case sl: SymbolLiteral => sl
+            case _ => null
+        }
+        val nvt = vt match {
+            case at: ArrayValueType                 => at.itemType
+            case st: StructValueType if lit != null => st.fields(lit.symbol)
+            case ut: UnionValueType  if lit != null => ut.fields(lit.symbol)
+            case nt: NativeValueType if lit != null => ValueType.any
+            case _                                  => sys.error("internal")
+        }
+
+        val multiplier = emitS32(vt.bytes)
+        val expr = emitExpr(comp)
+        val temp = emitMul(comp, multiplier, expr)
+        kt.releaseTemp(expr)
+        kt.releaseTemp(multiplier)
+        val offset = emitAdd(comp, base, temp)
+        kt.releaseTemp(temp)
+
+        return (offset, nvt)
+    }
+
+    private def emitOffset(node: ASTSymbolNode): BaseSymbol = {
+        val zero = emitS32(0)
+        val start = (zero, node.valueType)
+        val offset = node.indexes.foldLeft(start) { (a, index) =>
+            val (base, vt) = a
+            emitOffset(vt, base, index)
+        }
+        kt.releaseTemp(zero)
+        return offset._1
+    }
+
     private def emitSymbol(node: ASTSymbolNode): BaseSymbol = {
 
         val sym = kt.getSymbol(node.symbol)
@@ -123,24 +181,15 @@ private[autopipe] case class IRNodeEmitter(
             append(IRInstruction(NodeType.assign, src, sym), node)
         }
 
-        if (node.index == null) {
-
-            src
-
+        if (node.indexes.isEmpty) {
+            return src
         } else {
-
-            // Array reference.
-            val offset = emitExpr(node.index)
+            val offset = emitOffset(node)
             val dest = kt.createTemp(node.valueType)
-            if (useFlatMemory(src.valueType)) {
-                append(IRVectorLoad(dest, src, offset), node)
-            } else {
-                append(IRArrayLoad(dest, src, offset), node)
-            }
+            append(IRLoad(dest, src, offset), node)
             kt.releaseTemp(src)
             kt.releaseTemp(offset)
-            dest
-
+            return dest
         }
 
     }
@@ -233,33 +282,21 @@ private[autopipe] case class IRNodeEmitter(
     }
 
     private def emitAssign(node: ASTAssignNode) {
-
         val src = emitExpr(node.src)
-
-        def emitArrayStore(sn: ASTSymbolNode) {
-            val dest = kt.getSymbol(sn.symbol)
-            val offset = emitExpr(sn.index)
-            if (useFlatMemory(dest.valueType)) {
-                append(IRVectorStore(dest, offset, src), node)
-            } else {
-                append(IRArrayStore(dest, offset, src), node)
-            }
-            kt.releaseTemp(offset)
-            kt.releaseTemp(src)
-        }
-
-        def emitStore(sn: ASTSymbolNode) {
-            val dest = kt.getSymbol(sn.symbol)
-            append(IRInstruction(node.op, dest, src), node)
-            kt.releaseTemp(src)
-        }
-
         node.dest match {
-            case a: ASTSymbolNode if a.index != null  => emitArrayStore(a)
-            case s: ASTSymbolNode if s.index == null  => emitStore(s)
-            case _ => Error.raise("invalid LValue", node)
+            case sn: ASTSymbolNode =>
+                val dest = kt.getSymbol(sn.symbol)
+                if (sn.indexes.isEmpty) {
+                    append(IRInstruction(node.op, dest, src), node)
+                } else {
+                    val offset = emitOffset(sn)
+                    append(IRStore(dest, offset, src), node)
+                    kt.releaseTemp(offset)
+                }
+            case _ =>
+                Error.raise("invalid LValue", node)
         }
-
+        kt.releaseTemp(src)
     }
 
     private def emitIf(node: ASTIfNode) {

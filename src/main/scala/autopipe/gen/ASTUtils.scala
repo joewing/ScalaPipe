@@ -6,26 +6,31 @@ private[gen] trait ASTUtils {
 
     val kt: KernelType
 
+    protected def isNative(vt: ValueType) = vt.isInstanceOf[NativeValueType]
+
+    protected def isNativePointer(vt: ValueType) = vt match {
+        case p: PointerValueType if isNative(p.itemType) => true
+        case _ => false
+    }
+
     private def localPorts(node: ASTNode,
                            p: String => Boolean): Set[String] = node match {
         case sn: ASTSymbolNode =>
+            val indexPorts = sn.indexes.flatMap(localPorts(_, p)).toSet
             if (p(sn.symbol)) {
-                localPorts(sn.index, p) + sn.symbol
+                indexPorts + sn.symbol
             } else {
-                localPorts(sn.index, p)
+                indexPorts
             }
-        case cn: ASTCallNode    =>
-            Set(cn.args.flatMap(localPorts(_, p)): _*)
-        case on: ASTOpNode =>
-            localPorts(on.a, p) ++ localPorts(on.b, p)
+        case cn: ASTCallNode    => cn.args.flatMap(localPorts(_, p)).toSet
+        case on: ASTOpNode      => localPorts(on.a, p) ++ localPorts(on.b, p)
         case cn: ASTConvertNode => localPorts(cn.a, p)
         case an: ASTAssignNode  =>
             localPorts(an.dest, p) ++ localPorts(an.src, p)
         case in: ASTIfNode      => localPorts(in.cond, p)
         case wn: ASTWhileNode   => localPorts(wn.cond, p)
         case sn: ASTSwitchNode  => localPorts(sn.cond, p)
-        case bn: ASTBlockNode   =>
-            Set(bn.children.flatMap(localPorts(_, p)): _*)
+        case bn: ASTBlockNode   => bn.children.flatMap(localPorts(_, p)).toSet
         case rn: ASTAvailableNode if kt.isInput(rn.symbol) => Set(rn.symbol)
         case rt: ASTReturnNode =>
             if (!kt.outputs.isEmpty && p(kt.outputs.head.name)) {
@@ -40,13 +45,14 @@ private[gen] trait ASTUtils {
                               p: String => Boolean): Set[String] = node match {
 
         case sn: ASTSymbolNode =>
+            val indexPorts = sn.indexes.flatMap(blockingPorts(_, p)).toSet
             if (p(sn.symbol)) {
-                blockingPorts(sn.index, p) + sn.symbol
+                indexPorts + sn.symbol
             } else {
-                blockingPorts(sn.index, p)
+                indexPorts
             }
         case cn: ASTCallNode =>
-            Set(cn.args.flatMap(blockingPorts(_, p)): _*)
+            cn.args.flatMap(blockingPorts(_, p)).toSet
         case on: ASTOpNode =>
             blockingPorts(on.a, p) ++ blockingPorts(on.b, p)
         case cn: ASTConvertNode => blockingPorts(cn.a, p)
@@ -76,7 +82,7 @@ private[gen] trait ASTUtils {
             case an: ASTAssignNode  => reads(an.src)
             case on: ASTOpNode      => reads(on.a) ++ reads(on.b)
             case sn: ASTSymbolNode  =>
-                reads(sn.index) + ((sn.symbol, sn.index))
+                sn.indexes.flatMap(i => reads(i) + ((sn.symbol, i))).toSet
             case _                  => Set()
         }
     }
@@ -85,20 +91,21 @@ private[gen] trait ASTUtils {
                          assign: Boolean = false): Set[(String, ASTNode)] = {
         if (assign) {
             node match {
-                case sn: ASTSymbolNode  => Set((sn.symbol, sn.index))
-                case _                  => Set()
+                case sn: ASTSymbolNode =>
+                    sn.indexes.map(i => ((sn.symbol, i))).toSet
+                case _ => Set()
             }
         } else {
             node match {
-                case an: ASTAssignNode  => writes(an.dest, true)
-                case _                  => Set()
+                case an: ASTAssignNode => writes(an.dest, true)
+                case _ => Set()
             }
         }
     }
 
     protected def requiresInput(node: ASTNode): Boolean = node match {
         case sn: ASTSymbolNode =>
-            kt.isInput(sn.symbol) || requiresInput(sn.index)
+            kt.isInput(sn.symbol) || sn.indexes.exists(requiresInput(_))
         case cn: ASTCallNode =>
             cn.args.foldLeft(false) { (a, b) => a || requiresInput(b) }
         case on: ASTOpNode =>

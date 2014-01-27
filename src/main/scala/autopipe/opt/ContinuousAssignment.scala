@@ -158,8 +158,6 @@ private[opt] object ContinuousAssignment extends Pass {
                     case _                  => !usesPort(node)
                 }
             }
-        case vl: IRVectorLoad =>
-            vl.offset.isInstanceOf[ImmediateSymbol] && !usesPort(vl)
         case gt: IRGoto => true
         case _ => false
     }

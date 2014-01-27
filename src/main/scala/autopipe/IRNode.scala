@@ -99,21 +99,19 @@ private[autopipe] case class IRInstruction(
 
 }
 
-private[autopipe] case class IRVectorStore(
-        val dest:    BaseSymbol,
+private[autopipe] case class IRStore(
+        val dest:   BaseSymbol,
         val offset: BaseSymbol,
-        val src:     BaseSymbol,
-        val id:      Int = IRNodeCounter.getId
+        val src:    BaseSymbol,
+        val id:     Int = IRNodeCounter.getId
     ) extends IRNode {
-
-    val arrayType = dest.valueType.asInstanceOf[ArrayValueType]
 
     override def dests = Seq(dest)
     override def srcs = Seq(src, offset)
 
     override def replaceSources(o: BaseSymbol, n: BaseSymbol): IRNode = {
         val a = if (this.offset == o) this.copy(offset = n) else this
-        val b = if (    a.src     == o)     a.copy(src     = n) else a
+        val b = if (   a.src    == o)    a.copy(src    = n) else a
         return b
     }
 
@@ -125,73 +123,19 @@ private[autopipe] case class IRVectorStore(
 
 }
 
-private[autopipe] case class IRVectorLoad(
-        val dest:    BaseSymbol,
-        val src:     BaseSymbol,
+private[autopipe] case class IRLoad(
+        val dest:   BaseSymbol,
+        val src:    BaseSymbol,
         val offset: BaseSymbol,
-        val id:      Int = IRNodeCounter.getId
+        val id:     Int = IRNodeCounter.getId
     ) extends IRNode {
-
-    val arrayType = src.valueType.asInstanceOf[ArrayValueType]
 
     override def dests = Seq(dest)
     override def srcs = Seq(src, offset)
 
     override def replaceSources(o: BaseSymbol, n: BaseSymbol): IRNode = {
         val a = if (this.offset == o) this.copy(offset = n) else this
-        val b = if (    a.src     == o)     a.copy(src     = n) else a
-        return b
-    }
-
-    override def replaceDest(o: BaseSymbol, n: BaseSymbol): IRNode = {
-        if (dest == o) copy(dest = n) else this
-    }
-
-    override def toString = dest + " <- " + src + "[" + offset + "]"
-
-}
-
-private[autopipe] case class IRArrayStore(
-        val dest:    BaseSymbol,
-        val offset: BaseSymbol,
-        val src:     BaseSymbol,
-        val id:      Int = IRNodeCounter.getId
-    ) extends IRNode {
-
-    val arrayType = dest.valueType.asInstanceOf[ArrayValueType]
-
-    override def dests = Seq(dest)
-    override def srcs = Seq(src, offset)
-
-    override def replaceSources(o: BaseSymbol, n: BaseSymbol): IRNode = {
-        val a = if (this.offset == o) this.copy(offset = n) else this
-        val b = if (    a.src     == o)     a.copy(src     = n) else a
-        return b
-    }
-
-    override def replaceDest(o: BaseSymbol, n: BaseSymbol): IRNode = {
-        if (dest == o) copy(dest = n) else this
-    }
-
-    override def toString = dest + "[" + offset + "] <- " + src
-
-}
-
-private[autopipe] case class IRArrayLoad(
-        val dest:    BaseSymbol,
-        val src:     BaseSymbol,
-        val offset: BaseSymbol,
-        val id:      Int = IRNodeCounter.getId
-    ) extends IRNode {
-
-    val arrayType = src.valueType.asInstanceOf[ArrayValueType]
-
-    override def dests = Seq(dest)
-    override def srcs = Seq(src, offset)
-
-    override def replaceSources(o: BaseSymbol, n: BaseSymbol): IRNode = {
-        val a = if (this.offset == o) this.copy(offset = n) else this
-        val b = if (    a.src     == o)     a.copy(src     = n) else a
+        val b = if (   a.src    == o)    a.copy(src    = n) else a
         return b
     }
 

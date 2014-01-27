@@ -136,9 +136,7 @@ private[autopipe] class ConstantFolder(kt: KernelType) {
 
     private def foldSymbol(node: ASTSymbolNode): ASTNode = {
         val result = ASTSymbolNode(node.symbol)
-        if (node.index != null) {
-            result.index = fold(node.index)
-        }
+        result.indexes = node.indexes.map(fold(_))
         result.valueType = node.valueType
         result
     }

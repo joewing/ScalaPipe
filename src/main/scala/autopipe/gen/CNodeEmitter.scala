@@ -222,17 +222,13 @@ private[autopipe] abstract class CNodeEmitter(
     private def emitIf(node: ASTIfNode) {
         val clocks = getTiming(node)
         updateClocks(getTiming(node))
-        write("if(" + emitExpr(node.cond) + ") {")
-        enter
+        writeIf(emitExpr(node.cond))
         emit(node.iTrue)
-        leave
         if (node.iFalse != null) {
-            write("} else {")
-            enter()
+            writeElse
             emit(node.iFalse)
-            leave
         }
-        write("}")
+        writeEnd
     }
 
     private def emitSwitch(node: ASTSwitchNode) {
@@ -241,17 +237,15 @@ private[autopipe] abstract class CNodeEmitter(
         var first = true
         node.cases.foreach { c =>
             if (c._1 != null) {
-                val expr = "(" + test + ") == (" + emitExpr(c._1) + ")"
+                val cond = emitExpr(c._1)
+                val expr = s"($test) == ($cond)"
                 if (first) {
-                    write("if(" + expr + ") {")
+                    writeIf(expr)
                     first = false
                 } else {
-                    write("else if(" + expr + ") {")
+                    writeElseIf(expr)
                 }
-                enter
                 emit(c._2)
-                leave
-                write("}")
             }
         }
         node.cases.find({ c => c._1 == null }) match {
@@ -260,25 +254,21 @@ private[autopipe] abstract class CNodeEmitter(
                     emit(b)
                     first = false
                 } else {
-                    write("else {")
-                    enter
+                    writeElse
                     emit(b)
-                    leave
-                    write("}")
                 }
             case None => ()
         }
+        writeEnd
     }
 
     private def emitWhile(node: ASTWhileNode) {
         val clocks = getTiming(node)
         updateClocks(clocks)
-        write("while(" + emitExpr(node.cond) + ") {")
-        enter
+        writeWhile(emitExpr(node.cond))
         updateClocks(clocks)
         emit(node.body)
-        leave
-        write("}")
+        writeEnd
     }
 
     private def emitCallProc(node: ASTCallNode) {

@@ -28,7 +28,7 @@ private[opt] object CSE extends Pass {
                 val expr = ae(block.label).find { avail =>
                     !block.nodes.contains(avail) &&
                     (old.isInstanceOf[IRInstruction] ||
-                     old.isInstanceOf[IRArrayLoad]) &&
+                     old.isInstanceOf[IRLoad]) &&
                     old.op == avail.op &&
                     old.op != NodeType.assign &&
                     !old.dests.isEmpty &&

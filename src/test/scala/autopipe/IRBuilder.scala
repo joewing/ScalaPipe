@@ -101,20 +101,12 @@ private[autopipe] class IRBuilder
         append(IRInstruction(op, dest, srca, srcb))
     }
 
-    def vs(dest: BaseSymbol, offset: BaseSymbol, src: BaseSymbol) {
-        append(IRVectorStore(dest, offset, src))
+    def store(dest: BaseSymbol, offset: BaseSymbol, src: BaseSymbol) {
+        append(IRStore(dest, offset, src))
     }
 
-    def vl(dest: BaseSymbol, offset: BaseSymbol, src: BaseSymbol) {
-        append(IRVectorLoad(dest, src, offset))
-    }
-
-    def as(dest: BaseSymbol, offset: BaseSymbol, src: BaseSymbol) {
-        append(IRArrayStore(dest, offset, src))
-    }
-
-    def al(dest: BaseSymbol, offset: BaseSymbol, src: BaseSymbol) {
-        append(IRArrayLoad(dest, src, offset))
+    def load(dest: BaseSymbol, offset: BaseSymbol, src: BaseSymbol) {
+        append(IRLoad(dest, src, offset))
     }
 
     def goto(i: Int) {

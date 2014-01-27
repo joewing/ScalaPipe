@@ -42,10 +42,10 @@ private[autopipe] class HDLIRContext(val kt: KernelType) extends IRContext {
                     }
                 case _ => false
             }
-        case (ia: IRArrayStore, ib: IRArrayStore) => ia.dest == ib.dest
-        case (ia: IRArrayStore, ib: IRArrayLoad)  => ia.dest == ib.src
-        case (ia: IRArrayLoad,  ib: IRArrayStore) => ia.src  == ib.dest
-        case (ia: IRArrayLoad,  ib: IRArrayLoad)  => ia.src  == ib.src
+        case (ia: IRStore, ib: IRStore) => ia.dest == ib.dest
+        case (ia: IRStore, ib: IRLoad)  => ia.dest == ib.src
+        case (ia: IRLoad,  ib: IRStore) => ia.src  == ib.dest
+        case (ia: IRLoad,  ib: IRLoad)  => ia.src  == ib.src
         case _ => false
     }
 

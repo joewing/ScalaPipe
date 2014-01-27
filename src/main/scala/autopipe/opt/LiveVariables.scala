@@ -11,17 +11,16 @@ object LiveVariables extends DataFlowProblem {
     def init(kt: KernelType, graph: IRGraph) = Set[T]()
 
     def gen(sb: StateBlock, in: Set[T]): Set[T] =
-        Set(sb.srcs.filter(isVariable): _*)
+        sb.srcs.filter(isVariable).toSet
 
     def kill(sb: StateBlock, in: Set[T]): Set[T] = {
         val dests = sb.nodes.flatMap { node =>
             node match {
-                case vs: IRVectorStore  => List[T]()
-                case as: IRArrayStore    => List[T]()
+                case st: IRStore        => Seq[T]()
                 case _ => node.dests.filter(isVariable)
             }
         }
-        Set[T](dests: _*)
+        dests.toSet
     }
 
     def meet(a: Set[T], b: Set[T]) = a.union(b)

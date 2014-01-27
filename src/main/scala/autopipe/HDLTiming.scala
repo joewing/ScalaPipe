@@ -49,20 +49,18 @@ private[autopipe] object HDLTiming {
     }
 
     private def getNodeTime(node: IRNode): Int = node match {
-        case start: IRStart          => 0  // We initialize to 1.
-        case noop:  IRNoOp            => 1
-        case instr: IRInstruction  => getInstructionTime(instr)
-        case vs: IRVectorStore      => 1
-        case vl: IRVectorLoad        => 1
-        case as: IRArrayStore        => 1
-        case al: IRArrayLoad         => 2
-        case goto: IRGoto             => 1
-        case stop: IRStop             => 1
-        case ret: IRReturn            => 1
-        case cond: IRConditional    => 1
-        case switch: IRSwitch        => 2
-        case phi: IRPhi                => 1
-        case call: IRCall             => 0  // TODO
+        case start: IRStart         => 0  // We initialize to 1.
+        case noop:  IRNoOp          => 1
+        case instr: IRInstruction   => getInstructionTime(instr)
+        case st:    IRStore         => 1    // TODO
+        case ld:    IRLoad          => 2    // TODO
+        case goto:  IRGoto          => 1
+        case stop:  IRStop          => 1
+        case ret:   IRReturn        => 1
+        case cond:  IRConditional   => 1
+        case sw:    IRSwitch        => 2
+        case phi:   IRPhi           => 1
+        case call:  IRCall          => 0  // TODO
     }
 
 }

@@ -243,74 +243,7 @@ private[gen] abstract class HDLNodeEmitter(
         }
     }
 
-    private def emitVectorLoad(block: StateBlock, node: IRVectorLoad) {
-
-        val at = node.src.valueType.asInstanceOf[ArrayValueType]
-
-        val dest = emitSymbol(node.dest)
-        val src = emitSymbol(node.src)
-        val offset = emitSymbol(node.offset)
-        if (!node.offset.isInstanceOf[ImmediateSymbol]) {
-            write("case (" + offset + ")")
-            enter
-        }
-        val bitCount = at.itemType.bits
-        for (i <- 0 until at.length) {
-            var startOffset = (i + 1) * bitCount - 1
-            val endOffset = startOffset - bitCount + 1
-            val range = "[" + startOffset + ":" + endOffset + "]"
-            node.offset match {
-                case l: ImmediateSymbol =>
-                    if (i == l.value.long) {
-                        val expr = dest + " <= " + src + range + ";"
-                        if (block.continuous) {
-                            moduleEmitter.addAssignment(expr)
-                        } else {
-                            write(expr)
-                        }
-                    }
-                case _ =>
-                    write(i.toString + ": " + dest + " <= " + src + range + ";")
-            }
-        }
-        if (!node.offset.isInstanceOf[ImmediateSymbol]) {
-            leave
-            write("endcase")
-        }
-    }
-
-    private def emitVectorStore(block: StateBlock, node: IRVectorStore) {
-
-        val at = node.arrayType
-        val dest = emitSymbol(node.dest)
-        val src = emitSymbol(node.src)
-        val offset = emitSymbol(node.offset)
-        if (!node.offset.isInstanceOf[ImmediateSymbol]) {
-            write("case (" + offset + ")")
-            enter
-        }
-        val bitCount = at.itemType.bits
-        for (i <- 0 until at.length) {
-            var startOffset = (i + 1) * bitCount - 1
-            val endOffset = startOffset - bitCount + 1
-            val range = "[" + startOffset + ":" + endOffset + "]"
-            node.offset match {
-                case l: ImmediateSymbol =>
-                    if (i == l.value.long) {
-                        write(dest + range + " <= " + src + ";")
-                    }
-                case _ =>
-                    write(i.toString + ": " + dest + range + " <= " + src + ";")
-            }
-        }
-        if (!node.offset.isInstanceOf[ImmediateSymbol]) {
-            leave
-            write("endcase")
-        }
-
-    }
-
-    private def emitArrayLoad(block: StateBlock, node: IRArrayLoad) {
+    private def emitLoad(block: StateBlock, node: IRLoad) {
         val src = emitSymbol(node.src)
         val dest = emitSymbol(node.dest)
         val offset = emitSymbol(node.offset)
@@ -318,7 +251,7 @@ private[gen] abstract class HDLNodeEmitter(
         write(dest + " <= " + src + "_out;")
     }
 
-    private def emitArrayStore(block: StateBlock, node: IRArrayStore) {
+    private def emitStore(block: StateBlock, node: IRStore) {
         val dest = emitSymbol(node.dest)
         val src = emitSymbol(node.src)
         val offset = emitSymbol(node.offset)
@@ -386,11 +319,9 @@ private[gen] abstract class HDLNodeEmitter(
         block.nodes.foreach { node =>
             write("// " + node)
             node match {
-                case inode: IRInstruction    => emitInstruction(block, inode)
-                case vl:    IRVectorLoad    => emitVectorLoad(block, vl)
-                case vs:    IRVectorStore   => emitVectorStore(block, vs)
-                case al:    IRArrayLoad     => emitArrayLoad(block, al)
-                case as:    IRArrayStore    => emitArrayStore(block, as)
+                case inode: IRInstruction   => emitInstruction(block, inode)
+                case ld:    IRLoad          => emitLoad(block, ld)
+                case st:    IRStore         => emitStore(block, st)
                 case stop:  IRStop          => emitStop(block, stop)
                 case ret:   IRReturn        => emitReturn(block, ret)
                 case gnode: IRGoto          => emitGoto(block, gnode)

@@ -73,101 +73,55 @@ private[autopipe] class OpenCLKernelNodeEmitter(
         }
     }
 
-    override def emitSymbol(node: ASTSymbolNode): String = {
-
-        def isNative(vt: ValueType) = vt.isInstanceOf[NativeValueType]
-
-        def isNativePointer(vt: ValueType) = vt match {
-            case p: PointerValueType if isNative(p.itemType) => true
-            case _ => false
+    private def emitComponent(base: String,
+                              vt: ValueType,
+                              comp: ASTNode): (String, ValueType) = {
+        val lit: SymbolLiteral = comp match {
+            case sl: SymbolLiteral => sl
+            case _ => null
         }
-
-        val name = node.symbol
-        if (node.index == null) {
-            if (kt.isInput(name)) {
-                derefInput(name)
-            } else if (kt.isOutput(name)) {
-                derefOutput(name)
-            } else if (kt.isLocal(name)) {
-                name
-            } else if (kt.isState(name) || kt.isConfig(name)) {
-                "block->" + name
-            } else {
-                Error.raise("symbol not declared: " + name, node)
-            }
-        } else if (isNative(node.valueType)) {
-            if (node.index.isInstanceOf[SymbolLiteral]) {
-                val indexString = node.index.toString
-                if (kt.isInput(name) || kt.isOutput(name)) {
-                    name + "." + indexString
-                } else if (kt.isLocal(name)) {
-                    name + "." + indexString
-                } else if (kt.isState(name) || kt.isConfig(name)) {
-                    "block->" + name + "." + indexString
-                } else {
-                    Error.raise("symbol not declared: " + name, node)
-                }
-            } else {
-                val indexString = emitExpr(node.index)
-                if (kt.isInput(name) || kt.isOutput(name)) {
-                    name + "[" + indexString + "]"
-                } else if (kt.isLocal(name)) {
-                    name + "[" + indexString + "]"
-                } else if (kt.isState(name) || kt.isConfig(name)) {
-                    "block->" + name + "[" + indexString + "]"
-                } else {
-                    Error.raise("symbol not declared: " + name, node)
-                }
-            }
-        } else if (isNativePointer(node.valueType)) {
-            if (node.index.isInstanceOf[SymbolLiteral]) {
-                val indexString = node.index.toString
-                if (kt.isInput(name) || kt.isOutput(name)) {
-                    name + "->" + indexString
-                } else if (kt.isLocal(name)) {
-                    name + "->" + indexString
-                } else if (kt.isState(name) || kt.isConfig(name)) {
-                    "block->" + name + "->" + indexString
-                } else {
-                    Error.raise("symbol not declared: " + name, node)
-                }
-            } else {
-                val indexString = emitExpr(node.index)
-                if (kt.isInput(name) || kt.isOutput(name)) {
-                    "(*" + name + ")[" + indexString + "]"
-                } else if (kt.isLocal(name)) {
-                    "(*" + name + ")[" + indexString + "]"
-                } else if (kt.isState(name) || kt.isConfig(name)) {
-                    "(*block->" + name + ")[" + indexString + "]"
-                } else {
-                    Error.raise("symbol not declared: " + name, node)
-                }
-            }
+        val nvt = vt match {
+            case at: ArrayValueType                 => at.itemType
+            case st: StructValueType if lit != null => st.fields(lit.symbol)
+            case ut: UnionValueType  if lit != null => ut.fields(lit.symbol)
+            case nt: NativeValueType if lit != null => ValueType.any
+            case _                                  => sys.error("internal")
+        }
+        val expr = if (lit != null) {
+            "." + comp
         } else {
-            if (node.index.isInstanceOf[SymbolLiteral]) {
-                val indexString = emitExpr(node.index)
-                if (kt.isInput(name) || kt.isOutput(name)) {
-                    name + "." + indexString
-                } else if (kt.isLocal(name)) {
-                    name + "." + indexString
-                } else if (kt.isState(name) || kt.isConfig(name)) {
-                    "block->" + name + "." + indexString
-                } else {
-                    Error.raise("symbol not declared: " + name, node)
-                }
-            } else {
-                val indexString = emitExpr(node.index)
-                if (kt.isInput(name) || kt.isOutput(name)) {
-                    name + ".values[" + indexString + "]"
-                } else if (kt.isLocal(name)) {
-                    name + ".values[" + indexString + "]"
-                } else if (kt.isState(name) || kt.isConfig(name)) {
-                    "block->" + name + ".values[" + indexString + "]"
-                } else {
-                    Error.raise("symbol not declared: " + name, node)
-                }
-            }
+            "[" + emitExpr(comp) + "]"
         }
+        val str = if (isNative(vt)) {
+            s"$base$expr"
+        } else if (isNativePointer(vt)) {
+            s"$base(*$vt)$expr"
+        } else if (comp.isInstanceOf[SymbolLiteral]) {
+            s"$base$expr"
+        } else {
+            s"$base.values$expr"
+        }
+        return ((str, nvt))
+    }
+
+    override def emitSymbol(node: ASTSymbolNode): String = {
+        val name = node.symbol
+        val base = if (kt.isPort(name)) {
+            s"(*$name)"
+        } else if (kt.isLocal(name)) { 
+            s"$name"
+        } else if (kt.isState(name) || kt.isConfig(name)) {
+            s"block->$name"
+        } else {
+            Error.raise(s"symbol not declared: $name", node)
+        }
+        val valueType = kt.getType(node)
+        val start = ((base, valueType))
+        val result = node.indexes.foldLeft(start) { (a, index) =>
+            val (base, vt) = a
+            emitComponent(base, vt, index)
+        }
+        return result._1
     }
 
     override def emitAssign(node: ASTAssignNode) {

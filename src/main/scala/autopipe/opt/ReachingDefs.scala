@@ -17,10 +17,9 @@ object ReachingDefs extends DataFlowProblem {
         in.filter { case t@(s, d) =>
             sb.nodes.exists { node =>
                 node match {
-                    case vs: IRVectorStore  => false
-                    case as: IRArrayStore   => false
-                    case n: IRNode          => n.dests.contains(s)
-                    case _                  => false
+                    case st: IRStore    => false
+                    case n: IRNode      => n.dests.contains(s)
+                    case _              => false
                 }
             }
         }

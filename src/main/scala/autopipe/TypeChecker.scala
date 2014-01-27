@@ -111,47 +111,29 @@ private[autopipe] class TypeChecker(kt: KernelType) {
         case _                  => sys.error("internal: " + node)
     }
 
-    def getType(node: ASTNode): ValueType = {
-
-        def getSymbolType(sn: ASTSymbolNode): ValueType = {
-            val stype = kt.getType(sn)
-            if (sn.index != null) {
-                val lit: SymbolLiteral = sn.index match {
-                    case sl: SymbolLiteral => sl
-                    case _ => null
-                }
-                stype match {
-                    case at: ArrayValueType =>
-                        at.itemType
-                    case st: StructValueType =>
-                        if (lit != null) {
-                            st.fields(lit.symbol)
-                        } else {
-                            Error.raise("invalid structure member", node)
-                            ValueType.void
-                        }
-                    case ut: UnionValueType =>
-                        if (lit != null) {
-                            ut.fields(lit.symbol)
-                        } else {
-                            Error.raise("invalid union member", node)
-                            ValueType.void
-                        }
-                    case nt: NativeValueType =>
-                        if (lit != null) {
-                            ValueType.any
-                        } else {
-                            Error.raise("invalid native structure member", node)
-                            ValueType.void
-                        }
-                    case _ =>
-                        Error.raise("not an array or structure", node)
-                        ValueType.void
-                }
-            } else {
-                stype
-            }
+    private def getComponentType(vt: ValueType, comp: ASTNode): ValueType = {
+        val lit: SymbolLiteral = comp match {
+            case sl: SymbolLiteral => sl
+            case _ => null
         }
+        vt match {
+            case at: ArrayValueType                 => at.itemType
+            case st: StructValueType if lit != null => st.fields(lit.symbol)
+            case ut: UnionValueType  if lit != null => ut.fields(lit.symbol)
+            case nt: NativeValueType if lit != null => ValueType.any
+            case _ =>
+                Error.raise("invalid component specifier", comp)
+                ValueType.void
+        }
+    }
+
+    private def getSymbolType(sn: ASTSymbolNode): ValueType = {
+        sn.indexes.foldLeft(kt.getType(sn)) { (vt, index) =>
+            getComponentType(vt, index)
+        }
+    }
+
+    def getType(node: ASTNode): ValueType = {
 
         def get() = node match {
             case an: ASTAssignNode      => ValueType.void
@@ -198,12 +180,8 @@ private[autopipe] class TypeChecker(kt: KernelType) {
             Error.raise("multiple assignment not allowed", node)
         }
         dest match {
-            case sn: ASTSymbolNode =>
-                if (kt.isInput(sn)) {
-                    Error.raise("assignment to input port not allowed", node)
-                }
-            case _ =>
-                Error.raise("invalid assignment", node)
+            case sn: ASTSymbolNode if !kt.isInput(sn) => ()
+            case _ => Error.raise("invalid assignment", node)
         }
 
         ASTAssignNode(dest, widen(src, destType, lhs))
@@ -265,14 +243,13 @@ private[autopipe] class TypeChecker(kt: KernelType) {
             Error.raise("reading from output port not allowed", node)
         }
         val result = ASTSymbolNode(node.symbol)
-        if (node.index != null) {
-            val temp = check(node.index, false)
-            if (temp.valueType.isInstanceOf[IntegerValueType]) {
-                result.index = temp
-            } else if (node.index.isInstanceOf[SymbolLiteral]) {
-                result.index = temp
+        result.indexes = node.indexes.map { i =>
+            val temp = check(i, false)
+            if (temp.valueType.isInstanceOf[IntegerValueType] ||
+                i.isInstanceOf[SymbolLiteral]) {
+                temp
             } else {
-                result.index = ASTConvertNode(temp, ValueType.signed32)
+                ASTConvertNode(temp, ValueType.signed32)
             }
         }
         result
