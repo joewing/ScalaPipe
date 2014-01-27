@@ -10,7 +10,7 @@ function run_test {
     cd $TEST
     make
     if [ $ARG -gt 0 ] ; then
-        make sim | grep OUTPUT > test.out
+        make sim | grep OUTPUT > ../test.out
     else
         ./proc_localhost | grep OUTPUT > ../test.out
     fi

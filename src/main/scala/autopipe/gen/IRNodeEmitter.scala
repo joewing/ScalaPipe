@@ -72,11 +72,14 @@ private[autopipe] case class IRNodeEmitter(
 
     private def emitMul(ast: ASTNode,
                         a: BaseSymbol,
-                        b: BaseSymbol): BaseSymbol = {
-        val (_, srca, srcb) = sort(NodeType.mul, a, b, NodeType.mul)
-        val dest = kt.createTemp(a.valueType)
-        append(IRInstruction(NodeType.mul, dest, srca, srcb), ast)
-        dest
+                        b: BaseSymbol): BaseSymbol = (a, b) match {
+        case (ai: ImmediateSymbol, bi: ImmediateSymbol) =>
+            emitS32(ai.value.long.toInt * bi.value.long.toInt)
+        case _ =>
+            val (_, srca, srcb) = sort(NodeType.mul, a, b, NodeType.mul)
+            val dest = kt.createTemp(a.valueType)
+            append(IRInstruction(NodeType.mul, dest, srca, srcb), ast)
+            dest
     }
 
     private def emitUnaryOp(node: ASTOpNode): BaseSymbol = {
