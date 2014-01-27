@@ -22,6 +22,20 @@ function run_test {
 # Run unit tests.
 sbt test
 
+# Test arrays.
+echo "OUTPUT 0: 0 1 2 3 4 5 6 7 "           >  test.expected
+echo "OUTPUT 1: 8 9 10 11 12 13 14 15 "     >> test.expected
+echo "OUTPUT 2: 16 17 18 19 20 21 22 23 "       >> test.expected
+echo "OUTPUT 3: 24 25 26 27 28 29 30 31 "       >> test.expected
+echo "OUTPUT 4: 32 33 34 35 36 37 38 39 "       >> test.expected
+echo "OUTPUT 5: 40 41 42 43 44 45 46 47 "       >> test.expected
+echo "OUTPUT 6: 48 49 50 51 52 53 54 55 "       >> test.expected
+echo "OUTPUT 7: 56 57 58 59 60 61 62 63 "       >> test.expected
+echo "OUTPUT 8: 64 65 66 67 68 69 70 71 "       >> test.expected
+echo "OUTPUT 9: 72 73 74 75 76 77 78 79 "       >> test.expected
+run_test ArrayTest 0
+run_test ArrayTest 1
+
 # Test structures.
 echo "OUTPUT 0"     >  test.expected
 echo "OUTPUT 1"     >> test.expected
