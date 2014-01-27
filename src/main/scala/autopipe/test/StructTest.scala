@@ -39,14 +39,19 @@ object StructTest {
         if (t('x)('b) <> (t('y) & 1)) {
             stdio.printf("""OUTPUT: ERROR b\n""")
         }
-        if (t('y) == 10) {
+        if (t('y) == 9) {
             stdio.exit(0)
         }
     }
 
     def main(args: Array[String]) {
+        val mapping = if (args.length > 0) args(0).toInt else 0
         val app = new AutoPipeApp {
             Print(Gen())
+            mapping match {
+                case 0 => ()
+                case 1 => map(Gen -> Print, FPGA2CPU())
+            }
         }
         app.emit("StructTest")
     }
