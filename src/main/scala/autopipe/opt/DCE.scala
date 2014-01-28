@@ -1,7 +1,4 @@
-
 package autopipe.opt
-
-import scala.collection.immutable.TreeSet
 
 import autopipe._
 
@@ -28,9 +25,9 @@ private[opt] object DCE extends Pass {
     }
 
     /** Get connected blocks. */
-    private def getConnectedBlocks(graph: IRGraph): TreeSet[Int] = {
+    private def getConnectedBlocks(graph: IRGraph): Set[Int] = {
 
-        def helper(block: Int, visited: TreeSet[Int]): TreeSet[Int] = {
+        def helper(block: Int, visited: Set[Int]): Set[Int] = {
             graph.links(block).map(_.label).foldLeft(visited) { (a, b) =>
                 if (a.contains(b)) {
                     a
@@ -40,10 +37,8 @@ private[opt] object DCE extends Pass {
             }
         }
 
-        helper(graph.root.label, TreeSet[Int](graph.root.label))
+        helper(graph.root.label, Set(graph.root.label))
 
     }
 
-
 }
-

@@ -11,26 +11,26 @@ private[autopipe] abstract class DominatorBase(
     ) {
 
     // DFS
-    var count        = 0
-    val child        = new HashMap[StateBlock, StateBlock]
+    var count       = 0
+    val child       = new HashMap[StateBlock, StateBlock]
     val sibling     = new HashMap[StateBlock, StateBlock]
-    val dfn          = new HashMap[StateBlock, Int]
+    val dfn         = new HashMap[StateBlock, Int]
     val parent      = new HashMap[StateBlock, StateBlock]
     val vertex      = new HashMap[Int, StateBlock]
     val progeny     = new HashMap[StateBlock, Int]
 
     // Semidominators
-    val sdom         = new HashMap[StateBlock, Int]
-    val slist        = new HashMap[StateBlock, HashSet[StateBlock]]
-    val edges        = new HashMap[StateBlock, HashSet[StateBlock]]
+    val sdom        = new HashMap[StateBlock, Int]
+    val slist       = new HashMap[StateBlock, HashSet[StateBlock]]
+    val edges       = new HashMap[StateBlock, HashSet[StateBlock]]
     val ancestor    = new HashMap[StateBlock, StateBlock]
 
     // Dominators
-    val idom         = new HashMap[StateBlock, StateBlock]
+    val idom        = new HashMap[StateBlock, StateBlock]
 
     // Frontiers.
-    val ilist        = new HashMap[StateBlock, HashSet[StateBlock]]
-    val df            = new HashMap[StateBlock, HashSet[StateBlock]]
+    val ilist       = new HashMap[StateBlock, HashSet[StateBlock]]
+    val df          = new HashMap[StateBlock, HashSet[StateBlock]]
 
     dfst()
     semidominators()

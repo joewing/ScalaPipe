@@ -1,7 +1,5 @@
-
 package autopipe.opt
 
-import scala.collection.mutable.HashSet
 import autopipe._
 
 private[opt] abstract class Pass {
@@ -18,59 +16,65 @@ private[opt] abstract class Pass {
     }
 
     /** Get all blocks contained in a basic block with the specified block. */
-    protected def getStateBlocks(graph: IRGraph, block: Int): List[Int] = {
+    protected def getStateBlocks(graph: IRGraph, block: Int): Seq[Int] = {
         getStateBlocks(graph).filter(sb => sb.contains(block)).flatten
     }
 
-    protected def getStateBlocks(graph: IRGraph): List[List[Int]] = {
+    /** Get a Seq of Seqs of states in the same basic block. */
+    protected def getStateBlocks(graph: IRGraph): Seq[Seq[Int]] = {
 
-        val visited = new HashSet[Int]
+        var visited = Set[Int]()
 
-        def expand(block: Int, current: List[Int],
-                      all: List[List[Int]]): List[List[Int]] = {
+        def expand(block: Int,
+                   current: Seq[Int],
+                   all: Seq[Seq[Int]]): Seq[Seq[Int]] = {
 
-            if (!visited.contains(block)) {
-                visited += block
-                if (graph.inLinks(block).size > 1) {
-                    // Start of a new basic block.
-                    val nb = List(block)
-                    val all2 = all :+ current
-                    graph.links(block).size match {
-                        case 0 =>        // Stop statement
-                            all2 :+ nb
-                        case 1 =>        // Normal block
-                            expand(graph.links(block).head.label, nb, all2)
-                        case _ =>        // Conditional
-                            graph.links(block).foldLeft(all2 :+ nb) { (a, l) =>
-                                expand(l.label, Nil, a)
-                            }
-                    }
-                } else {
-                    // Append to the current basic block.
-                    val current2 = current :+ block
-                    graph.links(block).size match {
-                        case 0 =>
-                            // Stop statement.
-                            all :+ current2
-                        case 1 =>
-                            // Continue this basic block.
-                            expand(graph.links(block).head.label, current2, all)
-                        case _ =>
-                            // End of the current basic block.
-                            graph.links(block).foldLeft(all :+ current2) { (a, l) =>
-                                expand(l.label, Nil, a)
-                            }
-                    }
-                }
-            } else {
-                all :+ current
+            if (visited.contains(block)) {
+                return all :+ current
             }
 
+            visited += block
+            if (graph.inLinks(block).size > 1) {
+
+                // Start of a new basic block.
+                val nb = Seq(block)
+                val all2 = all :+ current
+                val result = graph.links(block).size match {
+                    case 0 =>        // Stop statement
+                        all2 :+ nb
+                    case 1 =>        // Normal block
+                        expand(graph.links(block).head.label, nb, all2)
+                    case _ =>        // Conditional
+                        val start = all2 :+ nb
+                        val blocks = graph.links(block).map(_.label)
+                        blocks.foldLeft(start) { (a, l) =>
+                            expand(l, Seq(), a)
+                        }
+                }
+                return result
+
+            } else {
+
+                // Append to the current basic block.
+                val current2 = current :+ block
+                val result = graph.links(block).size match {
+                    case 0 =>   // Stop statement.
+                        all :+ current2
+                    case 1 =>   // Continue this basic block.
+                        expand(graph.links(block).head.label, current2, all)
+                    case _ =>   // End of the current basic block.
+                        val start = all :+ current2
+                        val blocks = graph.links(block).map(_.label)
+                        blocks.foldLeft(start) { (a, l) =>
+                            expand(l, Seq(), a)
+                        }
+                }
+                return result
+
+            }
         }
 
-        expand(graph.root.label, Nil, Nil)
-
+        expand(graph.root.label, Seq(), Seq())
     }
 
 }
-

@@ -17,7 +17,7 @@ object AvailableExpressions extends DataFlowProblem {
         val nodes = sb.nodes.filter { n =>
             isExpression(n) && n.srcs.intersect(sb.dests).isEmpty
         }
-        Set[T](nodes: _*)
+        nodes.toSet
     }
 
     def kill(sb: StateBlock, in: Set[T]): Set[T] =

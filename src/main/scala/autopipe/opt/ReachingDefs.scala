@@ -11,7 +11,7 @@ object ReachingDefs extends DataFlowProblem {
     def init(kt: KernelType, graph: IRGraph) = Set[T]()
 
     def gen(sb: StateBlock, in: Set[T]): Set[T] =
-        Set[T](sb.dests.map(d => ((d, sb.label))): _*)
+        sb.dests.map(d => ((d, sb.label))).toSet
 
     def kill(sb: StateBlock, in: Set[T]): Set[T] = {
         in.filter { case t@(s, d) =>

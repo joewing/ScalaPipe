@@ -9,23 +9,20 @@ private[autopipe] case class ASTOptimizer(val kt: KernelType) {
     }
 
     private def removeDupBlocks(root: ASTNode): ASTNode = root match {
-
-        case in: ASTIfNode            =>
+        case in: ASTIfNode =>
             val newTrue = removeDupBlocks(in.iTrue)
             val newFalse = removeDupBlocks(in.iFalse)
             ASTIfNode(in.cond, newTrue, newFalse)
-        case wn: ASTWhileNode        =>
+        case wn: ASTWhileNode =>
             ASTWhileNode(wn.cond, removeDupBlocks(wn.body))
-        case bn: ASTBlockNode        => {
-                val subnodes = bn.children.map(removeDupBlocks)
-                if (subnodes.size == 1) {
-                    subnodes.head
-                } else {
-                    ASTBlockNode(subnodes)
-                }
+        case bn: ASTBlockNode =>
+            val subnodes = bn.children.map(removeDupBlocks)
+            if (subnodes.size == 1) {
+                subnodes.head
+            } else {
+                ASTBlockNode(subnodes)
             }
-        case other => other
-
+        case _ => root
     }
 
 }
