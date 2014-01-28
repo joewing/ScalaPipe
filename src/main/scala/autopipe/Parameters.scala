@@ -31,9 +31,10 @@ private[autopipe] class Parameters {
                                 //  0 - no sharing
                                 //  1 - share independent resources
                                 //  2 - share all resources
-    add('profile, false)        // Insert counters for profiling
-    add('fpga, "Simulation")    // Default FPGA device to target
+    add('profile, false)        // Insert counters for profiling.
+    add('fpga, "Simulation")    // Default FPGA device to target.
     add('trace, false)          // Set to generate address traces from C code.
+    add('wave, false)           // Dump waveform from simulation.
 
     def set(name: Symbol, value: Any) {
         params.get(name) match {

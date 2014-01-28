@@ -300,8 +300,10 @@ private[autopipe] class SimulationResourceGenerator(
         }
         write
 
-        write("$dumpvars;")
-        write
+        if (ap.parameters.get[Boolean]('wave)) {
+            write("$dumpvars;")
+            write
+        }
 
         write("clk <= 0;")
         write("rst <= 1;")

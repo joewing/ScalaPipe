@@ -89,3 +89,6 @@ run_test FunctionTest 3
 # Clean up.
 rm test.expected
 
+echo
+echo "Success!"
+echo
