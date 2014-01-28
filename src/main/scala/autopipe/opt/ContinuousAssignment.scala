@@ -61,8 +61,8 @@ private[opt] object ContinuousAssignment extends Pass {
 
     /** Determine the path cost of an operator. */
     private def getCost(node: IRNode): Int = node match {
-        case phi: IRPhi            => 1
-        case in: IRInstruction  => in.op match {
+        case phi: IRPhi             => 1
+        case in: IRInstruction      => in.op match {
             case NodeType.assign    => 0
             case NodeType.convert   => 3
             case NodeType.neg       => 2
@@ -165,7 +165,7 @@ private[opt] object ContinuousAssignment extends Pass {
                 case _                  => continuousInt(in)
             }
         case ld: IRLoad     => ld.src.valueType.flat
-        case st: IRStore    => false
+        case st: IRStore    => st.src.valueType.flat
         case gt: IRGoto     => true
         case _              => false
     }
