@@ -46,7 +46,7 @@ private[autopipe] abstract class EdgeGenerator(
     }
 
     protected def getKernels(device: Device,
-                             kernels: Traversable[Kernel]) = {
+                             kernels: Traversable[KernelInstance]) = {
         kernels.filter(_.device == device)
     }
 

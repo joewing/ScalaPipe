@@ -5,13 +5,13 @@ import autopipe.dsl.AutoPipeBlock
 
 class Stream(
         ap: AutoPipe,
-        private[autopipe] val sourceKernel: Kernel,
+        private[autopipe] val sourceKernel: KernelInstance,
         private[autopipe] val sourcePort: PortName
     ) {
 
     private[autopipe] val index = LabelMaker.getEdgeIndex
     private[autopipe] val label = "edge" + index
-    private[autopipe] var destKernel: Kernel = null
+    private[autopipe] var destKernel: KernelInstance = null
     private[autopipe] var destPort: PortName = null
     private[autopipe] val measures = new HashSet[Measure]
     private[autopipe] var edge: Edge = null
@@ -63,7 +63,7 @@ class Stream(
         measures += new Measure(this, stat, metric)
     }
 
-    private[autopipe] def setDest(k: Kernel, p: PortName) {
+    private[autopipe] def setDest(k: KernelInstance, p: PortName) {
         destKernel = k
         destPort = p
     }

@@ -2,7 +2,7 @@ package autopipe
 
 class StreamList(
         val ap: AutoPipe,
-        val kernel: Kernel
+        val kernel: KernelInstance
     ) {
 
     private[autopipe] var streams = Seq[Stream]()

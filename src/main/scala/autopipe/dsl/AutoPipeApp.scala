@@ -37,11 +37,11 @@ class AutoPipeApp {
 
     }
 
-    implicit def apb2Block(apb: AutoPipeBlock) = ap.createKernel(apb)
+    implicit def kernel2instance(apb: AutoPipeBlock) = ap.createKernel(apb)
 
-    implicit def kernel2StreamList(k: Kernel): StreamList = k.apply()
+    implicit def instance2StreamList(k: KernelInstance): StreamList = k.apply()
 
-    implicit def kernel2Arg(k: Kernel) = (null, k.apply().apply())
+    implicit def instance2Arg(k: KernelInstance) = (null, k.apply().apply())
 
     implicit def stream2Arg(s: Stream) = (null, s)
 

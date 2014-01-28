@@ -21,7 +21,7 @@ private[autopipe] object XGenerator extends Generator {
 
         def emitDecl: String = ""
 
-        def emitKernels(kernels: Seq[Kernel]): String = ""
+        def emitKernels(kernels: Seq[KernelInstance]): String = ""
 
         def emitMapping: String = ""
 
@@ -58,7 +58,7 @@ private[autopipe] object XGenerator extends Generator {
             "};\n"
         }
 
-        override def emitKernels(kernels: Seq[Kernel]): String = {
+        override def emitKernels(kernels: Seq[KernelInstance]): String = {
             val strs = kernels.map { k =>
                 "    " + k.name + "\n"
             }

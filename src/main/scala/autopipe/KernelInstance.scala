@@ -2,7 +2,7 @@ package autopipe
 
 import autopipe.dsl.AutoPipeBlock
 
-private[autopipe] class Kernel(
+private[autopipe] class KernelInstance(
         val ap: AutoPipe,
         val apb: AutoPipeBlock
     ) extends DebugInfo {
@@ -69,7 +69,7 @@ private[autopipe] class Kernel(
         configs += (n -> value)
     }
 
-    private[autopipe] def setConfigs(o: Kernel) {
+    private[autopipe] def setConfigs(o: KernelInstance) {
         configs ++= o.configs
     }
 

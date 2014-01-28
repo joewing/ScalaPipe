@@ -9,7 +9,7 @@ import autopipe.gen.RawFileGenerator
 
 private[autopipe] class AutoPipe {
 
-    private[autopipe] var kernels = Seq[Kernel]()
+    private[autopipe] var kernels = Seq[KernelInstance]()
     private[autopipe] var streams = Set[Stream]()
     private[autopipe] var devices = Set[Device]()
     private[autopipe] val parameters = new Parameters
@@ -74,7 +74,7 @@ private[autopipe] class AutoPipe {
             case None       => Error.raise("no kernel with name " + n); 0
         }
 
-    private[autopipe] def createKernel(apb: AutoPipeBlock): Kernel = {
+    private[autopipe] def createKernel(apb: AutoPipeBlock): KernelInstance = {
         kernelDecls.get(apb.name) match {
             case Some(kd) =>
                 if (kd != apb) {
@@ -83,12 +83,12 @@ private[autopipe] class AutoPipe {
             case None =>
                 kernelDecls = kernelDecls + (apb.name -> apb)
         }
-        val kernel = new Kernel(this, apb)
+        val kernel = new KernelInstance(this, apb)
         kernels = kernels :+ kernel
         kernel
     }
 
-    private[autopipe] def createStream(sourceKernel: Kernel,
+    private[autopipe] def createStream(sourceKernel: KernelInstance,
                                        sourcePort: PortName): Stream = {
         val stream = new Stream(this, sourceKernel, sourcePort)
         streams = streams + stream
@@ -273,11 +273,11 @@ private[autopipe] class AutoPipe {
     }
 
     // Get a list of strongly connected kernels.
-    private def getConnectedKernels(kernel: Kernel): Seq[Kernel] = {
+    private def getConnectedKernels(kernel: KernelInstance) = {
 
-        var connected = Set[Kernel]()
+        var connected = Set[KernelInstance]()
 
-        def visit(k: Kernel) {
+        def visit(k: KernelInstance) {
             k.getOutputs.filter(_.edge == null).foreach { o =>
                 val dest = o.destKernel
                 if(!connected.contains(dest)) {
@@ -301,7 +301,7 @@ private[autopipe] class AutoPipe {
     }
 
     // Determine the device to use for a list of connected kernels.
-    private def getDevice(kl: Seq[Kernel]): Device = {
+    private def getDevice(kl: Seq[KernelInstance]): Device = {
 
 
         // Check if any of the kernels already have a device assigned.

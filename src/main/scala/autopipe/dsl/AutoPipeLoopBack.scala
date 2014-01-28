@@ -17,7 +17,7 @@ class AutoPipeLoopBack(val t: AutoPipeType) {
         out = in
     }
 
-    private[autopipe] var kernel: Kernel = null
+    private[autopipe] var kernel: KernelInstance = null
 
     def input(s: Stream) {
         kernel.setInput(null, s)

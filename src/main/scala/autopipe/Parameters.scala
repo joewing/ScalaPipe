@@ -3,7 +3,7 @@ package autopipe
 private[autopipe] class Parameters {
 
     private class Param[T](val name: Symbol, var value: T)
-                                 (implicit val m: Manifest[T]) {
+                          (implicit val m: Manifest[T]) {
 
         def isInstance(v: Any) = {
             m.runtimeClass.isInstance(v)

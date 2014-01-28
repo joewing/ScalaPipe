@@ -14,7 +14,7 @@ private[autopipe] class CPUResourceGenerator(
 
     private val edgeGenerators = new HashMap[EdgeGenerator, HashSet[Stream]]
     private val emittedKernelTypes = new HashSet[KernelType]
-    private val threadIds = new HashMap[Kernel, Int]
+    private val threadIds = new HashMap[KernelInstance, Int]
 
     private lazy val openCLEdgeGenerator = new OpenCLEdgeGenerator(ap)
     private lazy val smartFusionEdgeGenerator = new SmartFusionEdgeGenerator(ap)
@@ -58,7 +58,7 @@ private[autopipe] class CPUResourceGenerator(
         device.platform == Platforms.C && device.host == host
     }
 
-    private def emitKernelHeader(kernel: Kernel) {
+    private def emitKernelHeader(kernel: KernelInstance) {
         val kernelType = kernel.kernelType
         if (!emittedKernelTypes.contains(kernelType)) {
             emittedKernelTypes += kernelType
@@ -67,7 +67,7 @@ private[autopipe] class CPUResourceGenerator(
         }
     }
 
-    private def emitKernelStruct(kernel: Kernel) {
+    private def emitKernelStruct(kernel: KernelInstance) {
 
         val inputCount = kernel.getInputs.size
         val outputCount = kernel.getOutputs.size
@@ -85,7 +85,7 @@ private[autopipe] class CPUResourceGenerator(
 
     }
 
-    private def emitKernelInit(kernel: Kernel) {
+    private def emitKernelInit(kernel: KernelInstance) {
 
         val name = kernel.name
         val kernelType = kernel.kernelType
@@ -151,7 +151,7 @@ private[autopipe] class CPUResourceGenerator(
 
     }
 
-    private def emitKernelGetFree(kernel: Kernel) {
+    private def emitKernelGetFree(kernel: KernelInstance) {
 
         val instance = kernel.label
 
@@ -173,7 +173,7 @@ private[autopipe] class CPUResourceGenerator(
 
     }
 
-    private def emitKernelAllocate(kernel: Kernel) {
+    private def emitKernelAllocate(kernel: KernelInstance) {
 
         val instance = kernel.label
         val rid = threadIds(kernel)
@@ -224,7 +224,7 @@ private[autopipe] class CPUResourceGenerator(
 
     }
 
-    private def emitKernelSend(kernel: Kernel) {
+    private def emitKernelSend(kernel: KernelInstance) {
 
         val instance = kernel.label
         val minDepth = kernel.getOutputs.foldLeft(Int.MaxValue) {
@@ -263,7 +263,7 @@ private[autopipe] class CPUResourceGenerator(
 
     }
 
-    private def emitKernelRelease(kernel: Kernel) {
+    private def emitKernelRelease(kernel: KernelInstance) {
 
         val name = kernel.kernelType.name
         val instance = kernel.label
@@ -297,13 +297,13 @@ private[autopipe] class CPUResourceGenerator(
 
     }
 
-    private def emitKernelDestroy(kernel: Kernel) {
+    private def emitKernelDestroy(kernel: KernelInstance) {
         val name = kernel.kernelType.name
         val instance = kernel.label
         write("ap_" + name + "_destroy(&" + instance + ".priv);")
     }
 
-    private def emitCheckRunning(kernel: Kernel) {
+    private def emitCheckRunning(kernel: KernelInstance) {
         val id = threadIds(kernel)
         val instance = kernel.label
         write("static char is_running" + id + "()")
@@ -328,7 +328,7 @@ private[autopipe] class CPUResourceGenerator(
         write("}")
     }
 
-    private def emitThread(kernel: Kernel) {
+    private def emitThread(kernel: KernelInstance) {
 
         val id = threadIds(kernel)
         val name = kernel.kernelType.name
@@ -385,10 +385,10 @@ private[autopipe] class CPUResourceGenerator(
 
     }
 
-    private def writeShutdown(kernels: Traversable[Kernel],
+    private def writeShutdown(kernels: Traversable[KernelInstance],
                               edgeStats: ListBuffer[Generator]) {
 
-        def writeKernelStats(k: Kernel) {
+        def writeKernelStats(k: KernelInstance) {
             write("ticks = " + k.label + ".clock.total_ticks;");
             write("pushes = " + k.label + ".clock.count;")
             write("us = (ticks * total_us) / total_ticks;")

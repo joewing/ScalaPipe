@@ -14,12 +14,12 @@ class AutoPipeSpec extends UnitSpec {
     }
 
     def createKernel(ap: AutoPipe) = {
-        new Kernel(ap, apb)
+        new KernelInstance(ap, apb)
     }
 
     def createApplication(ap: AutoPipe,
                           edge1: Edge = null,
-                          edge2: Edge = null): Seq[Kernel] = {
+                          edge2: Edge = null): Seq[KernelInstance] = {
         val kernel1 = createKernel(ap)
         val kernel2 = createKernel(ap)
         val kernel3 = createKernel(ap)
@@ -68,7 +68,7 @@ class AutoPipeSpec extends UnitSpec {
         val ap = createAutoPipe()
         val kernels = createApplication(ap)
         val getConnectedKernels =
-            PrivateMethod[Seq[Kernel]]('getConnectedKernels)
+            PrivateMethod[Seq[KernelInstance]]('getConnectedKernels)
         val lst = ap invokePrivate getConnectedKernels(kernels(2))
         assert(kernels.length == lst.length)
     }
