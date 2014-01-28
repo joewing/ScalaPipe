@@ -335,6 +335,7 @@ private[gen] abstract class HDLNodeEmitter(
             // and we have read all the requested words.
             addGuard(block, "ram_ready")
             addGuard(block, "(state == last_state)")
+            addGuard(block, "!ram_re")
             if (bits > ramWidth) {
                 addGuard(block, s"(ram_state == $wordCount)")
             }
@@ -436,6 +437,7 @@ private[gen] abstract class HDLNodeEmitter(
             // Store is done when the ram is ready and we have written
             // all of the words.
             addGuard(block, "ram_ready")
+            addGuard(block, "!ram_we")
             addGuard(block, "(state == last_state)")
             if (bits > ramWidth) {
                 addGuard(block, s"(ram_state == $wordCount)")

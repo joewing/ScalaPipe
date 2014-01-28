@@ -36,6 +36,26 @@ echo "OUTPUT 9: 72 73 74 75 76 77 78 79 "       >> test.expected
 run_test ArrayTest 0
 run_test ArrayTest 1
 
+echo "OUTPUT 524800"    >  test.expected
+echo "OUTPUT 525824"    >> test.expected
+echo "OUTPUT 526848"    >> test.expected
+echo "OUTPUT 527872"    >> test.expected
+echo "OUTPUT 528896"    >> test.expected
+echo "OUTPUT 529920"    >> test.expected
+echo "OUTPUT 530944"    >> test.expected
+echo "OUTPUT 531968"    >> test.expected
+echo "OUTPUT 532992"    >> test.expected
+echo "OUTPUT 534016"    >> test.expected
+run_test ArrayTest2 0 0
+run_test ArrayTest2 0 1
+run_test ArrayTest2 0 2
+run_test ArrayTest2 0 3
+run_test ArrayTest2 1 0
+run_test ArrayTest2 1 1
+run_test ArrayTest2 1 2
+run_test ArrayTest2 1 3
+
+
 # Test structures.
 echo "OUTPUT 0"     >  test.expected
 echo "OUTPUT 1"     >> test.expected
