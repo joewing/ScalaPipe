@@ -73,7 +73,11 @@ private[gen] abstract class HDLNodeEmitter(
                 s"$srca[$top:0]"
             case ivt: IntegerValueType if srcWidth < destWidth =>
                 val repeat = destWidth - srcWidth
-                s"{{1b'1}$repeat,$srca}"
+                if (ivt.signed) {
+                    s"{{$repeat{$srca[${srcWidth - 1}]}},$srca}"
+                } else {
+                    s"{{$repeat{1'b0}},$srca}"
+                }
             case fvt: FloatValueType =>
                 moduleEmitter.create("ap_ftoi" + srcWidth, srcWidth,
                                      block.label, Seq(srca))
