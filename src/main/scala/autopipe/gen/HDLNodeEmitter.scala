@@ -20,6 +20,10 @@ private[gen] abstract class HDLNodeEmitter(
     def start: Unit
     def stop: Unit
 
+    private def addGuard(block: StateBlock, guard: String) {
+        moduleEmitter.addGuard(block.label, guard)
+    }
+
     private def emitBegin(block: StateBlock) {
         write("if (state == " + block.label + ") begin")
         enter
@@ -96,7 +100,7 @@ private[gen] abstract class HDLNodeEmitter(
             case NodeType.xor               => s"$srca ^ $srcb"
             case NodeType.shr if vt.signed  => s"$srca >>> $srcb"
             case NodeType.shr if !vt.signed => s"$srca >> $srcb"
-            case NodeType.shl if vt.signed  => s"$srca <<< $srca"
+            case NodeType.shl if vt.signed  => s"$srca <<< $srcb"
             case NodeType.shl if !vt.signed => s"$srca << $srcb"
             case NodeType.add   =>
                 moduleEmitter.createSimple("ap_addI", width, List(srca, srcb))
@@ -169,7 +173,7 @@ private[gen] abstract class HDLNodeEmitter(
             case NodeType.mul if node.srca.isInstanceOf[ImmediateSymbol] => 
                 val ina = shiftRight(node.srca, f1)
                 val inb = shiftRight(node.srcb, f2)
-                ina + " * " + inb
+                s"$ina * $inb"
             case NodeType.mul if !node.srca.isInstanceOf[ImmediateSymbol] =>
                 val ina = shiftRight(node.srca, f1)
                 val inb = shiftRight(node.srcb, f2)
@@ -288,6 +292,8 @@ private[gen] abstract class HDLNodeEmitter(
         val dest = emitSymbol(node.dest)
         val offset = emitSymbol(node.offset)
         if (node.src.valueType.flat) {
+
+            // Load from a register.
             val maxOffset = node.src.valueType.bytes -
                             node.dest.valueType.bytes
             val builder = new Generator
@@ -306,7 +312,11 @@ private[gen] abstract class HDLNodeEmitter(
             } else {
                 write(builder)
             }
+
         } else {
+
+            // Load from a RAM.
+            // Note that this cannot be a continuous assignment.
             assert(!block.continuous)
 
             // Start the load.
@@ -315,18 +325,30 @@ private[gen] abstract class HDLNodeEmitter(
             val wordMask = (1 << wordShift) - 1
             val bits = node.dest.valueType.bits
             val wordCount = (bits + ramWidth - 1) / ramWidth
-            moduleEmitter.addGuard(block.label,
-                                   s"ram_ready && ram_state == $wordCount")
+            val start = moduleEmitter.getRAMOffset(node.src)
 
+            // The load is finished when the RAM is ready
+            // and we have read all the requested words.
+            addGuard(block, "ram_ready")
+            addGuard(block, "(state == last_state)")
+            if (bits > ramWidth) {
+                addGuard(block, s"(ram_state == $wordCount)")
+            }
+
+            // Emit the code to start the load.
             val initBuilder = new Generator
             initBuilder.write(s"ram_state <= 0;")
-            initBuilder.write(s"ram_addr <= $offset >> $wordShift;")
+            initBuilder.write(s"ram_addr <= $start + ($offset >> $wordShift);")
             initBuilder.write(s"ram_re <= 1;")
-            initBuilder.write(s"ram_mask <= {1'b1{$wordBytes}};")
+            initBuilder.write(s"ram_mask <= {$wordBytes{1'b1}};")
             addInitializer(initBuilder)
 
+            // Emit the code to handle when the load (or part
+            // of the load) completes.
             val updateBuilder = new Generator
-            updateBuilder.write("if (ram_ready) begin")
+            updateBuilder.write(s"if (ram_ready && " +
+                                s"!ram_re && " +
+                                s"state == last_state) begin")
             updateBuilder.enter
             if (bits > ramWidth) {
                 // Multi-word load.
@@ -338,10 +360,13 @@ private[gen] abstract class HDLNodeEmitter(
                     val width = math.min(ramWidth, bits - bottom)
                     val top = bottom + width - 1
                     updateBuilder.write(s"$word: $dest[$top:$bottom] <= " +
-                                        s"ram_out[${width - 1}:0]")
+                                        s"ram_out[${width - 1}:0];")
                 }
                 updateBuilder.leave
                 updateBuilder.write(s"endcase")
+                updateBuilder.write(s"ram_addr <= ram_addr + 1;")
+                updateBuilder.write(s"ram_state <= ram_state + 1;")
+                updateBuilder.write(s"ram_re <= ram_state < ${wordCount - 1};")
             } else if (bits == ramWidth) {
                 // Single-word load.
                 updateBuilder.write(s"$dest <= ram_out;")
@@ -359,8 +384,6 @@ private[gen] abstract class HDLNodeEmitter(
                 updateBuilder.leave
                 updateBuilder.write(s"endcase")
             }
-            updateBuilder.write("ram_state <= ram_state + 1;")
-            updateBuilder.write("ram_re <= 1;")
             updateBuilder.leave
             updateBuilder.write("end")
             addUpdater(updateBuilder)
@@ -373,6 +396,8 @@ private[gen] abstract class HDLNodeEmitter(
         val src = emitSymbol(node.src)
         val offset = emitSymbol(node.offset)
         if (node.dest.valueType.flat) {
+
+            // Store to a register.
             val maxOffset = node.dest.valueType.bytes -
                             node.src.valueType.bytes
             val builder = new Generator
@@ -390,7 +415,11 @@ private[gen] abstract class HDLNodeEmitter(
             } else {
                 write(builder)
             }
+
         } else {
+
+            // Store to a RAM.
+            // Note that this cannot be a continuous assignment.
             assert(!block.continuous)
 
             val wordBytes = ramWidth / 8
@@ -398,19 +427,27 @@ private[gen] abstract class HDLNodeEmitter(
             val wordMask = (1 << wordShift) - 1
             val bits = node.src.valueType.bits
             val wordCount = (bits + ramWidth - 1) / ramWidth
-            moduleEmitter.addGuard(block.label,
-                                   s"ram_ready && ram_state == $wordCount")
+            val start = moduleEmitter.getRAMOffset(node.dest)
 
+            // Store is done when the ram is ready and we have written
+            // all of the words.
+            addGuard(block, "ram_ready")
+            addGuard(block, "(state == last_state)")
+            if (bits > ramWidth) {
+                addGuard(block, s"(ram_state == $wordCount)")
+            }
+
+            // Emit the code to run for the first word of the store.
             val initBuilder = new Generator
             initBuilder.write(s"ram_state <= 0;")
-            initBuilder.write(s"ram_addr <= $offset >> $wordShift;")
+            initBuilder.write(s"ram_addr <= $start + ($offset >> $wordShift);")
             initBuilder.write(s"ram_we <= 1;")
             if (bits > ramWidth) {
                 // First word of a multi-word store.
                 // Note that this store will be aligned.
                 val top = ramWidth - 1
                 initBuilder.write(s"ram_in <= $src[$top:0]")
-                initBuilder.write(s"ram_mask <= {1'b1{$wordBytes}};")
+                initBuilder.write(s"ram_mask <= {$wordBytes{1'b1}};")
             } else if (bits == ramWidth) {
                 // Single-word store.
                 initBuilder.write(s"ram_in <= $src;")
@@ -436,14 +473,18 @@ private[gen] abstract class HDLNodeEmitter(
             }
             addInitializer(initBuilder)
 
+            // Emit the code to handle the remainder of
+            // a multi-word store.
             if (bits > ramWidth) {
-                // Remainder of a multi-word store.
                 val updateBuilder = new Generator
                 updateBuilder.write(s"if (ram_ready" +
+                                    s" && !ram_we" +
                                     s" && state != last_state" +
                                     s" && ram_state < $wordCount) begin")
                 updateBuilder.enter
                 updateBuilder.write(s"ram_we <= 1;")
+                updateBuilder.write(s"ram_addr <= ram_addr + 1;")
+                updateBuilder.write(s"ram_state <= ram_state + 1;")
                 updateBuilder.write(s"case (ram_state)")
                 updateBuilder.enter
                 for (word <- 1 until wordCount) {
@@ -453,7 +494,7 @@ private[gen] abstract class HDLNodeEmitter(
                     updateBuilder.write(s"$word: begin")
                     updateBuilder.enter
                     updateBuilder.write(s"ram_in[${width - 1}:0] <= " +
-                                        s"$src[$top:$bottom]")
+                                        s"$src[$top:$bottom];")
                     val mask = (1 << (width / 8)) - 1
                     updateBuilder.write(s"ram_mask <= $mask;")
                     updateBuilder.leave

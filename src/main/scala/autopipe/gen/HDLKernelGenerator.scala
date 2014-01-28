@@ -27,17 +27,17 @@ private[autopipe] class HDLKernelGenerator(
         val kernelName = "kernel_" + kt.name
 
         // Write the module header.
-        write("module " + kernelName + "(")
+        write(s"module $kernelName(")
         enter
-        for (i <- kt.inputs) {
-            write("input_" + i.name + ",")
-            write("avail_" + i.name + ",")
-            write("read_" + i.name + ",")
+        for (i <- kt.inputs.map(_.name)) {
+            write(s"input_$i,")
+            write(s"avail_$i,")
+            write(s"read_$i,")
         }
-        for (o <- kt.outputs) {
-            write("output_" + o.name + ",")
-            write("write_" + o.name + ",")
-            write("afull_" + o.name + ",")
+        for (o <- kt.outputs.map(_.name)) {
+            write(s"output_$o,")
+            write(s"write_$o,")
+            write(s"afull_$o,")
         }
         write("rst,")
         write("clk")
@@ -45,58 +45,32 @@ private[autopipe] class HDLKernelGenerator(
         write(");")
         enter
 
-        write
-
         // I/O declarations.
         for (i <- kt.inputs) {
-            val pts = getTypeString("input_" + i.name, i.valueType)
-            write("input wire " + pts + ";")
-            write("input wire avail_" + i.name + ";")
-            write("output wire read_" + i.name + ";")
+            val name = i.name
+            val pts = getTypeString(s"input_$name", i.valueType)
+            write(s"input wire $pts;")
+            write(s"input wire avail_$name;")
+            write(s"output wire read_$name;")
         }
         for (o <- kt.outputs) {
-            val pts = getTypeString("output_" + o.name, o.valueType)
-            write("output wire " + pts + ";")
-            write("output wire write_" + o.name + ";")
-            write("input wire afull_" + o.name + ";")
+            val name = o.name
+            val pts = getTypeString(s"output_$name", o.valueType)
+            write(s"output wire $pts;")
+            write(s"output wire write_$name;")
+            write(s"input wire afull_$name;")
         }
         write("input wire rst;")
         write("input wire clk;")
 
-        write
-
         // Configuration options.
         for (c <- kt.configs) {
-            if (c.value != null) {
-                write("parameter " + c.name + " = " + c.value + ";")
-            } else {
-                write("parameter " + c.name + " = 0;")
-            }
-        }
-        if (!kt.configs.isEmpty) {
-            write
+            val name = c.name
+            val value = if (c.value != null) c.value.toString else "0"
+            write(s"parameter $name = $value;")
         }
 
-        // States.
-        for (s <- kt.states) {
-            emitLocal("state_" + s.name, s)
-        }
-        if (!kt.states.isEmpty) {
-            write
-        }
-
-        // Temporaries.
-        for (t <- kt.temps) {
-            emitLocal("temp" + t.id, t)
-        }
-        if (!kt.temps.isEmpty) {
-            write
-        }
-
-        // Internal state machine.
-        write("reg [31:0] state;")
-        write("reg [31:0] last_state;")
-        write
+        emitLocals
 
         // Generate code.
         val nodeEmitter = new HDLKernelNodeEmitter(kt, graph, moduleEmitter)

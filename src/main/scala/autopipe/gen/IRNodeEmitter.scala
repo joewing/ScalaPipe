@@ -144,28 +144,27 @@ private[autopipe] case class IRNodeEmitter(
     private def emitOffset(vt: ValueType,
                            base: Option[BaseSymbol],
                            comp: ASTNode): (Option[BaseSymbol], ValueType) = {
-        val lit: SymbolLiteral = comp match {
-            case sl: SymbolLiteral => sl
-            case _ => null
+        val sym: String = comp match {
+            case sl: SymbolLiteral  => sl.symbol
+            case _                  => null
         }
         val nvt = vt match {
-            case at: ArrayValueType                 => at.itemType
-            case st: StructValueType if lit != null => st.fields(lit.symbol)
-            case ut: UnionValueType  if lit != null => ut.fields(lit.symbol)
-            case nt: NativeValueType if lit != null => ValueType.any
+            case at: ArrayValueType     => at.itemType
+            case st: StructValueType    => st.fields(sym)
+            case ut: UnionValueType     => ut.fields(sym)
+            case nt: NativeValueType    => ValueType.any
             case _ => sys.error(s"internal: $vt")
         }
 
         val expr: BaseSymbol = vt match {
-            case st: StructValueType if lit != null =>
-                emitS32(st.offset(lit.symbol))
-            case ut: UnionValueType if lit != null =>
-                emitS32(0)
-            case _ =>
-                val multiplier = emitS32(vt.bytes)
+            case st: StructValueType    => emitS32(st.offset(sym))
+            case ut: UnionValueType     => emitS32(0)
+            case at: ArrayValueType     =>
+                val multiplier = emitS32(at.itemType.bytes)
                 val temp = emitMul(comp, multiplier, emitExpr(comp))
                 kt.releaseTemp(multiplier)
                 temp
+            case _ => sys.error(s"internal: $vt")
         }
         val offset = base.foldLeft(expr) { (a, b) =>
             val temp = emitAdd(comp, a, b)

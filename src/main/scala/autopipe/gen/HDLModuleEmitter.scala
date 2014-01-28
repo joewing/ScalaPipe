@@ -34,13 +34,6 @@ private[gen] class HDLModuleEmitter(
         var states = Set[AssignState]()
     }
 
-    private class RAMState(_state: Int, val value: String, val offset: String)
-        extends StateCondition(_state)
-        
-    private class RAMUpdate(val port: String) {
-        var states = Set[RAMState]()
-    }
-
     private val share = kt.parameters.get[Int]('share)
 
     private val components = new HashMap[String, Component]
@@ -50,9 +43,8 @@ private[gen] class HDLModuleEmitter(
     private val readStates = new HashMap[String, Assignment]
     private val writeStates = new HashMap[String, Assignment]
 
-    private val ramOffsets = new HashMap[String, Int]
-    private val ramWrites = new HashMap[String, RAMUpdate]
-    private val ramReads = new HashMap[String, RAMUpdate]
+    private var ramOffset = 0
+    private val ramOffsetMap = new HashMap[BaseSymbol, Int]
 
     private var assignments = Set[String]()
     private var phis = Set[IRPhi]()
@@ -98,6 +90,14 @@ private[gen] class HDLModuleEmitter(
         gl += guard
     }
 
+    def getRAMOffset(symbol: BaseSymbol): Int = {
+        ramOffsetMap.getOrElseUpdate(symbol, {
+            val offset = ramOffset
+            ramOffset += ramDepth(symbol.valueType)
+            offset
+        })
+    }
+
     private def guard(state: Int): String = {
         val gl = guards.getOrElse(state, new ArrayBuffer[String]).toSet
         if (gl.isEmpty) {
@@ -117,17 +117,6 @@ private[gen] class HDLModuleEmitter(
         val a = writeStates.getOrElseUpdate(port, { new Assignment(port) })
         a.states += new AssignState(state, value)
         addGuard(state, "!afull_" + port)
-    }
-
-    def addRAMWrite(state: Int, port: String, src: String, offset: String) {
-        val a = ramWrites.getOrElseUpdate(port, { new RAMUpdate(port) })
-        a.states += new RAMState(state, src, offset)
-    }
-
-    def addRAMRead(state: Int, port: String, dest: String, offset: String) {
-        val a = ramReads.getOrElseUpdate(port, { new RAMUpdate(port) })
-        a.states += new RAMState(state, dest, offset)
-        addGuard(state, "(last_state == state)")
     }
 
     def addAssignment(str: String) {
@@ -261,40 +250,6 @@ private[gen] class HDLModuleEmitter(
 
     }
 
-    private def emitRAMUpdates {
-
-        def value(lst: Traversable[RAMState]) = lst.foldLeft("") { (a, s) =>
-            val state = s.state
-            val result = s.value
-            if (a.isEmpty) result.toString
-            else s" state == $state ? $result : ($a)"
-        }
-
-        def index(lst: Traversable[RAMState]) = lst.foldLeft("") { (a, s) =>
-            val state = s.state
-            val offset = s.offset
-            if (a.isEmpty) offset.toString
-            else s" state == $state ? $offset : ($a)"
-        }
-
-        ramWrites.values.foreach { s =>
-            val port = s.port
-            val cond = getCondition(s.states)
-            val input = value(s.states)
-            val wix = index(s.states)
-            write(s"assign ${port}_we = $cond;")
-            write(s"assign ${port}_in = $input;")
-            write(s"assign ${port}_wix = $wix;")
-        }
-
-        ramReads.values.foreach { s =>
-            val port = s.port
-            val rix = index(s.states)
-            write(s"assign ${port}_rix = $rix;")
-        }
-
-    }
-
     private def emitPhis {
 
         phis.foreach { phi =>
@@ -331,7 +286,6 @@ private[gen] class HDLModuleEmitter(
         emitSimpleComponents
         emitGuards
         emitAssignments
-        emitRAMUpdates
         emitPhis
         leave
         super.getOutput()
