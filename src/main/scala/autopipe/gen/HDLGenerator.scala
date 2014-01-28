@@ -113,7 +113,7 @@ private[gen] trait HDLGenerator extends Generator {
         if (vt.flat) {
             return 0
         } else {
-            return (vt.bytes + ramWidth - 1) / ramWidth
+            return (vt.bits + ramWidth - 1) / ramWidth
         }
     }
 

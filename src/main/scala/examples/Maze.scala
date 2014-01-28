@@ -27,8 +27,8 @@ object Maze {
             case "-w"  :: v :: t => parse(t, values + (('width, v.toInt)))
             case "-h"  :: v :: t => parse(t, values + (('height, v.toInt)))
             case "-s"  :: v :: t => parse(t, values + (('seed, v.toInt)))
-            case "-hw" :: t        => parse(t, values + (('hw, 1)))
-            case Nil => values
+            case "-hw" :: t      => parse(t, values + (('hw, 1)))
+            case Nil             => values
             case other => println("invalid option: " + other); usage
         }
     }
@@ -36,10 +36,10 @@ object Maze {
     def main(args: Array[String]) {
 
         // Set up defaults.
-        val defaults = Map('width -> 25)        ++
-                            Map('height -> 25)      ++
-                            Map('seed -> 0)            ++
-                            Map('hw -> 0)
+        val defaults = Map('width -> 25)    ++
+                       Map('height -> 25)   ++
+                       Map('seed -> 0)      ++
+                       Map('hw -> 1)
 
         // Parse arguments.
         val options = parse(args.toList, defaults)
@@ -50,10 +50,10 @@ object Maze {
 
         // Display what we will be generating.
         println("Generating maze application:")
-        println("  Width:         " + width)
-        println("  Height:        " + height)
-        println("  Seed:          " + seed)
-        println("  Platform:     " + (if (use_hw) "hardware" else "software"))
+        println("  Width:       " + width)
+        println("  Height:      " + height)
+        println("  Seed:        " + seed)
+        println("  Platform:    " + (if (use_hw) "hardware" else "software"))
 
         val GenRun = new AutoPipeBlock {
 

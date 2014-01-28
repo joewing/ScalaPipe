@@ -13,21 +13,21 @@ private[autopipe] object ValueType {
 
     private var valueTypes = Map[String, ValueType]()
 
-    val unsigned8   = insert(new IntegerValueType("UNSIGNED8",    8, false))
-    val signed8     = insert(new IntegerValueType("SIGNED8",      8, true))
+    val unsigned8   = insert(new IntegerValueType("UNSIGNED8",   8, false))
+    val signed8     = insert(new IntegerValueType("SIGNED8",     8, true))
     val unsigned16  = insert(new IntegerValueType("UNSIGNED16", 16, false))
-    val signed16    = insert(new IntegerValueType("SIGNED16",    16, true))
+    val signed16    = insert(new IntegerValueType("SIGNED16",   16, true))
     val unsigned32  = insert(new IntegerValueType("UNSIGNED32", 32, false))
-    val signed32    = insert(new IntegerValueType("SIGNED32",    32, true))
+    val signed32    = insert(new IntegerValueType("SIGNED32",   32, true))
     val unsigned64  = insert(new IntegerValueType("UNSIGNED64", 64, false))
-    val signed64    = insert(new IntegerValueType("SIGNED64",    64, true))
-    val float32     = insert(new FloatValueType(  "FLOAT32",     32))
-    val float64     = insert(new FloatValueType(  "FLOAT64",     64))
-    val float96     = insert(new FloatValueType(  "FLOAT96",     96))
+    val signed64    = insert(new IntegerValueType("SIGNED64",   64, true))
+    val float32     = insert(new FloatValueType(  "FLOAT32",    32))
+    val float64     = insert(new FloatValueType(  "FLOAT64",    64))
+    val float96     = insert(new FloatValueType(  "FLOAT96",    96))
 
-    val any         = insert(new ValueType("any"))
-    val string      = insert(new ValueType("STRING"))
-    val void        = insert(new ValueType("void"))
+    val any         = insert(new ValueType("any", 0))
+    val string      = insert(new ValueType("STRING", 0))
+    val void        = insert(new ValueType("void", 0))
     val bool        = signed8
 
     private def insert(vt: ValueType): ValueType = {
@@ -45,7 +45,9 @@ private[autopipe] object ValueType {
         }
     }
 
-    def getPointer(vt: ValueType): ValueType = {
+    def valueType(name: String): ValueType = valueTypes(name)
+
+    def pointer(vt: ValueType): ValueType = {
         val name = vt.name + "*"
         if (valueTypes.contains(name)) {
             valueTypes(name)
@@ -60,7 +62,7 @@ private[autopipe] object ValueType {
 
 private[autopipe] class ValueType(
         val name: String,
-        var bits: Int = 0,
+        var bits: Int,
         val signed: Boolean = false) {
 
     def baseType: ValueType = this
@@ -107,13 +109,19 @@ private[autopipe] class PointerValueType(_name: String, val itemType: ValueType)
 
 }
 
+private object ArrayValueType {
+
+    def bits(apa: AutoPipeArray): Int = {
+        apa.itemType.create.bits * apa.length
+    }
+
+}
+
 private[autopipe] class ArrayValueType(apa: AutoPipeArray)
-    extends ValueType(apa.name) {
+    extends ValueType(apa.name, ArrayValueType.bits(apa)) {
 
     private[autopipe] val itemType = apa.itemType.create()
     private[autopipe] val length = apa.length
-
-    bits = length * itemType.bits
 
     override def pure = itemType.pure
 
@@ -206,7 +214,7 @@ private[autopipe] class UnionValueType(apu: AutoPipeUnion)
 }
 
 private[autopipe] class TypeDefValueType(aptd: AutoPipeTypeDef)
-    extends ValueType(aptd.name) {
+    extends ValueType(aptd.name, ValueType.valueType(aptd.value).bits) {
 
     private[autopipe] val value = aptd.value
 

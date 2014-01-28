@@ -1,4 +1,3 @@
-
 package blocks
 
 import autopipe.dsl._
@@ -58,4 +57,3 @@ object MT19937 extends AutoPipeBlock {
     }
 
 }
-

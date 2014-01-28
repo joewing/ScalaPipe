@@ -68,11 +68,11 @@ private[gen] abstract class HDLNodeEmitter(
         val destWidth = node.dest.valueType.bits
         val srca = emitSymbol(node.srca)
         node.srca.valueType match {
-            case ivt: IntegerValueType if srcWidth >= destWidth =>
+            case ivt: IntegerValueType if srcWidth < destWidth =>
                 val top = destWidth - 1
                 s"$srca[$top:0]"
-            case ivt: IntegerValueType if srcWidth < destWidth =>
-                val repeat = destWidth - srcWidth
+            case ivt: IntegerValueType if srcWidth >= destWidth =>
+                val repeat = srcWidth - destWidth
                 if (ivt.signed) {
                     s"{{$repeat{$srca[${srcWidth - 1}]}},$srca}"
                 } else {
@@ -455,6 +455,7 @@ private[gen] abstract class HDLNodeEmitter(
             } else if (bits == ramWidth) {
                 // Single-word store.
                 initBuilder.write(s"ram_in <= $src;")
+                initBuilder.write(s"ram_mask <= {$wordBytes{1'b1}};")
             } else {
                 // Single-word store, but store less than a word.
                 val maxOffset = wordBytes - node.src.valueType.bytes

@@ -72,7 +72,7 @@ private[autopipe] class TypeChecker(kt: KernelType) {
     }
 
     private def getOpType(node: ASTOpNode): ValueType = node.op match {
-        case NodeType.addr      => ValueType.getPointer(getType(node.a))
+        case NodeType.addr      => ValueType.pointer(getType(node.a))
         case NodeType.sizeof    => ValueType.unsigned32
         case NodeType.neg       => getType(node.a)
         case NodeType.compl     => getType(node.a)
