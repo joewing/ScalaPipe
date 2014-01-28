@@ -6,7 +6,7 @@ private[gen] trait HDLGenerator extends Generator {
 
     protected val kt: KernelType
 
-    private val ramWidth = 32
+    protected val ramWidth = 32
 
     def hasState(node: ASTNode): Boolean = node match {
         case in: ASTIfNode      => in.iFalse != null
@@ -53,21 +53,30 @@ private[gen] trait HDLGenerator extends Generator {
         }
     }
 
-    def emitRAM(name: String, vt: ValueType) {
+    def emitRAM(depth: Int) {
+        val lastIndex = depth - 1
         val top = ramWidth - 1
-        val size = (vt.bits + ramWidth - 1) / ramWidth
-        write(s"reg [$top:0] $name [0:$size];")
-        write(s"wire [31:0] ${name}_wix;")
-        write(s"wire [31:0] ${name}_rix;")
-        write(s"wire [$top:0] ${name}_in;")
-        write(s"reg [$top:0] ${name}_out;")
-        write(s"wire ${name}_we;")
+        val wordBytesTop = ramWidth / 8 - 1
+
+        // Inputs
+        write(s"reg [$wordBytesTop:0] ram_mask;")
+        write(s"reg [31:0] ram_addr;")
+        write(s"reg [31:0] ram_state;")
+        write(s"wire [$top:0] ram_in;")
+        write(s"wire ram_we;")
+
+        // Outputs
+        write(s"wire ram_ready = 1;")
+        write(s"reg [$top:0] ram_out;")
+
+        write(s"reg [$top:0] ram_data [0:$lastIndex];")
+        write(s"wire [31:0] ram_index = ram_addr + ram_state;")
         write(s"always @(posedge clk) begin")
         enter
-        write(s"${name}_out <= $name[${name}_rix];")
-        write(s"if (${name}_we) begin")
+        write(s"ram_out <= ram_data[ram_index];")
+        write(s"if (ram_we) begin")
         enter
-        write(s"$name[${name}_wix] <= ${name}_in;")
+        write(s"ram_data[ram_index] <= ram_in;")
         leave
         write("end")
         leave
@@ -83,8 +92,6 @@ private[gen] trait HDLGenerator extends Generator {
             } else {
                 write(s"wire $ts;")
             }
-        } else {
-            emitRAM(name, s.valueType)
         }
     }
 

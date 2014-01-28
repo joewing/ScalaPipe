@@ -23,10 +23,7 @@ private[gen] class HDLKernelNodeEmitter(
     private def getLocalOutputs(node: IRNode) =
         getLocalPorts(node, { _.isInstanceOf[OutputSymbol] } ).map { _.name }
 
-    override def emitBegin(block: StateBlock) {
-        write("if (state == " + block.label + ") begin")
-        enter
-        beginScope
+    override def checkPorts(block: StateBlock) {
         block.nodes.foreach { node =>
             val localInputs = getLocalInputs(node)
             val localOutputs = getLocalOutputs(node)
@@ -34,20 +31,13 @@ private[gen] class HDLKernelNodeEmitter(
             val portsToCheck = ports.filter { !isCheckedPort(_) }
             addCheckedPorts(portsToCheck)
         }
-        write("if (guard_" + block.label + ") begin")
-        enter
     }
 
-    override def emitEnd(block: StateBlock) {
+    override def releasePorts(block: StateBlock) {
         val portsToRelease = getCheckedPorts
         for (i <- portsToRelease if kt.isInput(i)) {
             moduleEmitter.addReadState(block.label, i)
         }
-        leave
-        write("end")
-        endScope
-        leave
-        write("end")
     }
 
     override def emitAvailable(block: StateBlock, node: IRInstruction) {

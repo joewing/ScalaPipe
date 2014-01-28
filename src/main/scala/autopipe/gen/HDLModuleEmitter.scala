@@ -50,6 +50,7 @@ private[gen] class HDLModuleEmitter(
     private val readStates = new HashMap[String, Assignment]
     private val writeStates = new HashMap[String, Assignment]
 
+    private val ramOffsets = new HashMap[String, Int]
     private val ramWrites = new HashMap[String, RAMUpdate]
     private val ramReads = new HashMap[String, RAMUpdate]
 
@@ -92,7 +93,7 @@ private[gen] class HDLModuleEmitter(
         return instanceName + "_result"
     }
 
-    private def addGuard(state: Int, guard: String) {
+    def addGuard(state: Int, guard: String) {
         val gl = guards.getOrElseUpdate(state, { new ArrayBuffer[String] })
         gl += guard
     }

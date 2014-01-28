@@ -10,20 +10,12 @@ private[gen] class HDLFunctionNodeEmitter(
         _moduleEmitter: HDLModuleEmitter
     ) extends HDLNodeEmitter(ft, _graph, _moduleEmitter) {
 
-    override def emitBegin(block: StateBlock) {
-        write("if (state == " + block.label + ") begin")
-        enter
-        beginScope
-        write("if (guard_" + block.label + ") begin")
-        enter
+    override def checkPorts(block: StateBlock) {
+        // Nothing to do here.
     }
 
-    override def emitEnd(block: StateBlock) {
-        leave
-        write("end")
-        endScope
-        leave
-        write("end")
+    override def releasePorts(block: StateBlock) {
+        // Nothing to do here.
     }
 
     override def emitAvailable(block: StateBlock, node: IRInstruction) {
@@ -61,7 +53,7 @@ private[gen] class HDLFunctionNodeEmitter(
         enter
         val blocking = graph.blocks.filter(!_.continuous)
         val dests = blocking.flatMap(_.dests)
-        val pdests = HashSet(dests: _*).filter { d => d.valueType match {
+        val pdests = dests.toSet.filter { d => d.valueType match {
                 case ft: FloatValueType => true
                 case ft: FixedValueType => true
                 case it: IntegerValueType => true
