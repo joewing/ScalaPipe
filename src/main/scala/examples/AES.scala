@@ -12,7 +12,7 @@ object AES extends App {
     val keyBits = 128
     val rounds = 10
 
-    val STATE = new AutoPipeArray(UNSIGNED8, 16)
+    val STATE = new Vector(UNSIGNED8, 16)
 
     @tailrec
     def power(n: Int, i: Int = 0, x: Int = 1): Int = {

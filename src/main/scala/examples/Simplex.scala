@@ -12,7 +12,7 @@ object Simplex extends App {
     val columnCount = maxConstraints + maxVariables + 2
 
     val VALUE_TYPE = FLOAT32
-    val ROW_TYPE    = AutoPipeArray(VALUE_TYPE, columnCount)
+    val ROW_TYPE    = Vector(VALUE_TYPE, columnCount)
 
     // Read the initial canonical matrix.
     val Parser = new Kernel("Parser") {

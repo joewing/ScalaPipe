@@ -91,7 +91,7 @@ object Maze {
             val northInput = input(UNSIGNED32)
             val maze = output(UNSIGNED8)
 
-            val ROWTYPE = AutoPipeArray(UNSIGNED8, width)
+            val ROWTYPE = Vector(UNSIGNED8, width)
 
             val next = local(ROWTYPE)
             val x = local(UNSIGNED32, 0)

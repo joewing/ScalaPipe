@@ -1,7 +1,7 @@
 package scalapipe
 
 import scalapipe.dsl.AutoPipeType
-import scalapipe.dsl.AutoPipeArray
+import scalapipe.dsl.Vector
 import scalapipe.dsl.AutoPipeStruct
 import scalapipe.dsl.AutoPipeUnion
 import scalapipe.dsl.AutoPipePointer
@@ -111,17 +111,17 @@ private[scalapipe] class PointerValueType(_name: String, val itemType: ValueType
 
 private object ArrayValueType {
 
-    def bits(apa: AutoPipeArray): Int = {
-        apa.itemType.create.bits * apa.length
+    def bits(v: Vector): Int = {
+        v.itemType.create.bits * v.length
     }
 
 }
 
-private[scalapipe] class ArrayValueType(apa: AutoPipeArray)
-    extends ValueType(apa.name, ArrayValueType.bits(apa)) {
+private[scalapipe] class ArrayValueType(v: Vector)
+    extends ValueType(v.name, ArrayValueType.bits(v)) {
 
-    private[scalapipe] val itemType = apa.itemType.create()
-    private[scalapipe] val length = apa.length
+    private[scalapipe] val itemType = v.itemType.create()
+    private[scalapipe] val length = v.length
 
     override def pure = itemType.pure
 

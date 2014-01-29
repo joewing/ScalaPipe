@@ -29,7 +29,7 @@ object RadixSort {
         val in = input(UNSIGNED32)
         val out = output(UNSIGNED32)
         val radix = config(UNSIGNED32, 'radix, 0)
-        val buffer = local(new AutoPipeArray(UNSIGNED32, itemCount))
+        val buffer = local(new Vector(UNSIGNED32, itemCount))
         val temp = local(UNSIGNED32)
         val i = local(UNSIGNED32)
         val j = local(UNSIGNED32)

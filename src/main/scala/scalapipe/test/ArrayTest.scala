@@ -5,9 +5,9 @@ import scalapipe.dsl._
 
 object ArrayTest {
 
-    val SmallArray = new AutoPipeArray(UNSIGNED8, 8)
+    val SmallArray = new Vector(UNSIGNED8, 8)
 
-    val LargeArray = new AutoPipeArray(SmallArray, 1024)
+    val LargeArray = new Vector(SmallArray, 1024)
 
     val Gen = new Func("Gen") {
         val y0      = output(SmallArray)

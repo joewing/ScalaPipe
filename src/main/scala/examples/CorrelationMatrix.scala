@@ -19,8 +19,8 @@ object CorrelationMatrix {
 		val size = 3
 		val mtlength = 25
 
-		val SmallArray = new AutoPipeArray(FLOAT32, n)
-		val BigArray = new AutoPipeArray(FLOAT32, n*n)
+		val SmallArray = new Vector(FLOAT32, n)
+		val BigArray = new Vector(FLOAT32, n*n)
 
 		
 

@@ -8,8 +8,8 @@ object CholeskyDecomposition extends Kernel {
 	val size = 3
 	val x0 = input(FLOAT32)
 	val y0 = output(FLOAT32)
-	val inputMatrix = local(new AutoPipeArray(FLOAT32, size * size))
-	val outputMatrix = local(new AutoPipeArray(FLOAT32, size * size))
+	val inputMatrix = local(new Vector(FLOAT32, size * size))
+	val outputMatrix = local(new Vector(FLOAT32, size * size))
 	val state = local(SIGNED32, -1)
 	val i = local(SIGNED32, 0)
 	val j = local(SIGNED32, 0)

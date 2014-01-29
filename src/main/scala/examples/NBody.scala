@@ -15,8 +15,8 @@ object NBody {
         val hw = false
 
         val VTYPE = FLOAT32
-        val PARTICLE = new AutoPipeArray(VTYPE, 7)    // x, y, z, m, vx, vy, vz
-        val POINT = new AutoPipeArray(VTYPE, 4)        // x, y, z, command
+        val PARTICLE = new Vector(VTYPE, 7)    // x, y, z, m, vx, vy, vz
+        val POINT = new Vector(VTYPE, 4)        // x, y, z, command
 
         val gravity = 0.0000000000667428
 
@@ -185,7 +185,7 @@ object NBody {
             val filename = config(STRING, 'filename, "particles.txt")
 
             val temp = local(PARTICLE)
-            val line = local(new AutoPipeArray(FLOAT64, 7))
+            val line = local(new Vector(FLOAT64, 7))
             val fd    = local(stdio.FILEPTR, 0)
             val rc    = local(SIGNED32)
             val count = local(UNSIGNED32, 0)
@@ -232,7 +232,7 @@ object NBody {
             val lin = input(PARTICLE)
             val pout = output(PARTICLE)
 
-            val arrayType = new AutoPipeArray(PARTICLE, maxParticles)
+            val arrayType = new Vector(PARTICLE, maxParticles)
             val particles = local(arrayType)
             val temp = local(PARTICLE)
             val updateIndex = local(UNSIGNED32, 0)
@@ -281,7 +281,7 @@ object NBody {
             val pout = output(PARTICLE)
             val oout = output(POINT)
 
-            val arrayType = new AutoPipeArray(PARTICLE, maxParticles)
+            val arrayType = new Vector(PARTICLE, maxParticles)
             val particles = local(arrayType)
             val temp = local(PARTICLE)
             val other = local(POINT)

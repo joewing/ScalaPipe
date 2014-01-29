@@ -20,7 +20,7 @@ object ArrayTest2 {
             UNSIGNED32
         }
 
-        val ArrayType = new AutoPipeArray(vtype, 1024)
+        val ArrayType = new Vector(vtype, 1024)
 
         val Gen = new Func("Gen") {
             val y0      = output(UNSIGNED32)

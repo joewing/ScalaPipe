@@ -13,8 +13,8 @@ object BMPWriter extends Kernel {
     val file_name   = config(STRING, 'file, "out.bmp")
 
     val fd = local(stdio.FILEPTR, 0)
-    val header = local(new AutoPipeArray(UNSIGNED8, 14))
-    val dib_header = local(new AutoPipeArray(UNSIGNED8, 40))
+    val header = local(new Vector(UNSIGNED8, 14))
+    val dib_header = local(new Vector(UNSIGNED8, 40))
     val row_size = local(UNSIGNED32)
     val width = local(SIGNED32)
     val height = local(SIGNED32)

@@ -27,7 +27,7 @@ object BLSC {
 
 		val Ziggy = ZigguratNormalFloat
 
-		val FloatArray = new AutoPipeArray(FLOAT32, size)
+		val FloatArray = new Vector(FLOAT32, size)
 
 		val Cholesky = CholeskyDecomposition
 
@@ -35,8 +35,8 @@ object BLSC {
 
 		val SDup = new DuplicateBlock(UNSIGNED32)
 
-		val SmallArray = new AutoPipeArray(FLOAT32, size)
-		val BigArray = new AutoPipeArray(FLOAT32, size*size)
+		val SmallArray = new Vector(FLOAT32, size)
+		val BigArray = new Vector(FLOAT32, size*size)
 
 		
 

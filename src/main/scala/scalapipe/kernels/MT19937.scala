@@ -7,7 +7,7 @@ object MT19937 extends Kernel {
     val state = input(UNSIGNED32)
     val out = output(UNSIGNED32)
 
-    val mt = local(new AutoPipeArray(UNSIGNED32, 624))
+    val mt = local(new Vector(UNSIGNED32, 624))
     val index = local(UNSIGNED32, 0)
     val configured = local(UNSIGNED8, 0)
     val i = local(UNSIGNED32)

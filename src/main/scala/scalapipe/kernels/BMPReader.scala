@@ -13,8 +13,8 @@ object BMPReader extends Kernel {
     val file_name  = config(STRING, 'file, "in.bmp")
 
     val fd = local(stdio.FILEPTR, 0)
-    val header = local(AutoPipeArray(UNSIGNED8, 14))
-    val dib_header = local(AutoPipeArray(UNSIGNED8, 40))
+    val header = local(Vector(UNSIGNED8, 14))
+    val dib_header = local(Vector(UNSIGNED8, 40))
     val offset = local(UNSIGNED32)
     val compression = local(UNSIGNED32)
     val width = local(SIGNED32)

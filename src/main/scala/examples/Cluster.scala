@@ -16,7 +16,7 @@ object Cluster {
         val BUFFER_SIZE = MAX_WIDTH * MAX_HEIGHT
 
         val ValueType = UNSIGNED32
-        val ClusterType = new AutoPipeArray(ValueType, clusterCount)
+        val ClusterType = new Vector(ValueType, clusterCount)
 
         val LAST_INDEX = -1
 
@@ -63,7 +63,7 @@ object Cluster {
             val height          = local(SIGNED32)
             val x                 = local(SIGNED32, 0)
             val y                 = local(SIGNED32, 0)
-            val buffer          = local(AutoPipeArray(ValueType, BUFFER_SIZE))
+            val buffer          = local(Vector(ValueType, BUFFER_SIZE))
 
             if (initialized && imageReady) {
                 value_out = buffer(y * width + x)
