@@ -1,6 +1,6 @@
 package scalapipe.test
 
-import blocks._
+import scalapipe.kernels._
 import scalapipe.dsl._
 
 object StructTest {

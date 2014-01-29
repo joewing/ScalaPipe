@@ -1,8 +1,8 @@
 package examples
 
-import blocks.stdio
-import blocks.DuplicateBlock
-import blocks.CholeskyDecomposition
+import scalapipe.kernels.stdio
+import scalapipe.kernels.DuplicateBlock
+import scalapipe.kernels.CholeskyDecomposition
 
 import scalapipe._
 import scalapipe.dsl._

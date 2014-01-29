@@ -1,6 +1,6 @@
 package examples
 
-import blocks._
+import scalapipe.kernels._
 import scalapipe._
 import scalapipe.dsl._
 
@@ -470,8 +470,8 @@ object NBody {
             Loop.input(updated(1))
 
             if (hw) {
-                map(ANY_BLOCK -> Force, CPU2FPGA());
-                map(Force -> ANY_BLOCK, FPGA2CPU());
+                map(ANY_KERNEL -> Force, CPU2FPGA());
+                map(Force -> ANY_KERNEL, FPGA2CPU());
             }
 
 

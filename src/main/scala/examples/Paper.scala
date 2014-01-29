@@ -1,7 +1,7 @@
 package examples
 
-import blocks.ANY_BLOCK
-import blocks.stdio
+import scalapipe.kernels.ANY_KERNEL
+import scalapipe.kernels.stdio
 import scalapipe._
 import scalapipe.dsl._
 
@@ -230,7 +230,7 @@ object Paper {
             }
             Print(result)
 
-            map(ANY_BLOCK -> Print, FPGA2CPU())
+            map(ANY_KERNEL -> Print, FPGA2CPU())
 
         }
         laplace.emit("paper")

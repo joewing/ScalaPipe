@@ -2,7 +2,7 @@ package examples
 
 import scalapipe._
 import scalapipe.dsl._
-import blocks._
+import scalapipe.kernels._
 
 object Mandelbrot {
 
@@ -180,8 +180,8 @@ object Mandelbrot {
             Print(result)
 
             if (use_hw) {
-                map(Start -> ANY_BLOCK, CPU2FPGA())
-                map(ANY_BLOCK -> Print, FPGA2CPU())
+                map(Start -> ANY_KERNEL, CPU2FPGA())
+                map(ANY_KERNEL -> Print, FPGA2CPU())
             }
 
         }

@@ -1,6 +1,6 @@
 package scalapipe.test
 
-import blocks._
+import scalapipe.kernels._
 import scalapipe.dsl._
 
 object FunctionTest {
@@ -49,13 +49,13 @@ object FunctionTest {
             mapping match {
                 case 0 => ()
                 case 1 =>
-                    map(ANY_BLOCK -> Block1, CPU2FPGA())
-                    map(ANY_BLOCK -> Print, FPGA2CPU())
+                    map(ANY_KERNEL -> Block1, CPU2FPGA())
+                    map(ANY_KERNEL -> Print, FPGA2CPU())
                 case 2 =>
-                    map(ANY_BLOCK -> Print, FPGA2CPU())
+                    map(ANY_KERNEL -> Print, FPGA2CPU())
                 case 3 =>
-                    map(ANY_BLOCK -> Func1, CPU2FPGA())
-                    map(Func1 -> ANY_BLOCK, FPGA2CPU())
+                    map(ANY_KERNEL -> Func1, CPU2FPGA())
+                    map(Func1 -> ANY_KERNEL, FPGA2CPU())
             }
 
         }

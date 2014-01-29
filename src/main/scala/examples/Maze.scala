@@ -1,6 +1,6 @@
 package examples
 
-import blocks._
+import scalapipe.kernels._
 
 import scalapipe._
 import scalapipe.dsl._
@@ -218,14 +218,14 @@ object Maze {
 
             if (use_hw) {
                 map(GenState -> MT19937, CPU2FPGA())
-                map(ANY_BLOCK -> Print, FPGA2CPU())
+                map(ANY_KERNEL -> Print, FPGA2CPU())
             }
 
-//map(MT19937 -> ANY_BLOCK, CPU2GPU())
-//map(ANY_BLOCK -> GenRun, CPU2GPU())
-//map(ANY_BLOCK -> CarveMaze, GPU2CPU())
-//map(ANY_BLOCK -> CarveMaze, CPU2GPU())
-//map(ANY_BLOCK -> Print, GPU2CPU())
+//map(MT19937 -> ANY_KERNEL, CPU2GPU())
+//map(ANY_KERNEL -> GenRun, CPU2GPU())
+//map(ANY_KERNEL -> CarveMaze, GPU2CPU())
+//map(ANY_KERNEL -> CarveMaze, CPU2GPU())
+//map(ANY_KERNEL -> Print, GPU2CPU())
 
         }
         Maze.emit("maze")

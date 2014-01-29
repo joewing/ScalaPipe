@@ -2,7 +2,7 @@ package examples
 
 import scalapipe._
 import scalapipe.dsl._
-import blocks._
+import scalapipe.kernels._
 
 object RandomTest extends App {
 

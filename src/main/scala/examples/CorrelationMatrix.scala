@@ -1,9 +1,9 @@
 package examples
 
-import blocks.DuplicateBlock
-import blocks.MT19937
-import blocks.stdio
-import blocks.GenState
+import scalapipe.kernels.DuplicateBlock
+import scalapipe.kernels.MT19937
+import scalapipe.kernels.stdio
+import scalapipe.kernels.GenState
 import scalapipe._
 import scalapipe.dsl._
 

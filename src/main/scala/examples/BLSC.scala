@@ -1,12 +1,12 @@
 package examples
 
-import blocks.stdio
-import blocks.GenState
-import blocks.MT19937
-import blocks.ZigguratNormalFloat
-import blocks.CholeskyDecomposition
-import blocks.DuplicateBlock
-import blocks.ANY_BLOCK
+import scalapipe.kernels.stdio
+import scalapipe.kernels.GenState
+import scalapipe.kernels.MT19937
+import scalapipe.kernels.ZigguratNormalFloat
+import scalapipe.kernels.CholeskyDecomposition
+import scalapipe.kernels.DuplicateBlock
+import scalapipe.kernels.ANY_KERNEL
 
 
 import scalapipe._
@@ -678,9 +678,9 @@ object BLSC {
 			val tC = RandomCleaner(tT, 'n -> 1, 'upperrange -> 2, 'lowerrange -> .01, 'resolution -> 10000)
 			val black = BlackScholes(trans, spotC, volC, rC, tC, 'n -> size)
 
-			map(ANY_BLOCK -> Transform, CPU2FPGA())
-			map(Transform -> ANY_BLOCK, FPGA2CPU())
-			//map(ANY_BLOCK -> CorrelationMatrixGenerator, CPU2FPGA())
+			map(ANY_KERNEL -> Transform, CPU2FPGA())
+			map(Transform -> ANY_KERNEL, FPGA2CPU())
+			//map(ANY_KERNEL -> CorrelationMatrixGenerator, CPU2FPGA())
 			//map(CorrelationMatrixGenerator -> Transform, FPGA2FPGA())
 
 		}

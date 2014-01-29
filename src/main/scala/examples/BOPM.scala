@@ -1,5 +1,5 @@
 package examples
-import blocks.stdio
+import scalapipe.kernels.stdio
 
 import scalapipe._
 import scalapipe.dsl._

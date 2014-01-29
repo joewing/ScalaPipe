@@ -2,7 +2,7 @@ package examples
 
 import scalapipe._
 import scalapipe.dsl._
-import blocks._
+import scalapipe.kernels._
 
 object Simplex extends App {
 
@@ -331,8 +331,8 @@ object Simplex extends App {
 
         param('queueDepth, 2)
         param('fpga, "Simulation")
-        map(Parser -> ANY_BLOCK, CPU2FPGA())
-        map(ANY_BLOCK -> Output, FPGA2CPU())
+        map(Parser -> ANY_KERNEL, CPU2FPGA())
+        map(ANY_KERNEL -> Output, FPGA2CPU())
 
         val stream = Streamer(Parser(), Loop.output())
         val split = ArraySplitter(stream(0))

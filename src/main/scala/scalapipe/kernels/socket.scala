@@ -1,4 +1,4 @@
-package blocks
+package scalapipe.kernels
 
 import scalapipe.dsl._
 

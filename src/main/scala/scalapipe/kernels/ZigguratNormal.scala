@@ -1,12 +1,12 @@
-package blocks
+package scalapipe.kernels
 
 import scalapipe._
 import scalapipe.dsl._
 
-object ZigguratNormalFloat extends Kernel {
+object ZigguratNormal extends Kernel {
 
     val in  = input(UNSIGNED32)
-    val out = output(FLOAT32)
+    val out = output(SIGNED32)
 
     val state = local(SIGNED8, -1)
     val hz = local(SIGNED32)
@@ -20,7 +20,7 @@ object ZigguratNormalFloat extends Kernel {
 
     val r = 3.442620
     val uni = 0.2328306e-9
-    val p = 1 //268435456.0
+    val p = 268435456.0
 
     switch(state) {
 
@@ -39,7 +39,7 @@ object ZigguratNormalFloat extends Kernel {
             wn(127) = dn / m1
 
             fn(0) = 1.0
-            fn(127) = exp(-0.5 * dn * dn) //d->fn[127] = ; dn / m1
+            fn(127) = dn / m1 //d->fn[127] = exp(-0.5 * dn * dn);
 
             i = 126
             while (i >= 1) {
@@ -57,7 +57,7 @@ object ZigguratNormalFloat extends Kernel {
             hz = in //ival
             iz = hz & 0x7F
             if (abs(hz) < kn(iz)) {
-                out = cast(hz * wn(iz), FLOAT32)
+                out = cast(hz * wn(iz) * p, SIGNED32)
             } else {
                 if (iz == 0) {
                     state = 1
@@ -79,20 +79,19 @@ object ZigguratNormalFloat extends Kernel {
             y = -log(u(1))
             if (y + y >= x * x) {
                 if (hz > 0) {
-                    out = cast((x + r) * p, FLOAT32)
+                    out = cast((x + r) * p, SIGNED32)
                 } else {
-                    out = cast((-x - r) * p, FLOAT32)
+                    out = cast((-x - r) * p, SIGNED32)
                 }
                 state = 0
             } else {
                 state = 1
             }
         }
-
-        when(3) {
+when(3) {
             u(0) = 0.5 + in * uni
             if (fn(iz) + u(0) * (fn(iz - 1) - fn(iz)) < exp(x * x * -0.5)) {
-                out = cast(x * p, FLOAT32)
+                out = cast(x * p, SIGNED32)
             }
             state = 0
         }

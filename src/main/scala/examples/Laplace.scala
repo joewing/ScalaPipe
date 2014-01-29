@@ -1,6 +1,6 @@
 package examples
 
-import blocks._
+import scalapipe.kernels._
 
 import scalapipe._
 import scalapipe.dsl._
@@ -165,26 +165,26 @@ param('queueDepth, 64)
             case 0 => {     // Everything on a single CPU.
                 }
             case 1 => {     // RNG on FPGA, everything else on a single CPU.
-                    map(ANY_BLOCK -> RNG, CPU2FPGA())
-                    map(RNG -> ANY_BLOCK, FPGA2CPU())
+                    map(ANY_KERNEL -> RNG, CPU2FPGA())
+                    map(RNG -> ANY_KERNEL, FPGA2CPU())
                 }
             case 2 => {     // RNG and walks on FPGA.
-                    map(ANY_BLOCK -> RNG, CPU2FPGA())
-                    map(ANY_BLOCK -> Print, FPGA2CPU())
+                    map(ANY_KERNEL -> RNG, CPU2FPGA())
+                    map(ANY_KERNEL -> Print, FPGA2CPU())
                 }
             case 3 => {     // Each walk on a seperate CPU.
-                    map(ANY_BLOCK -> Walk, CPU2CPU(id = -1))
-                    map(Walk -> ANY_BLOCK, CPU2CPU(id = 0))
+                    map(ANY_KERNEL -> Walk, CPU2CPU(id = -1))
+                    map(Walk -> ANY_KERNEL, CPU2CPU(id = 0))
                 }
             case 4 => {     // RNG on FPGA, each walk on a separate CPU.
-                    map(ANY_BLOCK -> RNG, CPU2FPGA())
-                    map(RNG -> ANY_BLOCK, FPGA2CPU())
-                    map(ANY_BLOCK -> Walk, CPU2CPU(id = -1))
-                    map(Walk -> ANY_BLOCK, CPU2CPU(id = 0))
+                    map(ANY_KERNEL -> RNG, CPU2FPGA())
+                    map(RNG -> ANY_KERNEL, FPGA2CPU())
+                    map(ANY_KERNEL -> Walk, CPU2CPU(id = -1))
+                    map(Walk -> ANY_KERNEL, CPU2CPU(id = 0))
                 }
             case 5 => {     // RNG and walks on GPU.
-                    map(ANY_BLOCK -> RNG, CPU2GPU())
-                    map(ANY_BLOCK -> Print, GPU2CPU())
+                    map(ANY_KERNEL -> RNG, CPU2GPU())
+                    map(ANY_KERNEL -> Print, GPU2CPU())
                 }
             }
 

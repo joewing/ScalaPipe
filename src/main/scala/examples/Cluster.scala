@@ -1,6 +1,6 @@
 package examples
 
-import blocks._
+import scalapipe.kernels._
 import scalapipe._
 import scalapipe.dsl._
 

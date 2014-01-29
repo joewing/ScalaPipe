@@ -1,7 +1,7 @@
 package examples
 
-import blocks.stdio
-import blocks.ANY_BLOCK
+import scalapipe.kernels.stdio
+import scalapipe.kernels.ANY_KERNEL
 
 import scalapipe._
 import scalapipe.dsl._
@@ -87,8 +87,8 @@ object Averaging {
             val result = Half(Add(random0, random1))
             Print(result)
 
-            map(Random -> ANY_BLOCK, CPU2FPGA())
-            map(ANY_BLOCK -> Print, FPGA2CPU())
+            map(Random -> ANY_KERNEL, CPU2FPGA())
+            map(ANY_KERNEL -> Print, FPGA2CPU())
 
         }
 

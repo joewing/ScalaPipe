@@ -3,6 +3,7 @@ package scalapipe
 import java.io.File
 
 import scalapipe.dsl._
+import scalapipe.kernels.ANY_KERNEL
 import scalapipe.gen.XGenerator
 import scalapipe.gen.MakefileGenerator
 import scalapipe.gen.RawFileGenerator
@@ -122,8 +123,8 @@ private[scalapipe] class AutoPipe {
                 for (s <- i.getOutputs) {
                     val sname = s.sourceKernel.name
                     val dname = s.destKernel.name
-                    if ((sname == fromKernel || fromKernel == "any") &&
-                        (dname == toKernel || toKernel == "any")) {
+                    if ((sname == fromKernel || fromKernel == ANY_KERNEL) &&
+                        (dname == toKernel || toKernel == ANY_KERNEL)) {
                         s.setEdge(e.edge)
                     }
                 }
@@ -144,8 +145,8 @@ private[scalapipe] class AutoPipe {
                 for (s <- i.getOutputs) {
                     val sname = s.sourceKernel.name
                     val dname = s.destKernel.name
-                    if ((sname == fromKernel || fromKernel == "any") &&
-                        (dname == toKernel || toKernel == "any")) {
+                    if ((sname == fromKernel || fromKernel == ANY_KERNEL) &&
+                        (dname == toKernel || toKernel == ANY_KERNEL)) {
                         s.addMeasure(stat, metric)
                     }
                 }

@@ -5,7 +5,7 @@ import scala.collection.immutable.HashMap
 
 import scalapipe._
 import scalapipe.dsl._
-import blocks._
+import scalapipe.kernels._
 
 object AES extends App {
 
@@ -379,8 +379,8 @@ object AES extends App {
         Print(encrypted)
 
 /*
-        map(Source -> ANY_BLOCK, CPU2FPGA())
-        map(ANY_BLOCK -> Print, FPGA2CPU())
+        map(Source -> ANY_KERNEL, CPU2FPGA())
+        map(ANY_KERNEL -> Print, FPGA2CPU())
 */
 
     }

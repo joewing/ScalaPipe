@@ -1,6 +1,6 @@
 package examples
 
-import blocks.stdio
+import scalapipe.kernels.stdio
 
 
 import scalapipe._
