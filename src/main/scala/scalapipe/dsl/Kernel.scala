@@ -40,26 +40,26 @@ class Kernel(val name: String) extends EmbeddedControls {
 
     private def getLabel: String = labelCounter.next()
 
-    def inputType(i: Int): AutoPipeType = inputs(i).t
+    def inputType(i: Int): Type = inputs(i).t
 
-    def outputType(i: Int): AutoPipeType = outputs(i).t
+    def outputType(i: Int): Type = outputs(i).t
 
-    def output(t: AutoPipeType, n: Symbol = null): AutoPipeVariable = {
+    def output(t: Type, n: Symbol = null): Variable = {
         val label = if (n != null) n.name else getLabel
-        val node = new AutoPipeVariable(label, this)
+        val node = new Variable(label, this)
         outputs += new KernelOutput(label, t)
         node
     }
 
-    def input(t: AutoPipeType, n: Symbol = null): AutoPipeVariable = {
+    def input(t: Type, n: Symbol = null): Variable = {
         val label = if (n != null) n.name else getLabel
-        val node = new AutoPipeVariable(label, this)
+        val node = new Variable(label, this)
         inputs += new KernelInput(label, t)
         node
     }
 
-    def config(t: AutoPipeType, n: Symbol, v: Any = null): AutoPipeVariable = {
-        val node = new AutoPipeVariable(n.name, this)
+    def config(t: Type, n: Symbol, v: Any = null): Variable = {
+        val node = new Variable(n.name, this)
         configs += new KernelConfig(n.name, t, v)
         node
     }
@@ -71,13 +71,13 @@ class Kernel(val name: String) extends EmbeddedControls {
         externals += Platforms.withName(platform)
     }
 
-    def local(t: AutoPipeType, v: Any = null): AutoPipeVariable = {
+    def local(t: Type, v: Any = null): Variable = {
         val label = getLabel
         states += new KernelLocal(label, t.create(), v)
-        new AutoPipeVariable(label, this)
+        new Variable(label, this)
     }
 
-    def cast(expr: ASTNode, t: AutoPipeType): ASTNode = {
+    def cast(expr: ASTNode, t: Type): ASTNode = {
         ASTConvertNode(expr, t.create(), this)
     }
 
@@ -148,7 +148,7 @@ class Kernel(val name: String) extends EmbeddedControls {
 
     def addr(n: ASTNode) = ASTOpNode(NodeType.addr, n, null, this)
 
-    def sizeof(t: AutoPipeType) = IntLiteral(t.create.bits / 8, this)
+    def sizeof(t: Type) = IntLiteral(t.create.bits / 8, this)
 
     def sizeof(n: ASTNode) = ASTOpNode(NodeType.sizeof, n, null, this)
 
@@ -175,6 +175,6 @@ class Kernel(val name: String) extends EmbeddedControls {
 
     implicit def string(s: String) = StringLiteral(s, this)
 
-    implicit def builder(b: AutoPipeVariable) = b.create
+    implicit def builder(b: Variable) = b.create
 
 }

@@ -78,22 +78,22 @@ object xlib {
 
     // Types.
     val XID = UNSIGNED64
-    val GC = new AutoPipeNative("GC")
-    val DISPLAY = new AutoPipeNative("Display")
-    val XEVENT = new AutoPipeNative("XEvent")
-    val XPROPERTYEVENT = new AutoPipeNative("XPropertyEvent")
-    val XCLIENTMESSAGEEVENT = new AutoPipeNative("XClientMessageEvent")
-    val XGCVALUES = new AutoPipeNative("XGCValues")
-    val DISPLAYPTR = new AutoPipePointer(DISPLAY)
-    val XEVENTPTR = new AutoPipePointer(XEVENT)
-    val XPROPERTYEVENTPTR = new AutoPipePointer(XPROPERTYEVENT)
-    val XGCVALUESPTR = new AutoPipePointer(XGCVALUES)
-    val XIDPTR = new AutoPipePointer(XID)
-    val SIGNED32PTR = new AutoPipePointer(SIGNED32)
-    val SIGNED64PTR = new AutoPipePointer(SIGNED64)
-    val UNSIGNED64PTR = new AutoPipePointer(UNSIGNED64)
-    val UNSIGNED8PTR = new AutoPipePointer(UNSIGNED8)
-    val UNSIGNED8PTRPTR = new AutoPipePointer(UNSIGNED8PTR)
+    val GC = new NativeType("GC")
+    val DISPLAY = new NativeType("Display")
+    val XEVENT = new NativeType("XEvent")
+    val XPROPERTYEVENT = new NativeType("XPropertyEvent")
+    val XCLIENTMESSAGEEVENT = new NativeType("XClientMessageEvent")
+    val XGCVALUES = new NativeType("XGCValues")
+    val DISPLAYPTR = new Pointer(DISPLAY)
+    val XEVENTPTR = new Pointer(XEVENT)
+    val XPROPERTYEVENTPTR = new Pointer(XPROPERTYEVENT)
+    val XGCVALUESPTR = new Pointer(XGCVALUES)
+    val XIDPTR = new Pointer(XID)
+    val SIGNED32PTR = new Pointer(SIGNED32)
+    val SIGNED64PTR = new Pointer(SIGNED64)
+    val UNSIGNED64PTR = new Pointer(UNSIGNED64)
+    val UNSIGNED8PTR = new Pointer(UNSIGNED8)
+    val UNSIGNED8PTRPTR = new Pointer(UNSIGNED8PTR)
 
     val XOpenDisplay = new xlibFunc("XOpenDisplay") {
         argument(STRING)          // display_name

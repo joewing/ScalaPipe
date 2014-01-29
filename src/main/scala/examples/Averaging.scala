@@ -33,7 +33,7 @@ object Averaging {
         }
 
         // Create a polymorphic "Add" block.
-        class AddBlock(t: AutoPipeType) extends Kernel {
+        class AddBlock(t: Type) extends Kernel {
 
             // This block takes two inputs and has one output.
             val x0 = input(t)
@@ -51,7 +51,7 @@ object Averaging {
         val Add = new AddBlock(UNSIGNED32)
 
         // Create a polymorphic "Half" block.
-        class HalfBlock(t: AutoPipeType) extends Kernel {
+        class HalfBlock(t: Type) extends Kernel {
 
             // This block has a single input and a single output.
             val x0 = input(t)

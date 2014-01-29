@@ -23,25 +23,25 @@ private[scalapipe] class IRBuilder
 
     private def getName: String = "l" + getLabel
 
-    def input(t: AutoPipeType): InputSymbol = {
+    def input(t: Type): InputSymbol = {
         val i = new InputSymbol(getName, t.create(), inputs.size)
         inputs += i
         i
     }
 
-    def output(t: AutoPipeType): OutputSymbol = {
+    def output(t: Type): OutputSymbol = {
         val o = new OutputSymbol(getName, t.create(), outputs.size)
         outputs += o
         o
     }
 
-    def state(t: AutoPipeType, v: Any = null): StateSymbol = {
+    def state(t: Type, v: Any = null): StateSymbol = {
         val s = new StateSymbol(getName, t.create(), Literal.get(v))
         states += s
         s
     }
 
-    def temp(t: AutoPipeType, id: Int = getLabel): TempSymbol = {
+    def temp(t: Type, id: Int = getLabel): TempSymbol = {
         val s = new TempSymbol(t.create(), id)
         temps += s
         s

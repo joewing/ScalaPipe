@@ -2,7 +2,7 @@ package scalapipe.kernels
 
 import scalapipe.dsl._
 
-class SubtractBlock(t: AutoPipeType) extends Kernel {
+class SubtractBlock(t: Type) extends Kernel {
 
     val x0 = input(t)
     val x1 = input(t)

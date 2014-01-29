@@ -29,12 +29,12 @@ class Func(_name: String) extends Kernel(_name) {
     }
 
     // Arguments to this function.
-    def argument(t: AutoPipeType) {
+    def argument(t: Type) {
         input(t)
     }
 
     // Return type.
-    def returns(t: AutoPipeType) {
+    def returns(t: Type) {
         output(t)
     }
 

@@ -80,7 +80,7 @@ object Paper {
 
         val Random = LFSR
 
-        class Split(t: AutoPipeType) extends Kernel {
+        class Split(t: Type) extends Kernel {
 
             val in    = input(t)
             val out0 = output(t)
@@ -95,7 +95,7 @@ object Paper {
 
         }
 
-        class Average(t: AutoPipeType) extends Kernel {
+        class Average(t: Type) extends Kernel {
 
             val in0 = input(t)
             val in1 = input(t)

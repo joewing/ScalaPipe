@@ -2,7 +2,7 @@ package scalapipe.kernels
 
 import scalapipe.dsl._
 
-class InputSocket(t: AutoPipeType, port: Int) extends Kernel {
+class InputSocket(t: Type, port: Int) extends Kernel {
 
     val out     = output(t)
     val buffer  = local(t)

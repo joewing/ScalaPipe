@@ -2,7 +2,7 @@ package scalapipe.kernels
 
 import scalapipe.dsl._
 
-class JoinBlock(t: AutoPipeType, n: Int = 2) extends Kernel {
+class JoinBlock(t: Type, n: Int = 2) extends Kernel {
 
     val y = output(t)
 

@@ -25,11 +25,11 @@ object stdio {
         external("C")
     }
 
-    val FILE = new AutoPipeNative("FILE")
-    val FILEPTR = new AutoPipePointer(FILE)
-    val VOIDPTR = new AutoPipePointer(VOID)
-    val TIMEVAL = new AutoPipeNative("struct timeval")
-    val TIMEVALPTR = new AutoPipePointer(TIMEVAL)
+    val FILE = new NativeType("FILE")
+    val FILEPTR = new Pointer(FILE)
+    val VOIDPTR = new Pointer(VOID)
+    val TIMEVAL = new NativeType("struct timeval")
+    val TIMEVALPTR = new Pointer(TIMEVAL)
 
     val SEEK_SET = 0
     val SEEK_CUR = 1

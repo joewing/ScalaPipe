@@ -1,10 +1,10 @@
 package scalapipe
 
-import scalapipe.dsl.AutoPipeType
+import scalapipe.dsl.Type
 
 private[scalapipe] abstract class KernelPort(  
         val name: String,
-        val t: AutoPipeType
+        val t: Type
     ) {
 
     def valueType = t.create()
@@ -13,11 +13,11 @@ private[scalapipe] abstract class KernelPort(
 
 private[scalapipe] class KernelInput(
         _name: String,
-        _t: AutoPipeType
+        _t: Type
     ) extends KernelPort(_name, _t)
 
 private[scalapipe] class KernelOutput(
         _name: String,
-        _t: AutoPipeType
+        _t: Type
     ) extends KernelPort(_name, _t)
 

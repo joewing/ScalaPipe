@@ -25,7 +25,7 @@ object MultiOutput {
 				stop
 			}
 
-			class MathBlock(t: AutoPipeType) extends Kernel("MathBlock") {
+			class MathBlock(t: Type) extends Kernel("MathBlock") {
 
 				val x0 = input(t)
 				val x1 = input(t)

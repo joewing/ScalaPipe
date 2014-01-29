@@ -1,10 +1,10 @@
 package scalapipe
 
-import scalapipe.dsl.AutoPipeType
+import scalapipe.dsl.Type
 
 private[scalapipe] class KernelConfig(
         val name: String,
-        val t: AutoPipeType,
+        val t: Type,
         val default: Any
     ) {
 

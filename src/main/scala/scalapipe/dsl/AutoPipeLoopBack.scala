@@ -3,10 +3,10 @@ package scalapipe.dsl
 import scalapipe._
 
 object AutoPipeLoopBack {
-    def apply(t: AutoPipeType) = new AutoPipeLoopBack(t)
+    def apply(t: Type) = new AutoPipeLoopBack(t)
 }
 
-class AutoPipeLoopBack(val t: AutoPipeType) {
+class AutoPipeLoopBack(val t: Type) {
 
     private[scalapipe] var stream: Stream = null
 

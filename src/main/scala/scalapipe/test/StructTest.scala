@@ -5,12 +5,12 @@ import scalapipe.dsl._
 
 object StructTest {
 
-    val Struct1 = new AutoPipeStruct {
+    val Struct1 = new Struct {
         field('a, SIGNED32)     // 0 .. 3
         field('b, BOOL)         // 4 .. 4
     }
 
-    val Struct2 = new AutoPipeStruct {
+    val Struct2 = new Struct {
         field('x, Struct1)      // 0 .. 7
         field('y, UNSIGNED32)   // 8 .. 11
     }

@@ -1,9 +1,8 @@
-
 package scalapipe.dsl
 
 import scalapipe.{LabelMaker, ValueType}
 
-abstract class AutoPipeType(val name: String) {
+abstract class Type(val name: String) {
 
     def this() = this(LabelMaker.getTypeLabel)
 
@@ -12,4 +11,3 @@ abstract class AutoPipeType(val name: String) {
     private[scalapipe] def create(): ValueType
 
 }
-

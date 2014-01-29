@@ -56,7 +56,7 @@ object Mandelbrot {
         println("  Levels:     " + levels)
         println("  Platform:   " + (if (use_hw) "hardware" else "software"))
 
-        val FIXED = new AutoPipeFixed(32, 16)
+        val FIXED = new Fixed(32, 16)
 
         val Start = new Kernel {
             val out = output(UNSIGNED8)

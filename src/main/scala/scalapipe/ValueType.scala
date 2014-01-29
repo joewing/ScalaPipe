@@ -1,13 +1,13 @@
 package scalapipe
 
-import scalapipe.dsl.AutoPipeType
+import scalapipe.dsl.Type
 import scalapipe.dsl.Vector
-import scalapipe.dsl.AutoPipeStruct
-import scalapipe.dsl.AutoPipeUnion
-import scalapipe.dsl.AutoPipePointer
-import scalapipe.dsl.AutoPipeTypeDef
-import scalapipe.dsl.AutoPipeFixed
-import scalapipe.dsl.AutoPipeNative
+import scalapipe.dsl.Struct
+import scalapipe.dsl.Union
+import scalapipe.dsl.Pointer
+import scalapipe.dsl.TypeDef
+import scalapipe.dsl.Fixed
+import scalapipe.dsl.NativeType
 
 private[scalapipe] object ValueType {
 
@@ -35,12 +35,12 @@ private[scalapipe] object ValueType {
         vt
     }
 
-    def create(apt: AutoPipeType, f: () => ValueType): ValueType = {
-        if (valueTypes.contains(apt.name)) {
-            valueTypes(apt.name)
+    def create(t: Type, f: () => ValueType): ValueType = {
+        if (valueTypes.contains(t.name)) {
+            valueTypes(t.name)
         } else {
             val vt = f()
-            valueTypes += (apt.name -> vt)
+            valueTypes += (t.name -> vt)
             vt
         }
     }
@@ -63,7 +63,8 @@ private[scalapipe] object ValueType {
 private[scalapipe] class ValueType(
         val name: String,
         var bits: Int,
-        val signed: Boolean = false) {
+        val signed: Boolean = false
+    ) {
 
     def baseType: ValueType = this
 
@@ -100,12 +101,14 @@ private[scalapipe] class FloatValueType(_name: String, _bits: Int)
 
 }
 
-private[scalapipe] class PointerValueType(_name: String, val itemType: ValueType)
-    extends ValueType(_name, 64, false) {
+private[scalapipe] class PointerValueType(
+        _name: String,
+        val itemType: ValueType
+    ) extends ValueType(_name, 64, false) {
 
     override def pure = false
 
-    def this(app: AutoPipePointer) = this(app.name, app.itemType.create())
+    def this(ptr: Pointer) = this(ptr.name, ptr.itemType.create())
 
 }
 
@@ -150,8 +153,8 @@ private object StructValueType {
     }
 
     // Get the total size of the structure, including padding.
-    def bits(aps: AutoPipeStruct): Int = {
-        val fields = aps.fields.map(_._2.create)
+    def bits(struct: Struct): Int = {
+        val fields = struct.fields.map(_._2.create)
         val bytes = fields.foldLeft(0) { (total, field) =>
             pad(total, field) + field.bytes
         }
@@ -160,10 +163,11 @@ private object StructValueType {
 
 }
 
-private[scalapipe] class StructValueType(aps: AutoPipeStruct)
-    extends ValueType(aps.name, StructValueType.bits(aps)) {
+private[scalapipe] class StructValueType(
+        struct: Struct
+    ) extends ValueType(struct.name, StructValueType.bits(struct)) {
 
-    private[scalapipe] val fields = aps.fields.map { case (k, v) =>
+    private[scalapipe] val fields = struct.fields.map { case (k, v) =>
         (k.name, v.create())
     }
 
@@ -187,8 +191,9 @@ private[scalapipe] class StructValueType(aps: AutoPipeStruct)
 
 }
 
-private[scalapipe] class NativeValueType(aps: AutoPipeNative)
-    extends ValueType(aps.name, 0) {
+private[scalapipe] class NativeValueType(
+        native: NativeType
+    ) extends ValueType(native.name, 0) {
 
     override def pure = false
 
@@ -196,14 +201,15 @@ private[scalapipe] class NativeValueType(aps: AutoPipeNative)
 
 private object UnionValueType {
 
-    def bits(apu: AutoPipeUnion) = apu.fields.map(_._2.create.bits).max
+    def bits(union: Union) = union.fields.map(_._2.create.bits).max
 
 }
 
-private[scalapipe] class UnionValueType(apu: AutoPipeUnion)
-    extends ValueType(apu.name, UnionValueType.bits(apu)) {
+private[scalapipe] class UnionValueType(
+        union: Union
+    ) extends ValueType(union.name, UnionValueType.bits(union)) {
 
-    private[scalapipe] val fields = apu.fields.map { case (k, v) =>
+    private[scalapipe] val fields = union.fields.map { case (k, v) =>
         (k.name, v.create())
     }
 
@@ -213,17 +219,18 @@ private[scalapipe] class UnionValueType(apu: AutoPipeUnion)
 
 }
 
-private[scalapipe] class TypeDefValueType(aptd: AutoPipeTypeDef)
-    extends ValueType(aptd.name, ValueType.valueType(aptd.value).bits) {
+private[scalapipe] class TypeDefValueType(
+        typedef: TypeDef
+    ) extends ValueType(typedef.name, ValueType.valueType(typedef.value).bits) {
 
-    private[scalapipe] val value = aptd.value
+    private[scalapipe] val value = typedef.value
 
 }
 
-private[scalapipe] class FixedValueType(apf: AutoPipeFixed)
-    extends ValueType(apf.name, apf.bits, true) {
+private[scalapipe] class FixedValueType(fixed: Fixed)
+    extends ValueType(fixed.name, fixed.bits, true) {
 
-    private[scalapipe] val fraction = apf.fraction
+    private[scalapipe] val fraction = fixed.fraction
 
     override def baseType: ValueType = bits match {
         case 8  => ValueType.signed8
