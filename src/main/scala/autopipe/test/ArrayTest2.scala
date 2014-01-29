@@ -50,7 +50,7 @@ object ArrayTest2 {
 
         }
 
-        val Print = new AutoPipeBlock("Print") {
+        val Print = new Kernel("Print") {
             val x0      = input(UNSIGNED32)
             val count   = local(UNSIGNED32, 0)
             stdio.printf("""OUTPUT %d\n""", x0)

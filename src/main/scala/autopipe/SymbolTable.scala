@@ -1,9 +1,9 @@
 package autopipe
 
 import scala.collection.mutable.ListBuffer
-import autopipe.dsl.AutoPipeBlock
+import autopipe.dsl.Kernel
 
-private[autopipe] class SymbolTable(apb: AutoPipeBlock) {
+private[autopipe] class SymbolTable(kernel: Kernel) {
 
     private var symbols = Map[String, BaseSymbol]()
     private var freeTemps = Set[TempSymbol]()
@@ -15,7 +15,7 @@ private[autopipe] class SymbolTable(apb: AutoPipeBlock) {
 
     private def add(n: String, s: BaseSymbol) {
         if (symbols.contains(n)) {
-            Error.raise("duplicate symbol: " + n, apb)
+            Error.raise("duplicate symbol: " + n, kernel)
         } else {
             symbols += (n -> s)
         }

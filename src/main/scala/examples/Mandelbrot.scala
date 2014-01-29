@@ -58,13 +58,13 @@ object Mandelbrot {
 
         val FIXED = new AutoPipeFixed(32, 16)
 
-        val Start = new AutoPipeBlock {
+        val Start = new Kernel {
             val out = output(UNSIGNED8)
             out = 1
             stop
         }
 
-        val PixelGenerator = new AutoPipeBlock {
+        val PixelGenerator = new Kernel {
 
             val in = input(UNSIGNED8)
             val pixel = output(UNSIGNED32)
@@ -92,7 +92,7 @@ object Mandelbrot {
         val Split = new SplitBlock(UNSIGNED32)
         val Join = new JoinBlock(UNSIGNED64)
 
-        val Iterate = new AutoPipeBlock {
+        val Iterate = new Kernel {
 
             val in = input(UNSIGNED32)
             val out = output(UNSIGNED64)
@@ -122,7 +122,7 @@ object Mandelbrot {
 
         }
 
-        val Print = new AutoPipeBlock {
+        val Print = new Kernel {
 
             val result = input(UNSIGNED64)
 

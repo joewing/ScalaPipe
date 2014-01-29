@@ -9,7 +9,7 @@ class AutoPipeApp {
     implicit val ap = new AutoPipe
 
     def iteratedFold(inputs: Array[Stream],
-                     combiner: AutoPipeBlock): Stream = {
+                     combiner: Kernel): Stream = {
 
         val size = inputs.size
         if (size > 1) {
@@ -18,7 +18,7 @@ class AutoPipeApp {
                 val first = 2 * i
                 val second = first + 1
                 val dest = size / 2 + i - 1
-                val kernel = ap.createKernel(combiner)
+                val kernel = ap.createInstance(combiner)
                 result(dest) = kernel((null, inputs(first)),
                                       (null, inputs(second)))
             }
@@ -26,7 +26,7 @@ class AutoPipeApp {
                 val left = i * 2 - 1
                 val right = left + 1
                 val dest = i - 1
-                val kernel = ap.createKernel(combiner)
+                val kernel = ap.createInstance(combiner)
                 result(dest) = kernel((null, result(left)(0)),
                                       (null, result(right)(0)))
             }
@@ -37,7 +37,7 @@ class AutoPipeApp {
 
     }
 
-    implicit def kernel2instance(apb: AutoPipeBlock) = ap.createKernel(apb)
+    implicit def kernel2instance(k: Kernel) = ap.createInstance(k)
 
     implicit def instance2StreamList(k: KernelInstance): StreamList = k.apply()
 
@@ -67,13 +67,13 @@ class AutoPipeApp {
         measure(stream, 'trace, metric)
     }
 
-    def measure(edge: (AutoPipeBlock, AutoPipeBlock),
+    def measure(edge: (Kernel, Kernel),
                     stat: Symbol,
                     metric: Symbol) {
         ap.addMeasure(new EdgeMeasurement(edge._1, edge._2, stat, metric))
     }
 
-    def measure(edge: (AutoPipeBlock, AutoPipeBlock), metric: Symbol) {
+    def measure(edge: (Kernel, Kernel), metric: Symbol) {
         measure(edge, 'trace, metric)
     }
 
@@ -85,7 +85,7 @@ class AutoPipeApp {
         stream.edge = edge
     }
 
-    def map(edge: (AutoPipeBlock, AutoPipeBlock), t: Edge) {
+    def map(edge: (Kernel, Kernel), t: Edge) {
         ap.addEdge(new EdgeMapping(edge._1, edge._2, t))
     }
 

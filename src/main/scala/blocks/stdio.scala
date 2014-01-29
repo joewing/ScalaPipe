@@ -1,4 +1,3 @@
-
 package blocks
 
 import autopipe._
@@ -121,4 +120,3 @@ object stdio {
     }
 
 }
-

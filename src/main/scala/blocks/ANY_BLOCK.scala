@@ -1,7 +1,5 @@
-
 package blocks
 
 import autopipe.dsl._
 
-object ANY_BLOCK extends AutoPipeBlock("any")
-
+object ANY_BLOCK extends Kernel("any")

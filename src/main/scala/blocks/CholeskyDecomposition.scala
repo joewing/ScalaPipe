@@ -3,8 +3,7 @@ package blocks
 import autopipe._
 import autopipe.dsl._
 
-
-object CholeskyDecomposition extends AutoPipeBlock {
+object CholeskyDecomposition extends Kernel {
 
 	val size = 3
 	val x0 = input(FLOAT32)

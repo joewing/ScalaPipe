@@ -1,10 +1,10 @@
 package autopipe
 
-import autopipe.dsl.{AutoPipeBlock, AutoPipeFunction, AutoPipeObject}
+import autopipe.dsl.{Kernel, AutoPipeFunction, AutoPipeObject}
 
 abstract class ASTNode(
         val op: NodeType.Value,
-        val apb: AutoPipeBlock
+        val kernel: Kernel
     ) extends DebugInfo {
 
     private[autopipe] var parent: ASTNode = null
@@ -15,70 +15,70 @@ abstract class ASTNode(
     private[autopipe] def pure: Boolean = children.forall(_.pure)
 
     // Dirty way to get the line number and file name in case of an error.
-    if (apb != null) {
+    if (kernel != null) {
         collectDebugInfo
     }
 
-    final def unary_- = ASTOpNode(NodeType.neg, this, null, apb)
+    final def unary_- = ASTOpNode(NodeType.neg, this, null, kernel)
 
     final def unary_+ = this
 
-    final def unary_! = ASTOpNode(NodeType.not, this, null, apb)
+    final def unary_! = ASTOpNode(NodeType.not, this, null, kernel)
 
-    final def unary_~ = ASTOpNode(NodeType.compl, this, null, apb)
+    final def unary_~ = ASTOpNode(NodeType.compl, this, null, kernel)
 
-    final def &&[T <% ASTNode](o: T) = ASTOpNode(NodeType.land, this, o, apb)
+    final def &&[T <% ASTNode](o: T) = ASTOpNode(NodeType.land, this, o, kernel)
 
-    final def ||[T <% ASTNode](o: T) = ASTOpNode(NodeType.lor, this, o, apb)
+    final def ||[T <% ASTNode](o: T) = ASTOpNode(NodeType.lor, this, o, kernel)
 
-    final def &[T <% ASTNode](o: T) = ASTOpNode(NodeType.and, this, o, apb)
+    final def &[T <% ASTNode](o: T) = ASTOpNode(NodeType.and, this, o, kernel)
 
-    final def |[T <% ASTNode](o: T) = ASTOpNode(NodeType.or, this, o, apb)
+    final def |[T <% ASTNode](o: T) = ASTOpNode(NodeType.or, this, o, kernel)
 
-    final def ^[T <% ASTNode](o: T) = ASTOpNode(NodeType.xor, this, o, apb)
+    final def ^[T <% ASTNode](o: T) = ASTOpNode(NodeType.xor, this, o, kernel)
 
-    final def >>[T <% ASTNode](o: T) = ASTOpNode(NodeType.shr, this, o, apb)
+    final def >>[T <% ASTNode](o: T) = ASTOpNode(NodeType.shr, this, o, kernel)
 
-    final def <<[T <% ASTNode](o: T) = ASTOpNode(NodeType.shl, this, o, apb)
+    final def <<[T <% ASTNode](o: T) = ASTOpNode(NodeType.shl, this, o, kernel)
 
-    final def +[T <% ASTNode](o: T) = ASTOpNode(NodeType.add, this, o, apb)
+    final def +[T <% ASTNode](o: T) = ASTOpNode(NodeType.add, this, o, kernel)
 
-    final def -[T <% ASTNode](o: T) = ASTOpNode(NodeType.sub, this, o, apb)
+    final def -[T <% ASTNode](o: T) = ASTOpNode(NodeType.sub, this, o, kernel)
 
-    final def *[T <% ASTNode](o: T) = ASTOpNode(NodeType.mul, this, o, apb)
+    final def *[T <% ASTNode](o: T) = ASTOpNode(NodeType.mul, this, o, kernel)
 
-    final def /[T <% ASTNode](o: T) = ASTOpNode(NodeType.div, this, o, apb)
+    final def /[T <% ASTNode](o: T) = ASTOpNode(NodeType.div, this, o, kernel)
 
-    final def %[T <% ASTNode](o: T) = ASTOpNode(NodeType.mod, this, o, apb)
+    final def %[T <% ASTNode](o: T) = ASTOpNode(NodeType.mod, this, o, kernel)
 
-    final def ===[T <% ASTNode](o: T) = ASTOpNode(NodeType.eq, this, o, apb)
+    final def ===[T <% ASTNode](o: T) = ASTOpNode(NodeType.eq, this, o, kernel)
 
-    final def <>[T <% ASTNode](o: T) = ASTOpNode(NodeType.ne, this, o, apb)
+    final def <>[T <% ASTNode](o: T) = ASTOpNode(NodeType.ne, this, o, kernel)
 
-    final def >[T <% ASTNode](o: T) = ASTOpNode(NodeType.gt, this, o, apb)
+    final def >[T <% ASTNode](o: T) = ASTOpNode(NodeType.gt, this, o, kernel)
 
-    final def <[T <% ASTNode](o: T) = ASTOpNode(NodeType.lt, this, o, apb)
+    final def <[T <% ASTNode](o: T) = ASTOpNode(NodeType.lt, this, o, kernel)
 
-    final def >=[T <% ASTNode](o: T) = ASTOpNode(NodeType.ge, this, o, apb)
+    final def >=[T <% ASTNode](o: T) = ASTOpNode(NodeType.ge, this, o, kernel)
 
-    final def <=[T <% ASTNode](o: T) = ASTOpNode(NodeType.le, this, o, apb)
+    final def <=[T <% ASTNode](o: T) = ASTOpNode(NodeType.le, this, o, kernel)
 
-    final def abs = ASTOpNode(NodeType.abs, this, null, apb)
+    final def abs = ASTOpNode(NodeType.abs, this, null, kernel)
 
-    final def exp = ASTOpNode(NodeType.exp, this, null, apb)
+    final def exp = ASTOpNode(NodeType.exp, this, null, kernel)
 
-    final def log = ASTOpNode(NodeType.log, this, null, apb)
+    final def log = ASTOpNode(NodeType.log, this, null, kernel)
 
-    final def sqrt = ASTOpNode(NodeType.sqrt, this, null, apb)
+    final def sqrt = ASTOpNode(NodeType.sqrt, this, null, kernel)
 
-    final def sin = ASTOpNode(NodeType.sin, this, null, apb)
+    final def sin = ASTOpNode(NodeType.sin, this, null, kernel)
 
-    final def cos = ASTOpNode(NodeType.sin, this, null, apb)
+    final def cos = ASTOpNode(NodeType.sin, this, null, kernel)
 
-    final def tan = ASTOpNode(NodeType.sin, this, null, apb)
+    final def tan = ASTOpNode(NodeType.sin, this, null, kernel)
 
     private def assignOp(op: NodeType.Value, other: ASTNode) =
-        ASTAssignNode(this, ASTOpNode(op, this, other, apb), apb)
+        ASTAssignNode(this, ASTOpNode(op, this, other, kernel), kernel)
 
     final def &&=[T <% ASTNode](o: T) = assignOp(NodeType.land, o)
 
@@ -107,8 +107,8 @@ abstract class ASTNode(
 }
 
 private trait ASTStartNode extends ASTNode {
-    if (apb != null) {
-        apb.scopeStack.last += this
+    if (kernel != null) {
+        kernel.scopeStack.last += this
     }
     isStart = true
 }
@@ -117,8 +117,8 @@ private[autopipe] case class ASTOpNode(
         _op: NodeType.Value,
         val a: ASTNode,
         val b: ASTNode = null,
-        _apb: AutoPipeBlock = null
-    ) extends ASTNode(_op, _apb) {
+        _kernel: Kernel = null
+    ) extends ASTNode(_op, _kernel) {
 
     override private[autopipe] def children = Seq(a, b).filter(_ != null)
 
@@ -132,8 +132,8 @@ private[autopipe] case class ASTOpNode(
 private[autopipe] case class ASTAssignNode(
         val dest: ASTNode,
         val src: ASTNode,
-        _apb: AutoPipeBlock = null
-    ) extends ASTNode(NodeType.assign, _apb) with ASTStartNode {
+        _kernel: Kernel = null
+    ) extends ASTNode(NodeType.assign, _kernel) with ASTStartNode {
 
     override private[autopipe] def children = Seq(dest, src)
 
@@ -146,8 +146,8 @@ private[autopipe] case class ASTIfNode(
         val cond: ASTNode,
         val iTrue: ASTNode,
         val iFalse: ASTNode,
-        _apb: AutoPipeBlock = null
-    ) extends ASTNode(NodeType.IF, _apb) with ASTStartNode {
+        _kernel: Kernel = null
+    ) extends ASTNode(NodeType.IF, _kernel) with ASTStartNode {
 
     override private[autopipe] def children =
         Seq(cond, iTrue, iFalse).filter(_ != null)
@@ -165,8 +165,8 @@ private[autopipe] case class ASTIfNode(
 
 private[autopipe] case class ASTSwitchNode(
         val cond: ASTNode,
-        _apb: AutoPipeBlock = null
-    ) extends ASTNode(NodeType.SWITCH, _apb) with ASTStartNode {
+        _kernel: Kernel = null
+    ) extends ASTNode(NodeType.SWITCH, _kernel) with ASTStartNode {
 
     private[autopipe] var cases = Seq[(ASTNode, ASTNode)]()
 
@@ -182,8 +182,8 @@ private[autopipe] case class ASTSwitchNode(
 private[autopipe] case class ASTWhileNode(
         val cond: ASTNode,
         val body: ASTNode,
-        _apb: AutoPipeBlock = null
-    ) extends ASTNode(NodeType.WHILE, _apb) with ASTStartNode {
+        _kernel: Kernel = null
+    ) extends ASTNode(NodeType.WHILE, _kernel) with ASTStartNode {
 
     override private[autopipe] def children = Seq(cond, body)
 
@@ -193,8 +193,8 @@ private[autopipe] case class ASTWhileNode(
 }
 
 private[autopipe] case class ASTStopNode(
-        _apb: AutoPipeBlock = null
-    ) extends ASTNode(NodeType.STOP, _apb) with ASTStartNode {
+        _kernel: Kernel = null
+    ) extends ASTNode(NodeType.STOP, _kernel) with ASTStartNode {
 
     override private[autopipe] def children = Seq()
 
@@ -202,8 +202,8 @@ private[autopipe] case class ASTStopNode(
 
 private[autopipe] case class ASTBlockNode(
         nodes: Seq[ASTNode],
-        _apb: AutoPipeBlock = null
-    ) extends ASTNode(NodeType.BLOCK, _apb) with ASTStartNode {
+        _kernel: Kernel = null
+    ) extends ASTNode(NodeType.BLOCK, _kernel) with ASTStartNode {
 
     override private[autopipe] def children = nodes
 
@@ -213,8 +213,8 @@ private[autopipe] case class ASTBlockNode(
 
 private[autopipe] case class ASTAvailableNode(
         val symbol: String,
-        _apb: AutoPipeBlock = null
-    ) extends ASTNode(NodeType.avail, _apb) {
+        _kernel: Kernel = null
+    ) extends ASTNode(NodeType.avail, _kernel) {
 
     override private[autopipe] def children = Seq()
 
@@ -222,8 +222,8 @@ private[autopipe] case class ASTAvailableNode(
 
 private[autopipe] case class ASTSymbolNode(
         val symbol: String,
-        _apb: AutoPipeBlock = null
-    ) extends ASTNode(NodeType.symbol, _apb) {
+        _kernel: Kernel = null
+    ) extends ASTNode(NodeType.symbol, _kernel) {
 
     private[autopipe] var indexes = Seq[ASTNode]()
 
@@ -239,7 +239,7 @@ private[autopipe] case class ASTSymbolNode(
     }
 
     def apply(s: Symbol): ASTSymbolNode = {
-        val index = SymbolLiteral(s.name, apb)
+        val index = SymbolLiteral(s.name, kernel)
         index.parent = this
         indexes = indexes :+ index
         this
@@ -248,14 +248,14 @@ private[autopipe] case class ASTSymbolNode(
     def update(l: ASTNode, r: ASTNode): ASTAssignNode = {
         indexes = indexes :+ l
         l.parent = this
-        ASTAssignNode(this, r, apb)
+        ASTAssignNode(this, r, kernel)
     }
 
     def update(s: Symbol, r: ASTNode): ASTAssignNode = {
-        val index = SymbolLiteral(s.name, apb)
+        val index = SymbolLiteral(s.name, kernel)
         index.parent = this
         indexes = indexes :+ index
-        ASTAssignNode(this, r, apb)
+        ASTAssignNode(this, r, kernel)
     }
 
     override def toString = symbol + "(" + indexes.mkString(",") + ")"
@@ -264,8 +264,8 @@ private[autopipe] case class ASTSymbolNode(
 
 private[autopipe] case class ASTCallNode(
         val func: AutoPipeFunction,
-        _apb: AutoPipeBlock = null
-    ) extends ASTNode(NodeType.call, _apb) with ASTStartNode {
+        _kernel: Kernel = null
+    ) extends ASTNode(NodeType.call, _kernel) with ASTStartNode {
 
     val symbol = func.name
 
@@ -291,8 +291,8 @@ private[autopipe] case class ASTCallNode(
 private[autopipe] case class ASTSpecial(
         val obj: AutoPipeObject,
         val method: String,
-        _apb: AutoPipeBlock = null
-    ) extends ASTNode(NodeType.special, _apb) with ASTStartNode {
+        _kernel: Kernel = null
+    ) extends ASTNode(NodeType.special, _kernel) with ASTStartNode {
 
     var args = Seq[ASTNode]()
 
@@ -305,11 +305,11 @@ private[autopipe] case class ASTSpecial(
 private[autopipe] case class ASTConvertNode(
         val a: ASTNode,
         _valueType: ValueType,
-        _apb: AutoPipeBlock = null
-    ) extends ASTNode(NodeType.convert, _apb) {
+        _kernel: Kernel = null
+    ) extends ASTNode(NodeType.convert, _kernel) {
 
     valueType = _valueType
-    if (apb == null) {
+    if (kernel == null) {
         lineNumber = a.lineNumber
         fileName = a.fileName
     }
@@ -322,8 +322,8 @@ private[autopipe] case class ASTConvertNode(
 
 private[autopipe] case class ASTReturnNode(
         val a: ASTNode, 
-        _apb: AutoPipeBlock = null
-    ) extends ASTNode(NodeType.RETURN, _apb) with ASTStartNode {
+        _kernel: Kernel = null
+    ) extends ASTNode(NodeType.RETURN, _kernel) with ASTStartNode {
 
     override private[autopipe] def children = Seq(a).filter(_ != null)
 

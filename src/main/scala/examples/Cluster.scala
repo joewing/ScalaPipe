@@ -1,4 +1,3 @@
-
 package examples
 
 import blocks._
@@ -22,7 +21,7 @@ object Cluster {
         val LAST_INDEX = -1
 
         /** Source of cluster data. */
-        val ClusterSource = new AutoPipeBlock("ClusterSource") {
+        val ClusterSource = new Kernel("ClusterSource") {
 
             val cluster_in     = input(ClusterType)
             val cluster_out    = output(ClusterType)
@@ -47,7 +46,7 @@ object Cluster {
         }
 
         /** Source of value data. */
-        val ValueSource = new AutoPipeBlock("ValueSource") {
+        val ValueSource = new Kernel("ValueSource") {
 
             val value_in        = input(ValueType)
             val width_in        = input(SIGNED32)
@@ -120,7 +119,7 @@ object Cluster {
         }
 
         /** Block to assign values to clusters. */
-        val Assign = new AutoPipeBlock("Assign") {
+        val Assign = new Kernel("Assign") {
 
             val value_in    = input(ValueType)
             val width_in    = input(SIGNED32)
@@ -187,7 +186,7 @@ object Cluster {
         }
 
         /** Block to update clusters. */
-        val UpdateClusters = new AutoPipeBlock("UpdateClusters") {
+        val UpdateClusters = new Kernel("UpdateClusters") {
 
             val value_in        = input(ValueType)
             val index_in        = input(SIGNED32)
@@ -248,7 +247,7 @@ object Cluster {
         }
 
         /** Block to output the cluster data. */
-        val Output = new AutoPipeBlock("Output") {
+        val Output = new Kernel("Output") {
 
             val cluster_in     = input(ClusterType)
             val value_in        = input(ValueType)

@@ -27,7 +27,7 @@ object StructTest {
         count += 1
     }
 
-    val Print = new AutoPipeBlock("Print") {
+    val Print = new Kernel("Print") {
         val x0  = input(Struct2)
         val t   = local(Struct2)
 

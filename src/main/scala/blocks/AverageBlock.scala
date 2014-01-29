@@ -1,9 +1,8 @@
-
 package blocks
 
 import autopipe.dsl._
 
-class AverageBlock(t: AutoPipeType) extends AutoPipeBlock {
+class AverageBlock(t: AutoPipeType) extends Kernel {
 
     val x0 = input(t)
     val x1 = input(t)
@@ -12,4 +11,3 @@ class AverageBlock(t: AutoPipeType) extends AutoPipeBlock {
     y0 = (x0 + x1) / 2
 
 }
-

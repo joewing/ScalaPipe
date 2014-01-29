@@ -1,4 +1,3 @@
-
 package blocks
 
 import autopipe.dsl._
@@ -33,4 +32,3 @@ object socket {
     }
 
 }
-

@@ -9,44 +9,44 @@ import autopipe.gen.RawFileGenerator
 
 private[autopipe] class AutoPipe {
 
-    private[autopipe] var kernels = Seq[KernelInstance]()
+    private[autopipe] var instances = Seq[KernelInstance]()
     private[autopipe] var streams = Set[Stream]()
     private[autopipe] var devices = Set[Device]()
     private[autopipe] val parameters = new Parameters
-    private var kernelDecls = Map[String, AutoPipeBlock]()
+    private var kernels = Map[String, Kernel]()
     private var kernelTypes = Map[(String, Platforms.Value), KernelType]()
     private var edges = Set[EdgeMapping]()
     private var measures = Set[EdgeMeasurement]()
     private val deviceManager = new DeviceManager(parameters)
     private val resourceManager = new ResourceManager(this)
 
-    private def addKernelType(b: AutoPipeBlock,
+    private def addKernelType(k: Kernel,
                               p: Platforms.Value): KernelType = {
 
         // Check if this kernel already exists for the specified platform.
-        val key = (b.name, p)
+        val key = (k.name, p)
         if (kernelTypes.contains(key)) {
             return kernelTypes(key)
         }
 
         // Create a new instance for the specified platform.
-        val kt = b match {
+        val kt = k match {
             case f: AutoPipeFunction =>
-                if (b.externals.contains(p)) {
+                if (k.externals.contains(p)) {
                     new ExternalFunctionType(this, f, p)
                 } else {
                     new InternalFunctionType(this, f, p)
                 }
             case _ =>
-                if (b.externals.contains(p)) {
-                    new ExternalKernelType(this, b, p)
+                if (k.externals.contains(p)) {
+                    new ExternalKernelType(this, k, p)
                 } else {
-                    new InternalKernelType(this, b, p)
+                    new InternalKernelType(this, k, p)
                 }
         }
 
         // Add the kernel to our map.
-        kernelTypes = kernelTypes + (key -> kt)
+        kernelTypes += (key -> kt)
 
         return kt
 
@@ -69,23 +69,23 @@ private[autopipe] class AutoPipe {
 
     // Determine the number of output ports for a kernel.
     private[autopipe] def getOutputCount(n: String): Int =
-        kernelDecls.get(n) match {
-            case Some(kd)   => kd.outputs.size
+        kernels.get(n) match {
+            case Some(k)    => k.outputs.size
             case None       => Error.raise("no kernel with name " + n); 0
         }
 
-    private[autopipe] def createKernel(apb: AutoPipeBlock): KernelInstance = {
-        kernelDecls.get(apb.name) match {
+    private[autopipe] def createInstance(kernel: Kernel): KernelInstance = {
+        kernels.get(kernel.name) match {
             case Some(kd) =>
-                if (kd != apb) {
-                    Error.raise("multiple kernels with name " + apb.name)
+                if (kd != kernel) {
+                    Error.raise("multiple kernels with name " + kernel.name)
                 }
             case None =>
-                kernelDecls = kernelDecls + (apb.name -> apb)
+                kernels += (kernel.name -> kernel)
         }
-        val kernel = new KernelInstance(this, apb)
-        kernels = kernels :+ kernel
-        kernel
+        val instance = new KernelInstance(this, kernel)
+        instances = instances :+ instance
+        instance
     }
 
     private[autopipe] def createStream(sourceKernel: KernelInstance,
@@ -96,9 +96,11 @@ private[autopipe] class AutoPipe {
     }
 
     private[autopipe] def getKernelTypes(d: Device = null) = {
-        val ks = if (d != null) kernels.filter(_.device == d) else kernels
-        val kts = ks.map { k =>
-            addKernelType(k.apb, k.device.platform)
+        val devInstances = instances.filter { i =>
+            d == null || i.device == d
+        }
+        val kts = devInstances.map { instance =>
+            addKernelType(instance.kernel, instance.device.platform)
         }
         val funcs = kts.flatMap { kt =>
             kt.functions.map(f => addKernelType(f, kt.platform))
@@ -116,12 +118,12 @@ private[autopipe] class AutoPipe {
         for (e <- edges) {
             val fromKernel = e.fromKernel.name
             val toKernel = e.toKernel.name
-            for (k <- kernels) {
-                for (s <- k.getOutputs) {
+            for (i <- instances) {
+                for (s <- i.getOutputs) {
                     val sname = s.sourceKernel.name
                     val dname = s.destKernel.name
                     if ((sname == fromKernel || fromKernel == "any") &&
-                         (dname == toKernel || toKernel == "any")) {
+                        (dname == toKernel || toKernel == "any")) {
                         s.setEdge(e.edge)
                     }
                 }
@@ -138,12 +140,12 @@ private[autopipe] class AutoPipe {
             val toKernel = m.toKernel.name
             val stat = m.stat
             val metric = m.metric
-            for (k <- kernels) {
-                for (s <- k.getOutputs) {
+            for (i <- instances) {
+                for (s <- i.getOutputs) {
                     val sname = s.sourceKernel.name
                     val dname = s.destKernel.name
                     if ((sname == fromKernel || fromKernel == "any") &&
-                         (dname == toKernel || toKernel == "any")) {
+                        (dname == toKernel || toKernel == "any")) {
                         s.addMeasure(stat, metric)
                     }
                 }
@@ -273,7 +275,7 @@ private[autopipe] class AutoPipe {
     }
 
     // Get a list of strongly connected kernels.
-    private def getConnectedKernels(kernel: KernelInstance) = {
+    private def getConnectedKernels(instance: KernelInstance) = {
 
         var connected = Set[KernelInstance]()
 
@@ -294,8 +296,8 @@ private[autopipe] class AutoPipe {
             }
         }
 
-        connected = connected + kernel
-        visit(kernel)
+        connected = connected + instance
+        visit(instance)
         connected.toSeq
 
     }
@@ -361,7 +363,7 @@ private[autopipe] class AutoPipe {
     private def assignDevices {
 
         // Loop over each kernel to assign devices.
-        for (k <- kernels) {
+        for (k <- instances) {
 
             // Get a list of kernels that are strongly connected to
             // this kernel.
@@ -384,8 +386,8 @@ private[autopipe] class AutoPipe {
     }
 
     private def createKernelTypes {
-        val kts = kernels.map { k =>
-            addKernelType(k.apb, k.device.platform)
+        val kts = instances.map { instance =>
+            addKernelType(instance.kernel, instance.device.platform)
         }.distinct
         kts.foreach { kt =>
             kt.functions.foreach { f =>
@@ -399,7 +401,7 @@ private[autopipe] class AutoPipe {
     }
 
     private def checkKernels {
-        kernels.foreach { _.validate }
+        instances.foreach { _.validate }
     }
 
     private def emitKernels(dir: File) {

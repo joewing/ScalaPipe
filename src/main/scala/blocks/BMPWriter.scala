@@ -1,4 +1,3 @@
-
 package blocks
 
 import autopipe.dsl._
@@ -6,7 +5,7 @@ import autopipe.dsl._
 /** BMP file writer.
  * Writes 24-bit bitmaps.
  */
-object BMPWriter extends AutoPipeBlock {
+object BMPWriter extends Kernel {
 
     val data_in     = input(UNSIGNED32)
     val width_in    = input(SIGNED32)
@@ -134,5 +133,3 @@ object BMPWriter extends AutoPipeBlock {
     }
 
 }
-
-

@@ -19,21 +19,23 @@ private[autopipe] abstract class KernelType(
     private[autopipe] val inputs = symbols.inputs
     private[autopipe] val outputs = symbols.outputs
 
-    def this(ap: AutoPipe, apb: AutoPipeBlock, p: Platforms.Value) = {
-        this(ap, apb.name, new SymbolTable(apb), p, apb.loopBack)
-        apb.inputs.foreach { i =>
+    def this(ap: AutoPipe, kernel: Kernel, p: Platforms.Value) = {
+        this(ap, kernel.name, new SymbolTable(kernel), p, kernel.loopBack)
+        kernel.inputs.foreach { i =>
             symbols.addInput(i.name, i.valueType)
         }
-        apb.outputs.foreach { o =>
+        kernel.outputs.foreach { o =>
             symbols.addOutput(o.name, o.valueType)
         }
-        apb.configs.foreach { c =>
-            symbols.addConfig(c.name, c.valueType, Literal.get(c.default, apb))
+        kernel.configs.foreach { c =>
+            val lit = Literal.get(c.default, kernel)
+            symbols.addConfig(c.name, c.valueType, lit)
         }
-        apb.states.foreach { s =>
-            symbols.addState(s.name, s.valueType, Literal.get(s.init, apb))
+        kernel.states.foreach { s =>
+            val lit = Literal.get(s.init, kernel)
+            symbols.addState(s.name, s.valueType, lit)
         }
-        dependencies.add(apb.dependencies)
+        dependencies.add(kernel.dependencies)
     }
 
     private[autopipe] def getType(node: ASTSymbolNode): ValueType = {

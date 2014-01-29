@@ -30,7 +30,7 @@ object ArrayTest {
 
     }
 
-    val Print = new AutoPipeBlock("Print") {
+    val Print = new Kernel("Print") {
         val x0      = input(SmallArray)
         val temp    = local(SmallArray)
         val i       = local(UNSIGNED32)

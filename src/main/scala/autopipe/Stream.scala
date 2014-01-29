@@ -1,7 +1,7 @@
 package autopipe
 
 import scala.collection.mutable.HashSet
-import autopipe.dsl.AutoPipeBlock
+import autopipe.dsl.Kernel
 
 class Stream(
         ap: AutoPipe,
@@ -18,14 +18,14 @@ class Stream(
     private[autopipe] var depth = ap.parameters.get[Int]('queueDepth)
 
     /** Take this stream and apply it to the input of a split kernel. */
-    def iteratedMap(iterations: Int, splitter: AutoPipeBlock): List[Stream] = {
+    def iteratedMap(iterations: Int, splitter: Kernel): Seq[Stream] = {
 
-        def helper(iter: Int, inputs: List[Stream]): List[Stream] = {
+        def helper(iter: Int, inputs: Seq[Stream]): Seq[Stream] = {
             if (iter > 0) {
                 val outputs = inputs.flatMap(a => {
-                    val kernel = ap.createKernel(splitter)((null, a))
+                    val kernel = ap.createInstance(splitter)((null, a))
                     val outputCount = ap.getOutputCount(splitter.name)
-                    Array.range(0, outputCount).map(kernel(_))
+                    Seq.range(0, outputCount).map(kernel(_))
                 })
                 helper(iter - 1, outputs)
             } else {
@@ -33,7 +33,7 @@ class Stream(
             }
         }
 
-        helper(iterations, List(this))
+        helper(iterations, Seq(this))
 
     }
 

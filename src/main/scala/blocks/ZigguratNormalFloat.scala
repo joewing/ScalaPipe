@@ -3,8 +3,7 @@ package blocks
 import autopipe._
 import autopipe.dsl._
 
-
-object ZigguratNormalFloat extends AutoPipeBlock {
+object ZigguratNormalFloat extends Kernel {
 
     val in  = input(UNSIGNED32)
     val out = output(FLOAT32)
@@ -105,6 +104,3 @@ object ZigguratNormalFloat extends AutoPipeBlock {
     }
 
 }
-
-
-        

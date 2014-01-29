@@ -135,9 +135,9 @@ private[autopipe] object XGenerator extends Generator {
         var declStr = ""
         var blockStr = ""
         var mapStr = ""
-        val kernelTypes = ap.kernels.map(_.kernelType).toSet
+        val kernelTypes = ap.instances.map(_.kernelType).toSet
         for (kt <- kernelTypes) {
-            val kernels = ap.kernels.filter(_.kernelType == kt)
+            val kernels = ap.instances.filter(_.kernelType == kt)
             val generator = createGenerator(kt)
             declStr += generator.emitDecl
             blockStr += generator.emitKernels(kernels)

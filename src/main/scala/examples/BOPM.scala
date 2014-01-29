@@ -1,4 +1,3 @@
-
 package examples
 import blocks.stdio
 
@@ -11,7 +10,7 @@ object BOPM {
 		val count = 1000
 		val n = 100
 
-		val Stock = new AutoPipeBlock("Stock") {
+		val Stock = new Kernel("Stock") {
 
 			val y0 = output(FLOAT32)
 			val iterations = local(UNSIGNED32, count)
@@ -26,7 +25,7 @@ object BOPM {
 			stop
 		}
 
-		val Strike = new AutoPipeBlock("Strike") {
+		val Strike = new Kernel("Strike") {
 
 			val y0 = output(FLOAT32)
 			val iterations = local(UNSIGNED32, count)
@@ -42,7 +41,7 @@ object BOPM {
 			
 		}
 
-		val Interest = new AutoPipeBlock("Interest") {
+		val Interest = new Kernel("Interest") {
 
 			val y0 = output(FLOAT32)
 			val iterations = local(UNSIGNED32, count)
@@ -57,7 +56,7 @@ object BOPM {
 			stop
 		}
 
-		val Dividend = new AutoPipeBlock("Dividend") {
+		val Dividend = new Kernel("Dividend") {
 
 			val y0 = output(FLOAT32)
 			val iterations = local(UNSIGNED32, count)
@@ -71,7 +70,7 @@ object BOPM {
 			stop
 		}
 
-		val Volatility = new AutoPipeBlock("Volatility") {
+		val Volatility = new Kernel("Volatility") {
 			val y0 = output(FLOAT32)
 			val iterations = local(UNSIGNED32, count)
 
@@ -86,7 +85,7 @@ object BOPM {
 			
 		}
 
-		val Time = new AutoPipeBlock {
+		val Time = new Kernel {
 
 			val y0 = output(FLOAT32)
 			val iterations = local(UNSIGNED32, count)
@@ -122,7 +121,7 @@ object BOPM {
 			ret(answer)
 		}
 
-		val Print =  new AutoPipeBlock("Print") {
+		val Print =  new Kernel("Print") {
 			val keeperofcount = local(UNSIGNED32, 0)
 			val x0 = input(FLOAT32)
 
@@ -134,7 +133,7 @@ object BOPM {
 			}
 		}
 
-		val PriceFinder = new AutoPipeBlock("PriceFinder") {
+		val PriceFinder = new Kernel("PriceFinder") {
 			val x0 = input(FLOAT32) //s
 			val x1 = input(FLOAT32) //k
 			val x2 = input(FLOAT32) //r

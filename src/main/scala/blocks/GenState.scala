@@ -1,9 +1,8 @@
-
 package blocks
 
 import autopipe.dsl._
 
-object GenState extends AutoPipeBlock {
+object GenState extends Kernel {
 
     val state = output(UNSIGNED32)
     val seed = config(UNSIGNED32, 'seed, 15)
@@ -20,4 +19,3 @@ object GenState extends AutoPipeBlock {
     }
 
 }
-

@@ -1,9 +1,9 @@
 package autopipe
 
-import autopipe.dsl.AutoPipeBlock
+import autopipe.dsl.Kernel
 
 private[autopipe] class Scope(
-        val apb: AutoPipeBlock,
+        val kernel: Kernel,
         val nodeType: NodeType.Value,
         _cond: ASTNode = null
     ) {
@@ -18,15 +18,15 @@ private[autopipe] class Scope(
     }
 
     def handleElse() {
-        if (gotElse) Error.raise("multiple ELSE statements", apb)
-        if (nodeType != NodeType.IF) Error.raise("ELSE without IF", apb)
+        if (gotElse) Error.raise("multiple ELSE statements", kernel)
+        if (nodeType != NodeType.IF) Error.raise("ELSE without IF", kernel)
         gotElse = true
         bodies = bodies :+ getTop()
     }
 
     def handleWhen(cond: ASTNode) {
         if (nodeType != NodeType.SWITCH) {
-            Error.raise("'when' without 'switch'", apb)
+            Error.raise("'when' without 'switch'", kernel)
         }
         conditions = conditions :+ cond
         currentBody = currentBody.filterNot(_ == cond)
@@ -58,12 +58,12 @@ private[autopipe] class Scope(
         def emit(cl: Seq[ASTNode], bl: Seq[ASTNode]): ASTNode = {
             bl.size match {
                 case 0 =>
-                    Error.raise("invalid IF statement", apb)
-                    ASTStopNode(apb)
-                case 1 => ASTIfNode(cl.head, bl.head, null, apb)
-                case 2 => ASTIfNode(cl.head, bl.head, bl.last, apb)
+                    Error.raise("invalid IF statement", kernel)
+                    ASTStopNode(kernel)
+                case 1 => ASTIfNode(cl.head, bl.head, null, kernel)
+                case 2 => ASTIfNode(cl.head, bl.head, bl.last, kernel)
                 case _ => ASTIfNode(cl.head, bl.head,
-                                    emit(cl.tail, bl.tail), apb)
+                                    emit(cl.tail, bl.tail), kernel)
             }
         }
 
@@ -72,16 +72,16 @@ private[autopipe] class Scope(
     }
 
     private def handleSwitchEnd(): ASTNode = {
-        val node = ASTSwitchNode(conditions.head, apb)
+        val node = ASTSwitchNode(conditions.head, kernel)
         if (conditions.size != bodies.size) {
-            Error.raise("invalid 'switch' statement", apb)
+            Error.raise("invalid 'switch' statement", kernel)
         }
         node.cases ++= conditions.tail.zip(bodies.init)
         node
     }
 
     private def handleWhileEnd(): ASTNode =
-        ASTWhileNode(conditions.head, bodies.head, apb)
+        ASTWhileNode(conditions.head, bodies.head, kernel)
 
     private def handleBlockEnd(): ASTNode = bodies.head
 
@@ -93,8 +93,8 @@ private[autopipe] class Scope(
             case NodeType.WHILE  => handleWhileEnd
             case NodeType.BLOCK  => handleBlockEnd
             case _               =>
-                Error.raise("invalid END", apb)
-                ASTStopNode(apb)
+                Error.raise("invalid END", kernel)
+                ASTStopNode(kernel)
         }
     }
 

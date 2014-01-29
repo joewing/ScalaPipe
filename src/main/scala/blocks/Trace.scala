@@ -1,9 +1,8 @@
-
 package blocks
 
 import autopipe.dsl._
 
-object TraceF64 extends AutoPipeBlock {
+object TraceF64 extends Kernel {
 
     val in = input(FLOAT64)
     val out = output(FLOAT64)
@@ -15,4 +14,3 @@ object TraceF64 extends AutoPipeBlock {
     out = temp
 
 }
-

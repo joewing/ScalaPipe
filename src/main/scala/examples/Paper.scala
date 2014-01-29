@@ -1,4 +1,3 @@
-
 package examples
 
 import blocks.ANY_BLOCK
@@ -16,7 +15,7 @@ object Paper {
         val iterations = 256 / (1 << levels)
         val randSeed = 15
 
-        val LFSR = new AutoPipeBlock {
+        val LFSR = new Kernel {
 
             val out = output(UNSIGNED32)
             val state = local(UNSIGNED32, 1)
@@ -29,7 +28,7 @@ object Paper {
 
         }
 
-        val MT19937 = new AutoPipeBlock {
+        val MT19937 = new Kernel {
 
             val out = output(UNSIGNED32)
 
@@ -81,7 +80,7 @@ object Paper {
 
         val Random = LFSR
 
-        class Split(t: AutoPipeType) extends AutoPipeBlock {
+        class Split(t: AutoPipeType) extends Kernel {
 
             val in    = input(t)
             val out0 = output(t)
@@ -96,7 +95,7 @@ object Paper {
 
         }
 
-        class Average(t: AutoPipeType) extends AutoPipeBlock {
+        class Average(t: AutoPipeType) extends Kernel {
 
             val in0 = input(t)
             val in1 = input(t)
@@ -106,7 +105,7 @@ object Paper {
 
         }
 
-        val Walk = new AutoPipeBlock {
+        val Walk = new Kernel {
 
             val x0 = input(UNSIGNED32)
             val y0 = output(UNSIGNED32)
@@ -173,7 +172,7 @@ object Paper {
 
         }
 
-        val Print = new AutoPipeBlock {
+        val Print = new Kernel {
 
             val x0 = input(UNSIGNED32)
 
@@ -208,11 +207,11 @@ object Paper {
         val AverageU32 = new Average(UNSIGNED32)
 
         trait SplitJoin extends AutoPipeApp {
-            def splitJoin(input: Stream,
-                             levels: Int,
-                             split:  AutoPipeBlock,
-                             join:    AutoPipeBlock)
-                            (f: Stream => Stream): Stream = {
+            def splitJoin(input:    Stream,
+                          levels:   Int,
+                          split:    Kernel,
+                          join:     Kernel)
+                         (f: Stream => Stream): Stream = {
 
                 val ins = input.iteratedMap(levels, split)
                 val outs = Array.tabulate(1 << levels) {

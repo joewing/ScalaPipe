@@ -1,4 +1,3 @@
-
 package examples
 
 import blocks._
@@ -7,7 +6,7 @@ import autopipe.dsl._
 
 object Pi extends App {
 
-    val PiSim = new AutoPipeBlock {
+    val PiSim = new Kernel {
 
         val x0 = input(UNSIGNED32)
         val y0 = output(FLOAT32)
@@ -32,7 +31,7 @@ object Pi extends App {
 
     }
 
-    val Print = new AutoPipeBlock {
+    val Print = new Kernel {
         val x0 = input(FLOAT32)
         stdio.printf("""%g\n""", x0)
     }
@@ -46,4 +45,3 @@ object Pi extends App {
     app.emit("pi")
 
 }
-

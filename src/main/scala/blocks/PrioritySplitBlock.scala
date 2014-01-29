@@ -1,9 +1,8 @@
-
 package blocks
 
 import autopipe.dsl._
 
-class PrioritySplitBlock(t: AutoPipeType) extends AutoPipeBlock {
+class PrioritySplitBlock(t: AutoPipeType) extends Kernel {
 
     val x0 = input(t)
     val y0 = output(t)
@@ -16,4 +15,3 @@ class PrioritySplitBlock(t: AutoPipeType) extends AutoPipeBlock {
     }
 
 }
-

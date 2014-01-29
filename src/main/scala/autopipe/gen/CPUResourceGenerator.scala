@@ -385,7 +385,7 @@ private[autopipe] class CPUResourceGenerator(
 
     }
 
-    private def writeShutdown(kernels: Traversable[KernelInstance],
+    private def writeShutdown(instances: Traversable[KernelInstance],
                               edgeStats: ListBuffer[Generator]) {
 
         def writeKernelStats(k: KernelInstance) {
@@ -433,7 +433,7 @@ private[autopipe] class CPUResourceGenerator(
         write("""fprintf(stderr, "Statistics:\n");""")
         write("fprintf(stderr, \"Total CPU ticks: %llu\\n\", total_ticks);")
         write("fprintf(stderr, \"Total time:        %llu us\\n\", total_us);")
-        kernels.foreach(k => writeKernelStats(k))
+        instances.foreach(i => writeKernelStats(i))
         write(edgeStats)
         leave
         write("}")
@@ -454,13 +454,13 @@ private[autopipe] class CPUResourceGenerator(
     override def emit(dir: File) {
 
         // Get devices on this host.
-        val localKernels = ap.kernels.filter { k =>
-            k.device != null && k.device.host == host
+        val localInstances = ap.instances.filter { instance =>
+            instance.device != null && instance.device.host == host
         }
-        val cpuKernels = localKernels.filter {
-            k => shouldEmit(k.device)
+        val cpuInstances = localInstances.filter { instance =>
+            shouldEmit(instance.device)
         }
-        threadIds ++= cpuKernels.zipWithIndex
+        threadIds ++= cpuInstances.zipWithIndex
 
         // Write include files that we need.
         write("#include \"X.h\"")
@@ -533,14 +533,14 @@ private[autopipe] class CPUResourceGenerator(
 
         // Include kernel headers.
         write("extern \"C\" {")
-        cpuKernels.foreach { emitKernelHeader(_) }
+        cpuInstances.foreach { emitKernelHeader(_) }
         write("}")
 
         // Write the top edge code.
         write(edgeTop)
 
         // Create kernel structures.
-        cpuKernels.foreach { emitKernelStruct(_) }
+        cpuInstances.foreach { emitKernelStruct(_) }
 
         write("static unsigned long long start_ticks;")
         write("static struct timeval start_time;")
@@ -548,15 +548,15 @@ private[autopipe] class CPUResourceGenerator(
         // Write the edge globals.
         write(edgeGlobals)
 
-        writeShutdown(cpuKernels, edgeStats)
+        writeShutdown(cpuInstances, edgeStats)
 
         // Write the kernel functions.
-        cpuKernels.foreach { emitKernelGetFree(_) }
-        cpuKernels.foreach { emitKernelAllocate(_) }
-        cpuKernels.foreach { emitKernelSend(_) }
-        cpuKernels.foreach { emitKernelRelease(_) }
-        cpuKernels.foreach { emitCheckRunning(_) }
-        cpuKernels.foreach { emitThread(_) }
+        cpuInstances.foreach { emitKernelGetFree(_) }
+        cpuInstances.foreach { emitKernelAllocate(_) }
+        cpuInstances.foreach { emitKernelSend(_) }
+        cpuInstances.foreach { emitKernelRelease(_) }
+        cpuInstances.foreach { emitCheckRunning(_) }
+        cpuInstances.foreach { emitThread(_) }
 
         // Create the main function.
         write("int main(int argc, char **argv)")
@@ -604,7 +604,7 @@ private[autopipe] class CPUResourceGenerator(
         write(edgeInit)
 
         // Call the kernel init functions.
-        cpuKernels.foreach { emitKernelInit(_) }
+        cpuInstances.foreach { emitKernelInit(_) }
 
         write("atexit(showStats);")
 
@@ -618,7 +618,7 @@ private[autopipe] class CPUResourceGenerator(
         }
 
         // Call the kernel destroy functions.
-        cpuKernels.foreach { emitKernelDestroy(_) }
+        cpuInstances.foreach { emitKernelDestroy(_) }
 
         // Destroy the edges.
         write(edgeDestroy)

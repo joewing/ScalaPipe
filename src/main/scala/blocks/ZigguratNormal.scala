@@ -1,10 +1,9 @@
-
 package blocks
 
 import autopipe._
 import autopipe.dsl._
 
-object ZigguratNormal extends AutoPipeBlock {
+object ZigguratNormal extends Kernel {
 
     val in  = input(UNSIGNED32)
     val out = output(SIGNED32)
@@ -104,5 +103,3 @@ when(3) {
     }
 
 }
-
-

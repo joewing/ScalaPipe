@@ -1,5 +1,3 @@
-
-
 package examples
 
 import autopipe._
@@ -22,7 +20,7 @@ object LZ77 extends App {
 
     val DICT = new AutoPipeArray(UNSIGNED8, dictSize)
 
-    val FileReader = new AutoPipeBlock {
+    val FileReader = new Kernel {
 
         val out = output(UNSIGNED16)
         val fn = config(STRING, 'input, rawFile)
@@ -46,7 +44,7 @@ object LZ77 extends App {
 
     }
 
-    val CompressedFileReader = new AutoPipeBlock {
+    val CompressedFileReader = new Kernel {
 
         val out = output(UNSIGNED32)
         val fn = config(STRING, 'input, compressedFile)
@@ -74,7 +72,7 @@ object LZ77 extends App {
 
     }
 
-    val FileWriter = new AutoPipeBlock {
+    val FileWriter = new Kernel {
 
         val in = input(UNSIGNED16)
         val fn = config(STRING, 'output, rawFile)
@@ -100,7 +98,7 @@ object LZ77 extends App {
 
     }
 
-    val CompressedFileWriter = new AutoPipeBlock {
+    val CompressedFileWriter = new Kernel {
 
         val in = input(UNSIGNED32)
         val fn = config(STRING, 'output, compressedFile)
@@ -128,7 +126,7 @@ object LZ77 extends App {
 
     }
 
-    val Compress = new AutoPipeBlock {
+    val Compress = new Kernel {
 
         val in = input(UNSIGNED16)
         val out = output(UNSIGNED32)
@@ -211,7 +209,7 @@ object LZ77 extends App {
 
     }
 
-    val Decompress = new AutoPipeBlock {
+    val Decompress = new Kernel {
 
         val in = input(UNSIGNED32)
         val out = output(UNSIGNED16)

@@ -1,5 +1,3 @@
-
-
 package examples
 
 import blocks._
@@ -13,7 +11,7 @@ object RadixSort {
     val bitCount = 8
     val itemCount = 16
 
-    val Source = new AutoPipeBlock {
+    val Source = new Kernel {
         val out = output(UNSIGNED32)
         for (i <- 0 until itemCount) {
             out = Random.nextInt(1 << bitCount)
@@ -21,12 +19,12 @@ object RadixSort {
         stop
     }
 
-    val Print = new AutoPipeBlock {
+    val Print = new Kernel {
         val in = input(UNSIGNED32)
         stdio.printf("""%u\n""", in)
     }
 
-    val Sort = new AutoPipeBlock {
+    val Sort = new Kernel {
 
         val in = input(UNSIGNED32)
         val out = output(UNSIGNED32)
@@ -69,4 +67,3 @@ object RadixSort {
     }
 
 }
-

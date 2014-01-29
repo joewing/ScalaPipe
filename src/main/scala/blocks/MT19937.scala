@@ -2,7 +2,7 @@ package blocks
 
 import autopipe.dsl._
 
-object MT19937 extends AutoPipeBlock {
+object MT19937 extends Kernel {
 
     val state = input(UNSIGNED32)
     val out = output(UNSIGNED32)

@@ -1,4 +1,3 @@
-
 package examples
 
 import autopipe._
@@ -11,7 +10,7 @@ object RandomTest extends App {
     val rounds      = 1e4     // Number of rounds.
     val mode = 1                // 0 - CPU, 1 - FPGA, 2 - Custom FPGA
 
-    object CustomMT19937 extends AutoPipeBlock("mt19937") {
+    object CustomMT19937 extends Kernel("mt19937") {
         val state = input(UNSIGNED32, 'state)
         val out = output(UNSIGNED32, 'y)
         external("HDL")
@@ -23,7 +22,7 @@ object RandomTest extends App {
             case 2 => CustomMT19937
         }
 
-    val Sink = new AutoPipeBlock {
+    val Sink = new Kernel {
 
         val in = input(SIGNED32)
         val out = output(UNSIGNED8)
@@ -39,7 +38,7 @@ object RandomTest extends App {
 
     }
 
-    val Terminate = new AutoPipeBlock {
+    val Terminate = new Kernel {
         val in = input(UNSIGNED8)
         val temp = local(UNSIGNED8)
         val round = local(UNSIGNED32, 0)
@@ -69,4 +68,3 @@ object RandomTest extends App {
     app.emit("random")
 
 }
-

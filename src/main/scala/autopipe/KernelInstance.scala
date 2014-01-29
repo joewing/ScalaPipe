@@ -1,13 +1,13 @@
 package autopipe
 
-import autopipe.dsl.AutoPipeBlock
+import autopipe.dsl.Kernel
 
 private[autopipe] class KernelInstance(
         val ap: AutoPipe,
-        val apb: AutoPipeBlock
+        val kernel: Kernel
     ) extends DebugInfo {
 
-    private[autopipe] val name = apb.name
+    private[autopipe] val name = kernel.name
     private[autopipe] val index = LabelMaker.getInstanceIndex
     private[autopipe] val label = "instance" + index
     private[autopipe] var device: Device = null
@@ -91,9 +91,9 @@ private[autopipe] class KernelInstance(
         }
     }
 
-    private def getInput(pn: PortName): KernelPort = getPort(pn, apb.inputs)
+    private def getInput(pn: PortName): KernelPort = getPort(pn, kernel.inputs)
 
-    private def getOutput(pn: PortName) = getPort(pn, apb.outputs)
+    private def getOutput(pn: PortName) = getPort(pn, kernel.outputs)
 
     private[autopipe] def inputName(pn: PortName) = getInput(pn).name
 
@@ -105,7 +105,7 @@ private[autopipe] class KernelInstance(
 
     private[autopipe] def inputIndex(pn: PortName): Int = pn match {
         case in: IntPortName => in.name
-        case _ => apb.inputs.indexWhere(i => i.name == pn)
+        case _ => kernel.inputs.indexWhere(i => i.name == pn)
     }
 
     private[autopipe] def inputIndex(s: Stream): Int = {
@@ -115,7 +115,7 @@ private[autopipe] class KernelInstance(
 
     private[autopipe] def outputIndex(pn: PortName): Int = pn match {
         case in: IntPortName => in.name
-        case _ => apb.outputs.indexWhere(o => o.name == pn)
+        case _ => kernel.outputs.indexWhere(o => o.name == pn)
     }
 
     private[autopipe] def getInputs: List[Stream] = inputs.toList.map(_._2)
@@ -138,15 +138,15 @@ private[autopipe] class KernelInstance(
 
     private[autopipe] def validate {
 
-        if (inputs.size > apb.inputs.size) {
+        if (inputs.size > kernel.inputs.size) {
             Error.raise("too many inputs connected for " + name, this)
-        } else if (inputs.size < apb.inputs.size) {
+        } else if (inputs.size < kernel.inputs.size) {
             Error.raise("too few inputs connected for " + name, this)
         }
 
-        if (outputs.size > apb.outputs.size) {
+        if (outputs.size > kernel.outputs.size) {
             Error.raise("too many outputs connected for " + name, this)
-        } else if (outputs.size < apb.outputs.size) {
+        } else if (outputs.size < kernel.outputs.size) {
             Error.raise("too few outputs connected for " + name, this)
         }
 

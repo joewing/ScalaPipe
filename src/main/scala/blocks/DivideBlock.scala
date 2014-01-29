@@ -1,9 +1,8 @@
-
 package blocks
 
 import autopipe.dsl._
 
-class DivideBlock(t: AutoPipeType) extends AutoPipeBlock {
+class DivideBlock(t: AutoPipeType) extends Kernel {
 
     val x0 = input(t)
     val x1 = input(t)
@@ -12,4 +11,3 @@ class DivideBlock(t: AutoPipeType) extends AutoPipeBlock {
     y0 = x0 / x1
 
 }
-

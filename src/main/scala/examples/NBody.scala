@@ -23,7 +23,7 @@ object NBody {
         // Compute the acceleration of a particle by streaming
         // all particles past this block.
         // 15n^2 FLOPs
-        val Force = new AutoPipeBlock("Force") {
+        val Force = new Kernel("Force") {
 
             val pin = input(PARTICLE)
             val oin = input(POINT)
@@ -63,7 +63,7 @@ object NBody {
 
         }
 
-        val MDForce = new AutoPipeBlock("MDForce") {
+        val MDForce = new Kernel("MDForce") {
 
             val pin = input(PARTICLE)
             val oin = input(POINT)
@@ -117,7 +117,7 @@ object NBody {
         // The result will be the total acceleration.
         // The result is sent when a negative command is received.
         // 3n^2 FLOPs
-        val Accumulate = new AutoPipeBlock("Accumulate") {
+        val Accumulate = new Kernel("Accumulate") {
 
             val fin  = input(POINT)
             val fout = output(POINT)
@@ -146,7 +146,7 @@ object NBody {
 
         // Update a particle's state.
         // 6n FLOPs
-        val Update = new AutoPipeBlock("Update") {
+        val Update = new Kernel("Update") {
 
             val pin  = input(PARTICLE)     // The particle to update.
             val fin  = input(POINT)         // The combined force on the particle.
@@ -178,7 +178,7 @@ object NBody {
 
         }
 
-        val Source = new AutoPipeBlock("Source") {
+        val Source = new Kernel("Source") {
 
             val pout = output(PARTICLE)
 
@@ -226,7 +226,7 @@ object NBody {
 
         val Loop = new AutoPipeLoopBack(PARTICLE)
 
-        val Buffer = new AutoPipeBlock("Buffer") {
+        val Buffer = new Kernel("Buffer") {
 
             val fin = input(PARTICLE)
             val lin = input(PARTICLE)
@@ -275,7 +275,7 @@ object NBody {
 
         }
 
-        val Streamer = new AutoPipeBlock("Streamer") {
+        val Streamer = new Kernel("Streamer") {
 
             val pin  = input(PARTICLE)
             val pout = output(PARTICLE)
@@ -328,7 +328,7 @@ object NBody {
 
         }
 
-        val PrintText = new AutoPipeBlock("Print") {
+        val PrintText = new Kernel("Print") {
 
             val pin = input(PARTICLE)
 
@@ -372,7 +372,7 @@ object NBody {
 
         }
 
-        val PrintX = new AutoPipeBlock("Print") {
+        val PrintX = new Kernel("Print") {
 
             val pin = input(PARTICLE)
 

@@ -152,7 +152,7 @@ private[autopipe] abstract class HDLResourceGenerator(val ap: AutoPipe,
         write
 
         // Instantiate kernels.
-        for (kernel <- ap.kernels if kernel.device == device) {
+        for (kernel <- ap.instances if kernel.device == device) {
             val kernelName = "kernel_" + kernel.name
             write(kernelName)
             enter

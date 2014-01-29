@@ -1,4 +1,3 @@
-
 package examples
 
 import blocks.stdio
@@ -12,7 +11,7 @@ object Averaging {
     def main(args: Array[String]) {
 
         // Declare the "Random" block.
-        val Random = new AutoPipeBlock {
+        val Random = new Kernel {
 
             // This block has a single output and a configuration option.
             val y0 = output(UNSIGNED32)
@@ -34,7 +33,7 @@ object Averaging {
         }
 
         // Create a polymorphic "Add" block.
-        class AddBlock(t: AutoPipeType) extends AutoPipeBlock {
+        class AddBlock(t: AutoPipeType) extends Kernel {
 
             // This block takes two inputs and has one output.
             val x0 = input(t)
@@ -52,7 +51,7 @@ object Averaging {
         val Add = new AddBlock(UNSIGNED32)
 
         // Create a polymorphic "Half" block.
-        class HalfBlock(t: AutoPipeType) extends AutoPipeBlock {
+        class HalfBlock(t: AutoPipeType) extends Kernel {
 
             // This block has a single input and a single output.
             val x0 = input(t)
@@ -66,7 +65,7 @@ object Averaging {
         val Half = new HalfBlock(UNSIGNED32)
 
         // Declare the "Print" block.
-        val Print = new AutoPipeBlock {
+        val Print = new Kernel {
 
             // This block has only an input.
             val x0 = input(UNSIGNED32)

@@ -1,4 +1,3 @@
-
 package examples
 
 import scala.annotation.tailrec
@@ -89,7 +88,7 @@ object AES extends App {
 
     }
 
-    val SetKey = new AutoPipeBlock {
+    val SetKey = new Kernel {
         val key = 0 to 15
         val outs = Array.tabulate(11)(i => output(STATE))
         val state = local(STATE)
@@ -104,7 +103,7 @@ object AES extends App {
         stop
     }
 
-    val AddRoundKey = new AutoPipeBlock {
+    val AddRoundKey = new Kernel {
 
         val sin    = input(STATE)
         val kin    = input(STATE)
@@ -126,7 +125,7 @@ object AES extends App {
 
     }
 
-    val SubBytes = new AutoPipeBlock {
+    val SubBytes = new Kernel {
 
         val in  = input(STATE)
         val out = output(STATE)
@@ -152,7 +151,7 @@ object AES extends App {
 
     }
 
-    val InvSubBytes = new AutoPipeBlock {
+    val InvSubBytes = new Kernel {
 
         val in  = input(STATE)
         val out = output(STATE)
@@ -178,7 +177,7 @@ object AES extends App {
 
     }
 
-    val ShiftRows = new AutoPipeBlock {
+    val ShiftRows = new Kernel {
 
         val in = input(STATE)
         val out = output(STATE)
@@ -207,7 +206,7 @@ object AES extends App {
 
     }
 
-    val InvShiftRows = new AutoPipeBlock {
+    val InvShiftRows = new Kernel {
 
         val in = input(STATE)
         val out = output(STATE)
@@ -236,7 +235,7 @@ object AES extends App {
 
     }
 
-    val MixColumns = new AutoPipeBlock {
+    val MixColumns = new Kernel {
 
         val in = input(STATE)
         val out = output(STATE)
@@ -265,7 +264,7 @@ object AES extends App {
 
     }
 
-    val InvMixColumns = new AutoPipeBlock {
+    val InvMixColumns = new Kernel {
 
         val in = input(STATE)
         val out = output(STATE)
@@ -296,7 +295,7 @@ object AES extends App {
 
     }
 
-    val Source = new AutoPipeBlock {
+    val Source = new Kernel {
 
         val out = output(STATE)
         val state = local(STATE)
@@ -314,7 +313,7 @@ object AES extends App {
 
     }
 
-    val Print = new AutoPipeBlock {
+    val Print = new Kernel {
         val in = input(STATE)
         val state = local(STATE)
         val x = local(UNSIGNED32, 0)
@@ -388,4 +387,3 @@ object AES extends App {
     app.emit("aes")
 
 }
-

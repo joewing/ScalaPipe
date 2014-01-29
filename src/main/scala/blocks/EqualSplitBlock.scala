@@ -1,9 +1,8 @@
-
 package blocks
 
 import autopipe.dsl._
 
-class EqualSplitBlock(t: AutoPipeType, n: Int = 2) extends AutoPipeBlock {
+class EqualSplitBlock(t: AutoPipeType, n: Int = 2) extends Kernel {
 
     val x = input(t)
 
@@ -13,4 +12,3 @@ class EqualSplitBlock(t: AutoPipeType, n: Int = 2) extends AutoPipeBlock {
     }
 
 }
-

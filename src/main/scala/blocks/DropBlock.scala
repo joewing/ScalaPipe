@@ -1,9 +1,8 @@
-
 package blocks
 
 import autopipe.dsl._
 
-class DropBlock(t: AutoPipeType) extends AutoPipeBlock {
+class DropBlock(t: AutoPipeType) extends Kernel {
 
     val i = input(t)
     val temp = local(t)
@@ -11,4 +10,3 @@ class DropBlock(t: AutoPipeType) extends AutoPipeBlock {
     temp = i
 
 }
-

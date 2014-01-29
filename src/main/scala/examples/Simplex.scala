@@ -1,4 +1,3 @@
-
 package examples
 
 import autopipe._
@@ -16,7 +15,7 @@ object Simplex extends App {
     val ROW_TYPE    = AutoPipeArray(VALUE_TYPE, columnCount)
 
     // Read the initial canonical matrix.
-    val Parser = new AutoPipeBlock("Parser") {
+    val Parser = new Kernel("Parser") {
 
         val out         = output(VALUE_TYPE)
         val filename    = config(STRING, 'filename, "input.txt")
@@ -45,7 +44,7 @@ object Simplex extends App {
     }
 
     // Stream the canonical matrix.
-    val Streamer = new AutoPipeBlock("Streamer") {
+    val Streamer = new Kernel("Streamer") {
 
         val init_in     = input(VALUE_TYPE)
         val feedback    = input(VALUE_TYPE)
@@ -83,7 +82,7 @@ object Simplex extends App {
     }
 
     // Split the matrix by row.
-    val ArraySplitter = new AutoPipeBlock("ArraySplitter") {
+    val ArraySplitter = new Kernel("ArraySplitter") {
 
         val array_in    = input(VALUE_TYPE)
 
@@ -115,7 +114,7 @@ object Simplex extends App {
     }
 
     // Select the pivot row and column.
-    val PivotSelect = new AutoPipeBlock("PivotSelect") {
+    val PivotSelect = new Kernel("PivotSelect") {
 
         val array_in    = input(VALUE_TYPE)
         val prow_out    = output(VALUE_TYPE)
@@ -187,7 +186,7 @@ object Simplex extends App {
     }
 
     // Perform row operations.
-    val RowProcessor = new AutoPipeBlock("RowProcessor") {
+    val RowProcessor = new Kernel("RowProcessor") {
 
         val row_in      = input(VALUE_TYPE)
         val prow_in     = input(VALUE_TYPE)
@@ -237,7 +236,7 @@ object Simplex extends App {
     }
 
     // Buffer a row of the array.
-    val RowBuffer = new AutoPipeBlock("RowBuffer") {
+    val RowBuffer = new Kernel("RowBuffer") {
 
         val array_in    = input(VALUE_TYPE)
         val array_out  = output(VALUE_TYPE)
@@ -259,7 +258,7 @@ object Simplex extends App {
     }
 
     // Construct a canonical array from rows.
-    val ArrayBuilder = new AutoPipeBlock("ArrayBuilder") {
+    val ArrayBuilder = new Kernel("ArrayBuilder") {
 
         val array_out = output(VALUE_TYPE)
 
@@ -292,7 +291,7 @@ object Simplex extends App {
 
     // Output the result.
     // This will terminate the program when a solution is found.
-    val Output = new AutoPipeBlock("Output") {
+    val Output = new Kernel("Output") {
 
         val in = input(VALUE_TYPE)
         val t = local(VALUE_TYPE)
@@ -353,4 +352,3 @@ object Simplex extends App {
     app.emit("simplex")
 
 }
-

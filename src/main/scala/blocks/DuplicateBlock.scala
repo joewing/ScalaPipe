@@ -1,9 +1,8 @@
-
 package blocks
 
 import autopipe.dsl._
 
-class DuplicateBlock(t: AutoPipeType, n: Int = 2) extends AutoPipeBlock {
+class DuplicateBlock(t: AutoPipeType, n: Int = 2) extends Kernel {
 
     val x0 = input(t)
     val temp = local(t)
@@ -15,4 +14,3 @@ class DuplicateBlock(t: AutoPipeType, n: Int = 2) extends AutoPipeBlock {
     }
 
 }
-

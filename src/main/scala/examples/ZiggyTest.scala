@@ -12,7 +12,7 @@ object ZiggyTest {
 
 		val count = 20000
 
-		val Random = new AutoPipeBlock("Random") {
+		val Random = new Kernel("Random") {
 
 			val y0 = output(UNSIGNED32)
 			val iterations = local(UNSIGNED32, count)
@@ -30,7 +30,7 @@ object ZiggyTest {
 			stop
 		}
 
-		val Ziggy = new AutoPipeBlock("Ziggy") {
+		val Ziggy = new Kernel("Ziggy") {
 
 			    val in  = input(UNSIGNED32)
     			val out = output(SIGNED32)
@@ -132,7 +132,7 @@ object ZiggyTest {
 
 		}
 
-		val Print = new AutoPipeBlock("Print") {
+		val Print = new Kernel("Print") {
 			val x0 = input(SIGNED32)
 			val temp = local(SIGNED32, 0)
             val kingofcount = local(UNSIGNED32, count)

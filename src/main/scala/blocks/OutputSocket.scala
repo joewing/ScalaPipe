@@ -1,9 +1,8 @@
-
 package blocks
 
 import autopipe.dsl._
 
-class OutputSocket(t: AutoPipeType, port: Int) extends AutoPipeBlock {
+class OutputSocket(t: AutoPipeType, port: Int) extends Kernel {
 
     val in      = input(t)
     val buffer  = local(t)
@@ -22,4 +21,3 @@ class OutputSocket(t: AutoPipeType, port: Int) extends AutoPipeBlock {
     }
 
 }
-

@@ -93,7 +93,7 @@ object CorrelationMatrix {
 
 		
 
-		val CorrelationMatrixGenerator = new AutoPipeBlock("CorrelationMatrixGenerator") {
+		val CorrelationMatrixGenerator = new Kernel("CorrelationMatrixGenerator") {
 			val n = config(SIGNED32, 'n, 5)
 			val x0 = input(UNSIGNED32)
 			val switcher = local(FLOAT32)
@@ -320,7 +320,7 @@ object CorrelationMatrix {
 			}
 		}
 
-		/*val Randeaux = new AutoPipeBlock("Rand") {
+		/*val Randeaux = new Kernel("Rand") {
 			val y0 = output(UNSIGNED32)
 			val n = config(SIGNED32, 'n, 5)
 			val temp = local(FLOAT32, 0)

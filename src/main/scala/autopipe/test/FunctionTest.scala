@@ -12,13 +12,13 @@ object FunctionTest {
         ret(x0 + x1)
     }
 
-    val Block1 = new AutoPipeBlock("Block1") {
+    val Block1 = new Kernel("Block1") {
         val x0 = input(SIGNED32)
         val y0 = output(SIGNED32)
         y0 = Func1(x0, 1)
     }
 
-    val Generate = new AutoPipeBlock("Generate") {
+    val Generate = new Kernel("Generate") {
         val y0 = output(SIGNED32)
         val temp = local(SIGNED32, 0)
         y0 = temp
@@ -28,7 +28,7 @@ object FunctionTest {
         }
     }
 
-    val Print = new AutoPipeBlock("Print") {
+    val Print = new Kernel("Print") {
         val x0 = input(SIGNED32)
         val t = local(SIGNED32, 0)
         stdio.printf("""OUTPUT %d\n""", x0)

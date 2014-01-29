@@ -53,7 +53,7 @@ clean:
         val kernelTypes = ap.getKernelTypes()
 
         // Get the set of devices.
-        var devices = ap.kernels.map(_.device).toSet
+        var devices = ap.instances.map(_.device).toSet
 
         // Get the set of platforms for each kernel type.
         var platformMap = Map[String, Set[Platforms.Value]]()

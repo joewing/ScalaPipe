@@ -105,7 +105,7 @@ object BLSC {
 			ret(answer)
 		}
 
-		val RandomCleaner = new AutoPipeBlock("RandomCleaner") {
+		val RandomCleaner = new Kernel("RandomCleaner") {
 			val x0 = input(UNSIGNED32)
 			val y0 = output(FLOAT32)
 			val temp = local(FLOAT32)
@@ -138,7 +138,7 @@ object BLSC {
 
 		
 
-		val CorrelationMatrixGenerator = new AutoPipeBlock("CorrelationMatrixGenerator") {
+		val CorrelationMatrixGenerator = new Kernel("CorrelationMatrixGenerator") {
 			/*The correlation matrix generator makes use of the method for creating
 			a randomly correlated matrix descriped in the following:
 			Numpacharoen K, Atsawarungruangkit A (2012) Generating Correlation Matrices Based on the Boundaries of Their Coefficients. PLoS ONE 7(11): e48902. doi:10.1371/journal.pone.0048902
@@ -429,7 +429,7 @@ object BLSC {
 			}
 		}
 
-		val Transform = new AutoPipeBlock("transform") {
+		val Transform = new Kernel("transform") {
 			val n = config(SIGNED32, 'n, 5)
 			val x0 = input(FLOAT32)
 			val x1 = input(FLOAT32)
@@ -535,7 +535,7 @@ object BLSC {
 			}
 		}
 
-		val BlackScholes = new AutoPipeBlock("BlackScholes") {
+		val BlackScholes = new Kernel("BlackScholes") {
 			val n = config(SIGNED32, 'n, 5)
 			val x0 = input(FLOAT32)
 			val x1 = input(FLOAT32)

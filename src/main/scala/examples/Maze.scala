@@ -1,4 +1,3 @@
-
 package examples
 
 import blocks._
@@ -55,7 +54,7 @@ object Maze {
         println("  Seed:        " + seed)
         println("  Platform:    " + (if (use_hw) "hardware" else "software"))
 
-        val GenRun = new AutoPipeBlock {
+        val GenRun = new Kernel {
 
             val rand = input(UNSIGNED32)
             val runLength = output(UNSIGNED32)
@@ -86,7 +85,7 @@ object Maze {
 
         }
 
-        val CarveMaze = new AutoPipeBlock {
+        val CarveMaze = new Kernel {
 
             val runInput = input(UNSIGNED32)
             val northInput = input(UNSIGNED32)
@@ -148,7 +147,7 @@ object Maze {
 
         }
 
-        val Print = new AutoPipeBlock {
+        val Print = new Kernel {
 
             val maze = input(UNSIGNED8)
 

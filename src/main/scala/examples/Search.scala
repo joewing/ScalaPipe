@@ -1,4 +1,3 @@
-
 package examples
 
 import blocks._
@@ -18,7 +17,7 @@ object Search {
         val TERM = new AutoPipeArray(UNSIGNED64, 2)
 
         // Block to read a list of terms of length up to 8.
-        val TermReader = new AutoPipeBlock {
+        val TermReader = new Kernel {
 
             val y0 = output(TERM)
             val filename = config(STRING, 'filename, "../terms.txt")
@@ -62,7 +61,7 @@ object Search {
         }
 
         // Block to read data.
-        val FileReader = new AutoPipeBlock {
+        val FileReader = new Kernel {
 
             val y0 = output(UNSIGNED8)
             val filename = config(STRING, 'filename, "../data.txt")
@@ -87,7 +86,7 @@ object Search {
 
         // Block to distribute terms among the search engines.
         // Note that "maxTerms" determines how many ways to split.
-        val SplitTerms = new AutoPipeBlock {
+        val SplitTerms = new Kernel {
 
             val x0 = input(TERM)
             val outs = Array.tabulate(maxTerms) { i => output(TERM) }
@@ -112,7 +111,7 @@ object Search {
         }
 
         // Block to distribute data among the search engines.
-        val SplitData = new AutoPipeBlock {
+        val SplitData = new Kernel {
             val x0 = input(UNSIGNED8)
             val outs = Array.tabulate(maxTerms) { i => output(UNSIGNED8) }
             val temp = local(UNSIGNED8)
@@ -123,7 +122,7 @@ object Search {
         }
 
         // Block to do the searching.
-        val SearchData = new AutoPipeBlock {
+        val SearchData = new Kernel {
             val conf = input(TERM)
             val data = input(UNSIGNED8)
             val hits = output(UNSIGNED64)
@@ -148,7 +147,7 @@ object Search {
         }
 
         // Block to combine results.
-        val Combine = new AutoPipeBlock {
+        val Combine = new Kernel {
 
             val ins = Array.tabulate(maxTerms) { i => input(UNSIGNED64) }
             val y0 = output(UNSIGNED64)
@@ -162,7 +161,7 @@ object Search {
         }
 
         // Block to print results.
-        val Print = new AutoPipeBlock {
+        val Print = new Kernel {
             val x0 = input(UNSIGNED64)
 
             stdio.printf("""Match at offset %lu\n""", x0)
@@ -195,4 +194,3 @@ object Search {
     }
 
 }
-

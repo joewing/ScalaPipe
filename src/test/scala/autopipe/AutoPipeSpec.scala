@@ -5,25 +5,25 @@ import autopipe.dsl._
 
 class AutoPipeSpec extends UnitSpec {
 
-    val apb = new AutoPipeBlock("TestKernel")
+    val apb = new Kernel("TestKernel")
 
     def createAutoPipe(): AutoPipe = {
         val ap = new AutoPipe()
-        ap.createKernel(apb)
+        ap.createInstance(apb)
         ap
     }
 
-    def createKernel(ap: AutoPipe) = {
+    def createInstance(ap: AutoPipe) = {
         new KernelInstance(ap, apb)
     }
 
     def createApplication(ap: AutoPipe,
                           edge1: Edge = null,
                           edge2: Edge = null): Seq[KernelInstance] = {
-        val kernel1 = createKernel(ap)
-        val kernel2 = createKernel(ap)
-        val kernel3 = createKernel(ap)
-        val kernel4 = createKernel(ap)
+        val kernel1 = createInstance(ap)
+        val kernel2 = createInstance(ap)
+        val kernel3 = createInstance(ap)
+        val kernel4 = createInstance(ap)
         val sl1 = kernel1()
         val stream1 = sl1(0)
         val stream2 = sl1(1)

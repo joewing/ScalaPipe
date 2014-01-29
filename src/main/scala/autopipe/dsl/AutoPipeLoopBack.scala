@@ -10,22 +10,22 @@ class AutoPipeLoopBack(val t: AutoPipeType) {
 
     private[autopipe] var stream: Stream = null
 
-    private[autopipe] val apBlock = new AutoPipeBlock {
+    private[autopipe] val kernel = new Kernel {
         setLoopBack
         val in = input(t)
         val out = output(t)
         out = in
     }
 
-    private[autopipe] var kernel: KernelInstance = null
+    private[autopipe] var instance: KernelInstance = null
 
     def input(s: Stream) {
-        kernel.setInput(null, s)
+        instance.setInput(null, s)
     }
 
     def output()(implicit ap: AutoPipe): Stream = {
-        kernel = ap.createKernel(apBlock)
-        kernel.apply()()
+        instance = ap.createInstance(kernel)
+        instance.apply()()
     }
 
 }

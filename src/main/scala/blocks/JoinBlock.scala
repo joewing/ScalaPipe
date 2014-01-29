@@ -1,9 +1,8 @@
-
 package blocks
 
 import autopipe.dsl._
 
-class JoinBlock(t: AutoPipeType, n: Int = 2) extends AutoPipeBlock {
+class JoinBlock(t: AutoPipeType, n: Int = 2) extends Kernel {
 
     val y = output(t)
 
@@ -15,4 +14,3 @@ class JoinBlock(t: AutoPipeType, n: Int = 2) extends AutoPipeBlock {
     }
 
 }
-

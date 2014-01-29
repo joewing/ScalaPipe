@@ -1,4 +1,3 @@
-
 package examples
 
 import blocks._
@@ -30,7 +29,7 @@ object Laplace {
         val Split    = new SplitBlock(UNSIGNED32)
         val Average = new AverageBlock(UNSIGNED32)
 
-        object ExternalMT19937 extends AutoPipeBlock("mt19937") {
+        object ExternalMT19937 extends Kernel("mt19937") {
             val state = input(UNSIGNED32, 'state)
             val out = output(UNSIGNED32, 'y)
             external("HDL")
@@ -38,7 +37,7 @@ object Laplace {
 
         val RNG = if (customRNG) ExternalMT19937 else MT19937
 
-        val Walk = new AutoPipeBlock {
+        val Walk = new Kernel {
 
             val x0 = input(UNSIGNED32)
             val y0 = output(UNSIGNED32)
@@ -105,7 +104,7 @@ object Laplace {
 
         }
 
-        val Print = new AutoPipeBlock("Print") {
+        val Print = new Kernel("Print") {
 
             val x0 = input(UNSIGNED32)
 

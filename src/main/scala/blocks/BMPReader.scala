@@ -1,4 +1,3 @@
-
 package blocks
 
 import autopipe.dsl._
@@ -6,7 +5,7 @@ import autopipe.dsl._
 /** BMP file reader.
  * Reads 24 or 32 bit bitmaps.
  */
-object BMPReader extends AutoPipeBlock {
+object BMPReader extends Kernel {
 
     val data_out   = output(UNSIGNED32)
     val width_out  = output(SIGNED32)
@@ -125,4 +124,3 @@ object BMPReader extends AutoPipeBlock {
     }
 
 }
-

@@ -14,26 +14,27 @@ object TypeConverter {
 
     private def convertInt(value: IntLiteral,
                            to: ValueType): Literal = {
-        val apb = value.apb
+        val kernel = value.kernel
         (value.valueType, to) match {
             case (a: IntegerValueType, b: IntegerValueType) =>
-                IntLiteral(b, value.long, apb)
+                IntLiteral(b, value.long, kernel)
             case (a: IntegerValueType, b: FloatValueType) =>
-                FloatLiteral(b, value.double, apb)
+                FloatLiteral(b, value.double, kernel)
             case (a: IntegerValueType, b: FixedValueType) =>
-                IntLiteral(b, value.long << b.fraction, apb)
+                IntLiteral(b, value.long << b.fraction, kernel)
             case (a: FixedValueType, b: IntegerValueType) =>
-                IntLiteral(b, value.long >> a.fraction, apb)
+                IntLiteral(b, value.long >> a.fraction, kernel)
             case (a: FixedValueType, b: FloatValueType) =>
-                FloatLiteral(b, value.double / (1L << a.fraction), apb)
+                FloatLiteral(b, value.double / (1L << a.fraction), kernel)
             case (a: FixedValueType, b: FixedValueType) =>
-                if (a.fraction > b.fraction) {
-                    IntLiteral(b, value.long >> (a.fraction - b.fraction), apb)
+                val result = if (a.fraction > b.fraction) {
+                    value.long >> (a.fraction - b.fraction)
                 } else {
-                    IntLiteral(b, value.long << (b.fraction - a.fraction), apb)
+                    value.long << (b.fraction - a.fraction)
                 }
+                IntLiteral(b, result, kernel)
             case (a: IntegerValueType, b: PointerValueType) =>
-                IntLiteral(b, value.long, apb)
+                IntLiteral(b, value.long, kernel)
             case _ =>
                 Error.raise("invalid (int) conversion from " +
                             value.valueType + " to " + to, value)
@@ -43,14 +44,14 @@ object TypeConverter {
 
     private def convertFloat(value: FloatLiteral,
                              to: ValueType): Literal = {
-        val apb = value.apb
+        val kernel = value.kernel
         (value.valueType, to) match {
             case (a: FloatValueType, b: FloatValueType) =>
-                FloatLiteral(b, value.double, apb)
+                FloatLiteral(b, value.double, kernel)
             case (a: FloatValueType, b: IntegerValueType) =>
-                IntLiteral(b, value.long, apb)
+                IntLiteral(b, value.long, kernel)
             case (a: FloatValueType, b: FixedValueType) =>
-                IntLiteral((value.double * (1L << b.fraction)).toLong, apb)
+                IntLiteral((value.double * (1L << b.fraction)).toLong, kernel)
             case _ =>
                 Error.raise("invalid (float) conversion from " +
                             value.valueType + " to " + to, value)

@@ -1,9 +1,8 @@
-
 package blocks
 
 import autopipe.dsl._
 
-class SquareBlock(t: AutoPipeType) extends AutoPipeBlock {
+class SquareBlock(t: AutoPipeType) extends Kernel {
 
     val x0 = input(t)
     val y0 = output(t)
@@ -13,4 +12,3 @@ class SquareBlock(t: AutoPipeType) extends AutoPipeBlock {
     y0 = temp * temp
 
 }
-

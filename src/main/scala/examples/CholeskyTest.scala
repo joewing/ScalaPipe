@@ -17,7 +17,7 @@ object CholeskyTest {
 
 		val arraysize = 4
 
-		val InputMatrix = new AutoPipeBlock("InputMatrix") {
+		val InputMatrix = new Kernel("InputMatrix") {
 			val size = 3
 			val matrix = local(new AutoPipeArray(FLOAT32, 9))
 			val state = local(SIGNED32, 0)
@@ -64,7 +64,7 @@ object CholeskyTest {
 
 		val Cholesky = CholeskyDecomposition
 
-		val Print = new AutoPipeBlock("Print") {
+		val Print = new Kernel("Print") {
 
 			val size = 4
 			val i = local(SIGNED32, 0)

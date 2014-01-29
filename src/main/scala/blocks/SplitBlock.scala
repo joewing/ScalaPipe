@@ -1,9 +1,8 @@
-
 package blocks
 
 import autopipe.dsl._
 
-class SplitBlock(t: AutoPipeType, n: Int = 2) extends AutoPipeBlock {
+class SplitBlock(t: AutoPipeType, n: Int = 2) extends Kernel {
 
     val x = input(t)
 
@@ -15,4 +14,3 @@ class SplitBlock(t: AutoPipeType, n: Int = 2) extends AutoPipeBlock {
     }
 
 }
-

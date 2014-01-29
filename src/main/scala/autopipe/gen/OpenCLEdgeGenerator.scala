@@ -98,7 +98,7 @@ private[autopipe] class OpenCLEdgeGenerator(val ap: AutoPipe)
             }
 
             // Get kernels on this device.
-            val localKernels = getKernels(device, ap.kernels)
+            val localKernels = getKernels(device, ap.instances)
 
             // Get unique kernel types for this device.
             val kernelTypes = localKernels.map(_.kernelType).toList.distinct
@@ -444,7 +444,7 @@ private[autopipe] class OpenCLEdgeGenerator(val ap: AutoPipe)
         }
 
         // Initialize kernels.
-        val localKernels = ap.kernels.filter { b => b.device == device }
+        val localKernels = ap.instances.filter { b => b.device == device }
         for (kt <- localKernels.map(_.kernelType).toList.distinct) {
             initKernel(device, device_index, kt)
         }
@@ -601,7 +601,7 @@ private[autopipe] class OpenCLEdgeGenerator(val ap: AutoPipe)
         val sem = device.label + "_sem"
 
         // Get kernels mapped to this device.
-        val localKernels = ap.kernels.filter(k => k.device == device)
+        val localKernels = ap.instances.filter(k => k.device == device)
 
         // Determine the maximum number of host-to-device streams for a kernel.
         // This is used to allocate enough space in the event array.
@@ -1080,7 +1080,7 @@ private[autopipe] class OpenCLEdgeGenerator(val ap: AutoPipe)
             write("thread_us = 0;")
             write("fprintf(stderr, \"OpenCL Thread " + device.index +
                   ":\\n\");")
-            for (kernel <- getKernels(device, ap.kernels)) {
+            for (kernel <- getKernels(device, ap.instances)) {
                 val name = kernel.kernelType.name
                 val instance = kernel.label
                 val ticks = instance + "_block.clock.total_ticks"

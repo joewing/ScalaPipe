@@ -1,6 +1,6 @@
 package autopipe
 
-import autopipe.dsl.AutoPipeBlock
+import autopipe.dsl.Kernel
 
 private[autopipe] object Error {
 
@@ -22,9 +22,9 @@ private[autopipe] object Error {
         }
     }
 
-    def raise(msg: String, apb: AutoPipeBlock): String = {
-        if (!apb.scopeStack.isEmpty) {
-            val scope = apb.scopeStack.last
+    def raise(msg: String, kernel: Kernel): String = {
+        if (!kernel.scopeStack.isEmpty) {
+            val scope = kernel.scopeStack.last
             if (!scope.conditions.isEmpty) {
                 raise(msg, scope.conditions.head)
             } else if (!scope.bodies.isEmpty) {

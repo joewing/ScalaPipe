@@ -1,29 +1,29 @@
 package autopipe
 
-import autopipe.dsl.AutoPipeBlock
+import autopipe.dsl.Kernel
 
 object Literal {
 
-    def get(v: Any, apb: AutoPipeBlock = null): Literal = v match {
-        case b: Boolean => IntLiteral(ValueType.bool, if (b) 1 else 0, apb)
-        case i: Int     => IntLiteral(ValueType.signed32, i, apb)
-        case l: Long    => IntLiteral(ValueType.signed64, l, apb)
-        case f: Float   => FloatLiteral(ValueType.float32, f, apb)
-        case d: Double  => FloatLiteral(ValueType.float64, d, apb)
-        case s: Symbol  => SymbolLiteral(ValueType.any, s.name, apb)
-        case s: String  => StringLiteral(s, apb)
+    def get(v: Any, kernel: Kernel = null): Literal = v match {
+        case b: Boolean => IntLiteral(ValueType.bool, if (b) 1 else 0, kernel)
+        case i: Int     => IntLiteral(ValueType.signed32, i, kernel)
+        case l: Long    => IntLiteral(ValueType.signed64, l, kernel)
+        case f: Float   => FloatLiteral(ValueType.float32, f, kernel)
+        case d: Double  => FloatLiteral(ValueType.float64, d, kernel)
+        case s: Symbol  => SymbolLiteral(ValueType.any, s.name, kernel)
+        case s: String  => StringLiteral(s, kernel)
         case null       => null
         case _          =>
-            Error.raise("invalid literal: " + v, apb)
-            IntLiteral(ValueType.signed32, 0, apb)
+            Error.raise("invalid literal: " + v, kernel)
+            IntLiteral(ValueType.signed32, 0, kernel)
     }
 
 }
 
 abstract class Literal(
         _t: ValueType,
-        _apb: AutoPipeBlock
-    ) extends ASTNode(NodeType.literal, _apb) {
+        _kernel: Kernel
+    ) extends ASTNode(NodeType.literal, _kernel) {
 
     valueType = _t
 
@@ -49,34 +49,34 @@ abstract class Literal(
 
 object IntLiteral {
 
-    def apply(t: ValueType, v: Long, apb: AutoPipeBlock) =
-        new IntLiteral(t, v, apb)
+    def apply(t: ValueType, v: Long, kernel: Kernel) =
+        new IntLiteral(t, v, kernel)
 
-    def apply(v: Boolean, apb: AutoPipeBlock) =
-        new IntLiteral(ValueType.bool, if (v) 1 else 0, apb)
+    def apply(v: Boolean, kernel: Kernel) =
+        new IntLiteral(ValueType.bool, if (v) 1 else 0, kernel)
 
-    def apply(v: Byte, apb: AutoPipeBlock) =
-        new IntLiteral(ValueType.signed8, v.toLong, apb)
+    def apply(v: Byte, kernel: Kernel) =
+        new IntLiteral(ValueType.signed8, v.toLong, kernel)
 
-    def apply(v: Char, apb: AutoPipeBlock) =
-        new IntLiteral(ValueType.signed16, v.toLong, apb)
+    def apply(v: Char, kernel: Kernel) =
+        new IntLiteral(ValueType.signed16, v.toLong, kernel)
 
-    def apply(v: Short, apb: AutoPipeBlock) =
-        new IntLiteral(ValueType.signed16, v.toLong, apb)
+    def apply(v: Short, kernel: Kernel) =
+        new IntLiteral(ValueType.signed16, v.toLong, kernel)
 
-    def apply(v: Int, apb: AutoPipeBlock) =
-        new IntLiteral(ValueType.signed32, v.toLong, apb)
+    def apply(v: Int, kernel: Kernel) =
+        new IntLiteral(ValueType.signed32, v.toLong, kernel)
 
-    def apply(v: Long, apb: AutoPipeBlock) =
-        new IntLiteral(ValueType.signed64, v, apb)
+    def apply(v: Long, kernel: Kernel) =
+        new IntLiteral(ValueType.signed64, v, kernel)
 
 }
 
 class IntLiteral(
         _t: ValueType,
         val value: Long,
-        _apb: AutoPipeBlock
-    ) extends Literal(_t, _apb) {
+        _kernel: Kernel
+    ) extends Literal(_t, _kernel) {
 
     override def long: Long = value
 
@@ -87,7 +87,7 @@ class IntLiteral(
     override def isTrue: Boolean = value != 0
 
     override def set(index: Literal, value: Literal): Literal =
-        IntLiteral(valueType, value.long, apb)
+        IntLiteral(valueType, value.long, kernel)
 
     override def equals(other: Any): Boolean = other match {
         case l: Literal => value == l.long
@@ -98,22 +98,22 @@ class IntLiteral(
 
 object FloatLiteral {
 
-    def apply(t: ValueType, v: Double, apb: AutoPipeBlock) =
-        new FloatLiteral(t, v, apb)
+    def apply(t: ValueType, v: Double, kernel: Kernel) =
+        new FloatLiteral(t, v, kernel)
 
-    def apply(v: Float, apb: AutoPipeBlock) =
-        new FloatLiteral(ValueType.float32, v.toDouble, apb)
+    def apply(v: Float, kernel: Kernel) =
+        new FloatLiteral(ValueType.float32, v.toDouble, kernel)
 
-    def apply(v: Double, apb: AutoPipeBlock) =
-        new FloatLiteral(ValueType.float64, v.toDouble, apb)
+    def apply(v: Double, kernel: Kernel) =
+        new FloatLiteral(ValueType.float64, v.toDouble, kernel)
 
 }
 
 class FloatLiteral(
         _t: ValueType,
         val value: Double,
-        _apb: AutoPipeBlock
-    ) extends Literal(_t, _apb) {
+        _kernel: Kernel
+    ) extends Literal(_t, _kernel) {
 
     def rawFloat: Int = {
         import java.nio.ByteBuffer
@@ -151,19 +151,19 @@ class FloatLiteral(
 
 object StringLiteral {
 
-    def apply(t: ValueType, v: String, apb: AutoPipeBlock) =
-        new StringLiteral(t, v, apb)
+    def apply(t: ValueType, v: String, kernel: Kernel) =
+        new StringLiteral(t, v, kernel)
 
-    def apply(v: String, apb: AutoPipeBlock) =
-        new StringLiteral(ValueType.string, v, apb)
+    def apply(v: String, kernel: Kernel) =
+        new StringLiteral(ValueType.string, v, kernel)
 
 }
 
 class StringLiteral(
         _t: ValueType,
         val value: String,
-        _apb: AutoPipeBlock
-    ) extends Literal(_t, _apb) {
+        _kernel: Kernel
+    ) extends Literal(_t, _kernel) {
 
     override def toString = "\"" + value + "\""
 
@@ -178,19 +178,19 @@ class StringLiteral(
 
 object SymbolLiteral {
 
-    def apply(t: ValueType, s: String, apb: AutoPipeBlock) =
-        new SymbolLiteral(t, s, apb)
+    def apply(t: ValueType, s: String, kernel: Kernel) =
+        new SymbolLiteral(t, s, kernel)
 
-    def apply(s: String, apb: AutoPipeBlock) =
-        new SymbolLiteral(ValueType.any, s, apb)
+    def apply(s: String, kernel: Kernel) =
+        new SymbolLiteral(ValueType.any, s, kernel)
 
 }
 
 class SymbolLiteral(
         _t: ValueType,
         val symbol: String,
-        _apb: AutoPipeBlock
-    ) extends Literal(_t, _apb) {
+        _kernel: Kernel
+    ) extends Literal(_t, _kernel) {
 
     override def toString = symbol
 

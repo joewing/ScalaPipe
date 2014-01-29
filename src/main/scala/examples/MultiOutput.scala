@@ -11,7 +11,7 @@ object MultiOutput {
 
 		def main(args: Array[String]) {
 
-			val Random = new AutoPipeBlock("Random") {
+			val Random = new Kernel("Random") {
 				val y0 = output(FLOAT32)
 				val iterations = local(UNSIGNED32, count)
 
@@ -25,7 +25,7 @@ object MultiOutput {
 				stop
 			}
 
-			class MathBlock(t: AutoPipeType) extends AutoPipeBlock("MathBlock") {
+			class MathBlock(t: AutoPipeType) extends Kernel("MathBlock") {
 
 				val x0 = input(t)
 				val x1 = input(t)
@@ -42,7 +42,7 @@ object MultiOutput {
 
 			val Math = new MathBlock(FLOAT32)
 
-			val Print = new AutoPipeBlock("Print") {
+			val Print = new Kernel("Print") {
 				val x0 = input(FLOAT32)
 				val x1 = input(FLOAT32)
 				val x2 = input(FLOAT32)

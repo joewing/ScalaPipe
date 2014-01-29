@@ -1,6 +1,6 @@
 package autopipe
 
-import autopipe.dsl.AutoPipeBlock
+import autopipe.dsl.Kernel
 import autopipe.gen.KernelGenerator
 import autopipe.gen.CKernelGenerator
 import autopipe.gen.OpenCLKernelGenerator
@@ -9,11 +9,11 @@ import java.io.File
 
 private[autopipe] class InternalKernelType(
         ap: AutoPipe,
-        apb: AutoPipeBlock,
+        kernel: Kernel,
         p: Platforms.Value
-    ) extends KernelType(ap, apb, p) {
+    ) extends KernelType(ap, kernel, p) {
 
-    private val root = apb.getRoot
+    private val root = kernel.getRoot
     private val checked = TypeChecker.check(this, root)
     val expression = ConstantFolder.fold(this, checked)
 
