@@ -130,14 +130,14 @@ private[scalapipe] object XGenerator extends Generator {
         case _ => sys.error("Unknown block type")
     }
 
-    private[scalapipe] def emit(ap: AutoPipe) {
+    private[scalapipe] def emit(sp: ScalaPipe) {
 
         var declStr = ""
         var blockStr = ""
         var mapStr = ""
-        val kernelTypes = ap.instances.map(_.kernelType).toSet
+        val kernelTypes = sp.instances.map(_.kernelType).toSet
         for (kt <- kernelTypes) {
-            val kernels = ap.instances.filter(_.kernelType == kt)
+            val kernels = sp.instances.filter(_.kernelType == kt)
             val generator = createGenerator(kt)
             declStr += generator.emitDecl
             blockStr += generator.emitKernels(kernels)
@@ -145,7 +145,7 @@ private[scalapipe] object XGenerator extends Generator {
         }
 
         val edgeTypes = new HashMap[Edge, ListBuffer[Stream]]
-        for (s <- ap.streams) {
+        for (s <- sp.streams) {
             if (s.edge != null) {
                 edgeTypes.get(s.edge) match {
                     case Some(set) => set += s
@@ -162,7 +162,7 @@ private[scalapipe] object XGenerator extends Generator {
             mapStr += generator.emitMapping(e._2)
         }
 
-        val edgeStr = ap.streams.foldLeft("") { (a, s) =>
+        val edgeStr = sp.streams.foldLeft("") { (a, s) =>
             val sourcePort = s.sourceKernel.outputName(s.sourcePort)
             val destPort = s.destKernel.inputName(s.destPort)
             val sourceString = s.sourceKernel.label + "." + sourcePort
@@ -170,7 +170,7 @@ private[scalapipe] object XGenerator extends Generator {
             a + s.label + ": " + sourceString + " -> " + destString + ";\n"
         }
         var measureStr = ""
-        for (s <- ap.streams) {
+        for (s <- sp.streams) {
             for (m <- s.measures) {
                 measureStr += m.emit(s)
             }

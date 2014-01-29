@@ -4,8 +4,9 @@ import scala.collection.mutable.HashSet
 
 import scalapipe._
 
-private[scalapipe] class OpenCLEdgeGenerator(val ap: AutoPipe)
-    extends EdgeGenerator(Platforms.OpenCL) {
+private[scalapipe] class OpenCLEdgeGenerator(
+        val sp: ScalaPipe
+    ) extends EdgeGenerator(Platforms.OpenCL) {
 
     override def emitCommon() {
 
@@ -91,14 +92,14 @@ private[scalapipe] class OpenCLEdgeGenerator(val ap: AutoPipe)
             }
 
             // Edges internal to this device.
-            // Note that we need to use ap.streams since streams
+            // Note that we need to use sp.streams since streams
             // won't contain these edges.
-            for (s <- getInternalStreams(device, ap.streams)) {
+            for (s <- getInternalStreams(device, sp.streams)) {
                 write("static OCLPort " + s.label + "_data;")
             }
 
             // Get kernels on this device.
-            val localKernels = getKernels(device, ap.instances)
+            val localKernels = getKernels(device, sp.instances)
 
             // Get unique kernel types for this device.
             val kernelTypes = localKernels.map(_.kernelType).toList.distinct
@@ -429,22 +430,22 @@ private[scalapipe] class OpenCLEdgeGenerator(val ap: AutoPipe)
                 device_index + ", " + device.label + "_wgsize);")
 
         // Initialize edges into the GPU.
-        for (stream <- getSenderStreams(device, ap.streams)) {
+        for (stream <- getSenderStreams(device, sp.streams)) {
             initSender(device, stream)
         }
 
         // Initialize edge out of the GPU.
-        for (stream <- getReceiverStreams(device, ap.streams)) {
+        for (stream <- getReceiverStreams(device, sp.streams)) {
             initReceiver(device, stream)
         }
 
         // Initialize internal edges.
-        for (stream <- getInternalStreams(device, ap.streams)) {
+        for (stream <- getInternalStreams(device, sp.streams)) {
             initInternal(device, stream)
         }
 
         // Initialize kernels.
-        val localKernels = ap.instances.filter { b => b.device == device }
+        val localKernels = sp.instances.filter { b => b.device == device }
         for (kt <- localKernels.map(_.kernelType).toList.distinct) {
             initKernel(device, device_index, kt)
         }
@@ -601,7 +602,7 @@ private[scalapipe] class OpenCLEdgeGenerator(val ap: AutoPipe)
         val sem = device.label + "_sem"
 
         // Get kernels mapped to this device.
-        val localKernels = ap.instances.filter(k => k.device == device)
+        val localKernels = sp.instances.filter(k => k.device == device)
 
         // Determine the maximum number of host-to-device streams for a kernel.
         // This is used to allocate enough space in the event array.
@@ -1080,7 +1081,7 @@ private[scalapipe] class OpenCLEdgeGenerator(val ap: AutoPipe)
             write("thread_us = 0;")
             write("fprintf(stderr, \"OpenCL Thread " + device.index +
                   ":\\n\");")
-            for (kernel <- getKernels(device, ap.instances)) {
+            for (kernel <- getKernels(device, sp.instances)) {
                 val name = kernel.kernelType.name
                 val instance = kernel.label
                 val ticks = instance + "_block.clock.total_ticks"
@@ -1101,4 +1102,3 @@ private[scalapipe] class OpenCLEdgeGenerator(val ap: AutoPipe)
     }
 
 }
-

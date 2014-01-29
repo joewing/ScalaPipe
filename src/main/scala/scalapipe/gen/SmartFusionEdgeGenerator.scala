@@ -4,8 +4,9 @@ import scalapipe._
 
 /** Edge generator for edges mapped between the CPU and FPGA on a
  *  SmartFusion SoC. */
-private[scalapipe] class SmartFusionEdgeGenerator(val ap: AutoPipe)
-    extends EdgeGenerator(Platforms.HDL) {
+private[scalapipe] class SmartFusionEdgeGenerator(
+        val sp: ScalaPipe
+    ) extends EdgeGenerator(Platforms.HDL) {
 
     override def emitCommon() {
         write("#include <sys/ioctl.h>")

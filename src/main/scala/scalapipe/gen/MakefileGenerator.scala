@@ -5,7 +5,7 @@ import scala.collection.mutable.ListBuffer
 import java.io.{File, FileOutputStream, PrintStream}
 
 private[scalapipe] class MakefileGenerator(
-        val ap: AutoPipe
+        val sp: ScalaPipe
     ) extends Generator {
 
     private def emitKernelMakefile(dir: File,
@@ -50,16 +50,16 @@ clean:
     def emit(dir: File) {
 
         // Get a list of kernel types.
-        val kernelTypes = ap.getKernelTypes()
+        val kernelTypes = sp.getKernelTypes()
 
         // Get the set of devices.
-        var devices = ap.instances.map(_.device).toSet
+        var devices = sp.instances.map(_.device).toSet
 
         // Get the set of platforms for each kernel type.
         var platformMap = Map[String, Set[Platforms.Value]]()
         devices.foreach { d =>
             val platform = d.platform
-            ap.getKernelTypes(d).filter(_.internal).foreach { kt =>
+            sp.getKernelTypes(d).filter(_.internal).foreach { kt =>
                 val name = kt.name
                 val ps = platformMap.getOrElse(name, Set[Platforms.Value]())
                 val ns = ps + platform
@@ -98,10 +98,10 @@ clean:
         }
 
         // Determine if we need to link in TimeTrial.
-        val needTimeTrial = !ap.streams.filter(!_.measures.isEmpty).isEmpty
+        val needTimeTrial = !sp.streams.filter(!_.measures.isEmpty).isEmpty
 
         // Get a list of processes to create (one for each host).
-        val targets = ap.devices.map { d => "proc_" + d.host }
+        val targets = sp.devices.map { d => "proc_" + d.host }
 
         write("TARGETS=" + targets.mkString(" "))
         write("C_BLOCKS=" + localC.mkString(" "))
@@ -202,7 +202,7 @@ proc_%: proc_%.o $(OBJECTS)
 
 """)
 
-        writeLeft(ap.getRules)
+        writeLeft(sp.getRules)
 
         write("""
 # Rule for cleaning up.

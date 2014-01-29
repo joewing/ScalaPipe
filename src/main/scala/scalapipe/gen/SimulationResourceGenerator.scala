@@ -1,13 +1,12 @@
-
 package scalapipe.gen
 
 import scalapipe._
 import java.io.File
 
 private[scalapipe] class SimulationResourceGenerator(
-        _ap: AutoPipe,
+        _sp: ScalaPipe,
         _device: Device
-    ) extends HDLResourceGenerator(_ap, _device) {
+    ) extends HDLResourceGenerator(_sp, _device) {
 
     // Align i to the smallest multiple of 32.
     private def align(i: Int): Int = (i + 31) & ~31;
@@ -23,7 +22,7 @@ private[scalapipe] class SimulationResourceGenerator(
 
     override def getRules: String = {
 
-        val kernelTypes = ap.getKernelTypes(device)
+        val kernelTypes = sp.getKernelTypes(device)
         val names = kernelTypes.map(_.name)
         val base = "sim.v fp.v int.v fpga_x.v fpga_wrap.v"
         val bstr = names.foldLeft(base) { (s, name) =>
@@ -56,10 +55,10 @@ private[scalapipe] class SimulationResourceGenerator(
 
     private def emitWrapFile(dir: File) {
 
-        val inputStreams = ap.streams.filter { s =>
+        val inputStreams = sp.streams.filter { s =>
             s.destKernel.device == device && s.sourceKernel.device != device
         }
-        val outputStreams = ap.streams.filter { s =>
+        val outputStreams = sp.streams.filter { s =>
             s.sourceKernel.device == device && s.destKernel.device != device
         }
 
@@ -210,10 +209,10 @@ private[scalapipe] class SimulationResourceGenerator(
 
     private def emitSimFile(dir: File) {
 
-        val inputStreams = ap.streams.filter { s =>
+        val inputStreams = sp.streams.filter { s =>
             s.destKernel.device == device && s.sourceKernel.device != device
         }
-        val outputStreams = ap.streams.filter { s =>
+        val outputStreams = sp.streams.filter { s =>
             s.sourceKernel.device == device && s.destKernel.device != device
         }
 
@@ -300,7 +299,7 @@ private[scalapipe] class SimulationResourceGenerator(
         }
         write
 
-        if (ap.parameters.get[Boolean]('wave)) {
+        if (sp.parameters.get[Boolean]('wave)) {
             write("$dumpvars;")
             write
         }
@@ -384,4 +383,3 @@ private[scalapipe] class SimulationResourceGenerator(
     }
 
 }
-

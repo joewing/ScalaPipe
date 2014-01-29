@@ -3,27 +3,27 @@ package scalapipe
 import org.scalatest._
 import scalapipe.dsl._
 
-class AutoPipeSpec extends UnitSpec {
+class ScalaPipeSpec extends UnitSpec {
 
-    val apb = new Kernel("TestKernel")
+    val kernel = new Kernel("TestKernel")
 
-    def createAutoPipe(): AutoPipe = {
-        val ap = new AutoPipe()
-        ap.createInstance(apb)
-        ap
+    def createScalaPipe(): ScalaPipe = {
+        val sp = new ScalaPipe
+        sp.createInstance(kernel)
+        sp
     }
 
-    def createInstance(ap: AutoPipe) = {
-        new KernelInstance(ap, apb)
+    def createInstance(sp: ScalaPipe) = {
+        new KernelInstance(sp, kernel)
     }
 
-    def createApplication(ap: AutoPipe,
+    def createApplication(sp: ScalaPipe,
                           edge1: Edge = null,
                           edge2: Edge = null): Seq[KernelInstance] = {
-        val kernel1 = createInstance(ap)
-        val kernel2 = createInstance(ap)
-        val kernel3 = createInstance(ap)
-        val kernel4 = createInstance(ap)
+        val kernel1 = createInstance(sp)
+        val kernel2 = createInstance(sp)
+        val kernel3 = createInstance(sp)
+        val kernel4 = createInstance(sp)
         val sl1 = kernel1()
         val stream1 = sl1(0)
         val stream2 = sl1(1)
@@ -40,36 +40,36 @@ class AutoPipeSpec extends UnitSpec {
     }
 
     "getDevice" should "return a CPU device by default" in {
-        val ap = createAutoPipe()
-        val kernels = createApplication(ap)
+        val sp = createScalaPipe()
+        val kernels = createApplication(sp)
         val getDevice = PrivateMethod[Device]('getDevice)
-        val device = ap invokePrivate getDevice(kernels)
+        val device = sp invokePrivate getDevice(kernels)
         assert(device.deviceType.platform == Platforms.C)
     }
 
     "getDevice" should "return the correct device type" in {
-        val ap = createAutoPipe()
-        val kernels = createApplication(ap, CPU2FPGA(), CPU2FPGA())
+        val sp = createScalaPipe()
+        val kernels = createApplication(sp, CPU2FPGA(), CPU2FPGA())
         val getDevice = PrivateMethod[Device]('getDevice)
-        val device = ap invokePrivate getDevice(kernels)
+        val device = sp invokePrivate getDevice(kernels)
         assert(device.deviceType.platform == Platforms.HDL)
     }
 
     "getDevice" should "raise an error on an invalid mapping" in {
-        val ap = createAutoPipe()
-        val kernels = createApplication(ap, CPU2FPGA(), CPU2CPU())
+        val sp = createScalaPipe()
+        val kernels = createApplication(sp, CPU2FPGA(), CPU2CPU())
         val getDevice = PrivateMethod[Device]('getDevice)
         val oldCount = Error.errorCount
-        ap invokePrivate getDevice(kernels)
+        sp invokePrivate getDevice(kernels)
         assert(Error.errorCount == oldCount + 1)
     }
 
     "getConnectedKernels" should "return connected kernels" in {
-        val ap = createAutoPipe()
-        val kernels = createApplication(ap)
+        val sp = createScalaPipe()
+        val kernels = createApplication(sp)
         val getConnectedKernels =
             PrivateMethod[Seq[KernelInstance]]('getConnectedKernels)
-        val lst = ap invokePrivate getConnectedKernels(kernels(2))
+        val lst = sp invokePrivate getConnectedKernels(kernels(2))
         assert(kernels.length == lst.length)
     }
 

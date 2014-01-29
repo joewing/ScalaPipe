@@ -4,9 +4,10 @@ package scalapipe.gen
 import scalapipe._
 import java.io.File
 
-private[scalapipe] abstract class HDLResourceGenerator(val ap: AutoPipe,
-                                                                        val device: Device)
-    extends ResourceGenerator {
+private[scalapipe] abstract class HDLResourceGenerator(
+        val sp: ScalaPipe,
+        val device: Device
+    ) extends ResourceGenerator {
 
     protected val host = device.host
     protected val id    = device.index
@@ -59,7 +60,7 @@ private[scalapipe] abstract class HDLResourceGenerator(val ap: AutoPipe,
 
     private def emitInternal(dir: File) {
 
-        val streams = ap.streams.filter { s =>
+        val streams = sp.streams.filter { s =>
             s.sourceKernel.device == device || s.destKernel.device == device
         }
         val tt = new TimeTrial(streams)
@@ -152,7 +153,7 @@ private[scalapipe] abstract class HDLResourceGenerator(val ap: AutoPipe,
         write
 
         // Instantiate kernels.
-        for (kernel <- ap.instances if kernel.device == device) {
+        for (kernel <- sp.instances if kernel.device == device) {
             val kernelName = "kernel_" + kernel.name
             write(kernelName)
             enter

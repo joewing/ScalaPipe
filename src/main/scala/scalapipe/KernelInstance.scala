@@ -3,7 +3,7 @@ package scalapipe
 import scalapipe.dsl.Kernel
 
 private[scalapipe] class KernelInstance(
-        val ap: AutoPipe,
+        val sp: ScalaPipe,
         val kernel: Kernel
     ) extends DebugInfo {
 
@@ -17,11 +17,11 @@ private[scalapipe] class KernelInstance(
 
     collectDebugInfo
 
-    def apply(): StreamList = new StreamList(ap, this)
+    def apply(): StreamList = new StreamList(sp, this)
 
     def apply(s: Stream): StreamList = {
         setInput(null, s)
-        new StreamList(ap, this)
+        new StreamList(sp, this)
     }
 
     def apply(args: (Symbol, Any)*) = {
@@ -33,15 +33,15 @@ private[scalapipe] class KernelInstance(
                 setConfig(name, a._2)
             }
         }
-        new StreamList(ap, this)
+        new StreamList(sp, this)
     }
 
     def apply(args: Array[Stream]) = {
         for (a <- args) setInput(null, a)
-        new StreamList(ap, this)
+        new StreamList(sp, this)
     }
 
-    private[scalapipe] def kernelType = ap.kernelType(name, device.platform)
+    private[scalapipe] def kernelType = sp.kernelType(name, device.platform)
 
     private[scalapipe] def setInput(n: String, s: Stream) {
         val portName: PortName = if(n == null) new IntPortName(inputs.size)

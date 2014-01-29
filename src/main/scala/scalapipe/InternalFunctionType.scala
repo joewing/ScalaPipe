@@ -7,10 +7,10 @@ import scalapipe.gen.HDLFunctionGenerator
 import scalapipe.gen.OpenCLFunctionGenerator
 
 private[scalapipe] class InternalFunctionType(
-        ap: AutoPipe,
+        sp: ScalaPipe,
         func: Func,
         p: Platforms.Value
-    ) extends InternalKernelType(ap, func, p) {
+    ) extends InternalKernelType(sp, func, p) {
 
     private[scalapipe] def returnType = outputs.size match {
         case 0 => ValueType.void

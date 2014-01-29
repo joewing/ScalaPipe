@@ -4,9 +4,9 @@ import scalapipe._
 import java.io.File
 
 private[scalapipe] class SmartFusionResourceGenerator(
-        _ap: AutoPipe,
+        _sp: ScalaPipe,
         _device: Device
-    ) extends HDLResourceGenerator(_ap, _device) {
+    ) extends HDLResourceGenerator(_sp, _device) {
 
     // Align i to the smallest multiple of 32.
     private def align(i: Int): Int = (i + 31) & ~31;
@@ -30,10 +30,10 @@ private[scalapipe] class SmartFusionResourceGenerator(
 
     private def emitWrapFile(dir: File) {
 
-        val inputStreams = ap.streams.filter { s =>
+        val inputStreams = sp.streams.filter { s =>
             s.destKernel.device == device && s.sourceKernel.device != device
         }
-        val outputStreams = ap.streams.filter { s =>
+        val outputStreams = sp.streams.filter { s =>
             s.sourceKernel.device == device && s.destKernel.device != device
         }
 
@@ -292,10 +292,10 @@ private[scalapipe] class SmartFusionResourceGenerator(
 
     private def emitTopFile(dir: File) {
 
-        val inputStreams = ap.streams.filter { s =>
+        val inputStreams = sp.streams.filter { s =>
             s.destKernel.device == device && s.sourceKernel.device != device
         }
-        val outputStreams = ap.streams.filter { s =>
+        val outputStreams = sp.streams.filter { s =>
             s.sourceKernel.device == device && s.destKernel.device != device
         }
 

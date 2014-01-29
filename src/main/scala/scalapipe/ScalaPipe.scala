@@ -8,7 +8,7 @@ import scalapipe.gen.XGenerator
 import scalapipe.gen.MakefileGenerator
 import scalapipe.gen.RawFileGenerator
 
-private[scalapipe] class AutoPipe {
+private[scalapipe] class ScalaPipe {
 
     private[scalapipe] var instances = Seq[KernelInstance]()
     private[scalapipe] var streams = Set[Stream]()

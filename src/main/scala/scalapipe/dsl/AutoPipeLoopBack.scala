@@ -23,8 +23,8 @@ class AutoPipeLoopBack(val t: AutoPipeType) {
         instance.setInput(null, s)
     }
 
-    def output()(implicit ap: AutoPipe): Stream = {
-        instance = ap.createInstance(kernel)
+    def output()(implicit sp: ScalaPipe): Stream = {
+        instance = sp.createInstance(kernel)
         instance.apply()()
     }
 

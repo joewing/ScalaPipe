@@ -3,7 +3,7 @@ package scalapipe
 import scalapipe.dsl._
 
 private[scalapipe] abstract class KernelType(
-        val ap: AutoPipe,
+        val sp: ScalaPipe,
         val name: String,
         val symbols: SymbolTable,
         val platform: Platforms.Value,
@@ -13,14 +13,14 @@ private[scalapipe] abstract class KernelType(
     private[scalapipe] val configs = symbols.configs
     private[scalapipe] val states = symbols.states
     private[scalapipe] val temps = symbols.temps
-    private[scalapipe] val parameters = ap.parameters
+    private[scalapipe] val parameters = sp.parameters
     private[scalapipe] val dependencies = new DependencySet
     private[scalapipe] val label = LabelMaker.getTypeLabel
     private[scalapipe] val inputs = symbols.inputs
     private[scalapipe] val outputs = symbols.outputs
 
-    def this(ap: AutoPipe, kernel: Kernel, p: Platforms.Value) = {
-        this(ap, kernel.name, new SymbolTable(kernel), p, kernel.loopBack)
+    def this(sp: ScalaPipe, kernel: Kernel, p: Platforms.Value) = {
+        this(sp, kernel.name, new SymbolTable(kernel), p, kernel.loopBack)
         kernel.inputs.foreach { i =>
             symbols.addInput(i.name, i.valueType)
         }

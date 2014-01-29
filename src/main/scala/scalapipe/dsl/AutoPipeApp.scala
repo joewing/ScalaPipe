@@ -6,7 +6,7 @@ import scalapipe._
 /** ScalaPipe Application DSL. */
 class AutoPipeApp {
 
-    implicit val ap = new AutoPipe
+    implicit val sp = new ScalaPipe
 
     def iteratedFold(inputs: Array[Stream],
                      combiner: Kernel): Stream = {
@@ -18,7 +18,7 @@ class AutoPipeApp {
                 val first = 2 * i
                 val second = first + 1
                 val dest = size / 2 + i - 1
-                val kernel = ap.createInstance(combiner)
+                val kernel = sp.createInstance(combiner)
                 result(dest) = kernel((null, inputs(first)),
                                       (null, inputs(second)))
             }
@@ -26,7 +26,7 @@ class AutoPipeApp {
                 val left = i * 2 - 1
                 val right = left + 1
                 val dest = i - 1
-                val kernel = ap.createInstance(combiner)
+                val kernel = sp.createInstance(combiner)
                 result(dest) = kernel((null, result(left)(0)),
                                       (null, result(right)(0)))
             }
@@ -37,7 +37,7 @@ class AutoPipeApp {
 
     }
 
-    implicit def kernel2instance(k: Kernel) = ap.createInstance(k)
+    implicit def kernel2instance(k: Kernel) = sp.createInstance(k)
 
     implicit def instance2StreamList(k: KernelInstance): StreamList = k.apply()
 
@@ -70,7 +70,7 @@ class AutoPipeApp {
     def measure(edge: (Kernel, Kernel),
                     stat: Symbol,
                     metric: Symbol) {
-        ap.addMeasure(new EdgeMeasurement(edge._1, edge._2, stat, metric))
+        sp.addMeasure(new EdgeMeasurement(edge._1, edge._2, stat, metric))
     }
 
     def measure(edge: (Kernel, Kernel), metric: Symbol) {
@@ -86,15 +86,15 @@ class AutoPipeApp {
     }
 
     def map(edge: (Kernel, Kernel), t: Edge) {
-        ap.addEdge(new EdgeMapping(edge._1, edge._2, t))
+        sp.addEdge(new EdgeMapping(edge._1, edge._2, t))
     }
 
     def param(name: Symbol, value: Any) {
-        ap.setParameter(name, value)
+        sp.setParameter(name, value)
     }
 
     def emit(dirname: String) {
-        ap.emit(dirname)
+        sp.emit(dirname)
     }
 
 }

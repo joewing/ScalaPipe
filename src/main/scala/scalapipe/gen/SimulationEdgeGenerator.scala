@@ -1,11 +1,11 @@
-
 package scalapipe.gen
 
 import scalapipe._
 
 /** Edge generator for edges mapped between the CPU and FPGA simulation. */
-private[scalapipe] class SimulationEdgeGenerator(val ap: AutoPipe)
-    extends EdgeGenerator(Platforms.HDL) {
+private[scalapipe] class SimulationEdgeGenerator(
+        val sp: ScalaPipe
+    ) extends EdgeGenerator(Platforms.HDL) {
 
     override def emitCommon() {
         write("#include <sys/types.h>")
@@ -314,4 +314,3 @@ private[scalapipe] class SimulationEdgeGenerator(val ap: AutoPipe)
     }
 
 }
-

@@ -1,12 +1,12 @@
-
 package scalapipe.gen
 
 import scalapipe._
 import java.io.File
 
-private[scalapipe] class OpenCLResourceGenerator(val ap: AutoPipe,
-                                                                val device: Device)
-        extends ResourceGenerator {
+private[scalapipe] class OpenCLResourceGenerator(
+        val sp: ScalaPipe,
+        val device: Device
+    ) extends ResourceGenerator {
 
     override def getRules: String = {
         """
@@ -27,4 +27,3 @@ LDFLAGS += $(OCLLIB)
     }
 
 }
-

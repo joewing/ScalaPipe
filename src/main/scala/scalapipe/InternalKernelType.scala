@@ -8,10 +8,10 @@ import scalapipe.gen.HDLKernelGenerator
 import java.io.File
 
 private[scalapipe] class InternalKernelType(
-        ap: AutoPipe,
+        sp: ScalaPipe,
         kernel: Kernel,
         p: Platforms.Value
-    ) extends KernelType(ap, kernel, p) {
+    ) extends KernelType(sp, kernel, p) {
 
     private val root = kernel.getRoot
     private val checked = TypeChecker.check(this, root)

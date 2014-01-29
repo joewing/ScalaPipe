@@ -1,4 +1,3 @@
-
 package scalapipe
 
 import scalapipe.dsl._
@@ -6,7 +5,7 @@ import scala.collection.mutable.HashMap
 
 /** A simple DSL for generating IRGraphs to be used for testing. */
 private[scalapipe] class IRBuilder
-    extends KernelType(new AutoPipe, "test",
+    extends KernelType(new ScalaPipe, "test",
                        new SymbolTable(null),
                        Platforms.HDL,
                        false) {
@@ -168,4 +167,3 @@ private[scalapipe] class IRBuilder
     def internal = true
 
 }
-

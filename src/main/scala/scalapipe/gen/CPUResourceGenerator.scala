@@ -8,7 +8,7 @@ import scala.collection.mutable.ListBuffer
 import java.io.File
 
 private[scalapipe] class CPUResourceGenerator(
-        val ap: AutoPipe,
+        val sp: ScalaPipe,
         val host: String
     ) extends ResourceGenerator {
 
@@ -16,14 +16,14 @@ private[scalapipe] class CPUResourceGenerator(
     private val emittedKernelTypes = new HashSet[KernelType]
     private val threadIds = new HashMap[KernelInstance, Int]
 
-    private lazy val openCLEdgeGenerator = new OpenCLEdgeGenerator(ap)
-    private lazy val smartFusionEdgeGenerator = new SmartFusionEdgeGenerator(ap)
-    private lazy val simulationEdgeGenerator = new SimulationEdgeGenerator(ap)
+    private lazy val openCLEdgeGenerator = new OpenCLEdgeGenerator(sp)
+    private lazy val smartFusionEdgeGenerator = new SmartFusionEdgeGenerator(sp)
+    private lazy val simulationEdgeGenerator = new SimulationEdgeGenerator(sp)
     private lazy val sockEdgeGenerator = new SockEdgeGenerator
     private lazy val cEdgeGenerator = new CEdgeGenerator
 
     private def getHDLEdgeGenerator: EdgeGenerator = {
-        val fpga = ap.parameters.get[String]('fpga)
+        val fpga = sp.parameters.get[String]('fpga)
         fpga match {
             case "SmartFusion"    => smartFusionEdgeGenerator
             case "Simulation"     => simulationEdgeGenerator
@@ -454,7 +454,7 @@ private[scalapipe] class CPUResourceGenerator(
     override def emit(dir: File) {
 
         // Get devices on this host.
-        val localInstances = ap.instances.filter { instance =>
+        val localInstances = sp.instances.filter { instance =>
             instance.device != null && instance.device.host == host
         }
         val cpuInstances = localInstances.filter { instance =>
@@ -475,7 +475,7 @@ private[scalapipe] class CPUResourceGenerator(
         write("#define MAX_POLL_COUNT 32")
 
         // Get streams on this host.
-        val localStreams = ap.streams.filter { s =>
+        val localStreams = sp.streams.filter { s =>
             shouldEmit(s.sourceKernel.device) || shouldEmit(s.destKernel.device)
         }
 
@@ -484,7 +484,7 @@ private[scalapipe] class CPUResourceGenerator(
 
         // Determine if we need TimeTrial.
         // Note that we need to check every stream on this host.
-        val needTimeTrial = ap.streams.filter { s =>
+        val needTimeTrial = sp.streams.filter { s =>
             s.sourceKernel.device.host == host ||
             s.destKernel.device.host == host
         }.exists { s => !s.measures.isEmpty }
@@ -494,8 +494,8 @@ private[scalapipe] class CPUResourceGenerator(
         }
 
         if (needTimeTrial) {
-            val threadCount = ap.threadCount
-            val bufferSize = ap.parameters.get[Int]('timeTrialBufferSize)
+            val threadCount = sp.threadCount
+            val bufferSize = sp.parameters.get[Int]('timeTrialBufferSize)
             write("static XTTASharedMemory tta(" + threadCount + ", " +
                     bufferSize + ");")
             write("static XTTAThread *tta_thread = NULL;")
@@ -576,9 +576,9 @@ private[scalapipe] class CPUResourceGenerator(
         // Startup TimeTrial.
         if (needTimeTrial) {
 
-            val ttOutput = ap.parameters.get[String]('timeTrialOutput)
+            val ttOutput = sp.parameters.get[String]('timeTrialOutput)
             val ttFile = if (ttOutput == null) "NULL" else ttOutput
-            val ttAffinity = ap.parameters.get[Int]('timeTrialAffinity)
+            val ttAffinity = sp.parameters.get[Int]('timeTrialAffinity)
             write("tta_thread = new XTTAThread(&tta, " + ttFile + ", " +
                     ttAffinity + ");")
 

@@ -4,7 +4,7 @@ import scala.collection.mutable.HashSet
 import scalapipe.dsl.Kernel
 
 class Stream(
-        ap: AutoPipe,
+        sp: ScalaPipe,
         private[scalapipe] val sourceKernel: KernelInstance,
         private[scalapipe] val sourcePort: PortName
     ) {
@@ -15,7 +15,7 @@ class Stream(
     private[scalapipe] var destPort: PortName = null
     private[scalapipe] val measures = new HashSet[Measure]
     private[scalapipe] var edge: Edge = null
-    private[scalapipe] var depth = ap.parameters.get[Int]('queueDepth)
+    private[scalapipe] var depth = sp.parameters.get[Int]('queueDepth)
 
     /** Take this stream and apply it to the input of a split kernel. */
     def iteratedMap(iterations: Int, splitter: Kernel): Seq[Stream] = {
@@ -23,8 +23,8 @@ class Stream(
         def helper(iter: Int, inputs: Seq[Stream]): Seq[Stream] = {
             if (iter > 0) {
                 val outputs = inputs.flatMap(a => {
-                    val kernel = ap.createInstance(splitter)((null, a))
-                    val outputCount = ap.getOutputCount(splitter.name)
+                    val kernel = sp.createInstance(splitter)((null, a))
+                    val outputCount = sp.getOutputCount(splitter.name)
                     Seq.range(0, outputCount).map(kernel(_))
                 })
                 helper(iter - 1, outputs)

@@ -4,10 +4,10 @@ import scalapipe.dsl.Kernel
 import java.io.File
 
 private[scalapipe] class ExternalKernelType(
-        ap: AutoPipe,
+        sp: ScalaPipe,
         kernel: Kernel,
         p: Platforms.Value
-    ) extends KernelType(ap, kernel, p) {
+    ) extends KernelType(sp, kernel, p) {
 
     override def internal = false
 

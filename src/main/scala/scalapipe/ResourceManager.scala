@@ -6,7 +6,7 @@ import scalapipe.gen.SmartFusionResourceGenerator
 import scalapipe.gen.SimulationResourceGenerator
 import scalapipe.gen.OpenCLResourceGenerator
 
-private[scalapipe] class ResourceManager(val ap: AutoPipe) {
+private[scalapipe] class ResourceManager(val sp: ScalaPipe) {
 
     private var generators = Map[Device, ResourceGenerator]()
     private var cpuGenerators = Map[String, CPUResourceGenerator]()
@@ -16,19 +16,19 @@ private[scalapipe] class ResourceManager(val ap: AutoPipe) {
         platform match {
             case Platforms.HDL => createHDLResourceGenerator(device)
             case Platforms.OpenCL =>
-                new OpenCLResourceGenerator(ap, device)
+                new OpenCLResourceGenerator(sp, device)
             case _ =>
                 sys.error("unknown platform: " + platform)
         }
     }
 
     private def createHDLResourceGenerator(device: Device): ResourceGenerator = {
-        val fpga = ap.parameters.get[String]('fpga)
+        val fpga = sp.parameters.get[String]('fpga)
         fpga match {
             case "SmartFusion"    =>
-                new SmartFusionResourceGenerator(ap, device)
+                new SmartFusionResourceGenerator(sp, device)
             case "Simulation"     =>
-                new SimulationResourceGenerator(ap, device)
+                new SimulationResourceGenerator(sp, device)
             case _ => sys.error("unknown FPGA device: " + fpga)
         }
     }
@@ -39,7 +39,7 @@ private[scalapipe] class ResourceManager(val ap: AutoPipe) {
             if (cpuGenerators.contains(host)) {
                 cpuGenerators(host)
             } else {
-                val cg = new CPUResourceGenerator(ap, host)
+                val cg = new CPUResourceGenerator(sp, host)
                 cpuGenerators += (host -> cg)
                 cg
             }
