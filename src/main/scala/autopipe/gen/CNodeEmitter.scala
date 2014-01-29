@@ -141,18 +141,6 @@ private[autopipe] abstract class CNodeEmitter(
         }
     }
 
-    private def emitSpecial(node: ASTSpecial): String = {
-        val func = node.obj.name + "_" + node.method
-        val argString = node.args.foldLeft("") { (a, n) =>
-            if (a.isEmpty) {
-                emitExpr(n)
-            } else {
-                a + ", " + emitExpr(n)
-            }
-        }
-        func + "(" + argString + ")"
-    }
-
     private def emitLiteral(l: Literal): String = l.toString
 
     private def emitConvert(node: ASTConvertNode): String = {
@@ -208,7 +196,6 @@ private[autopipe] abstract class CNodeEmitter(
         case o: ASTOpNode           => emitOp(o)
         case a: ASTAvailableNode    => emitAvailable(a)
         case c: ASTConvertNode      => emitConvert(c)
-        case s: ASTSpecial          => emitSpecial(s)
         case null                   => "0"
         case _ => Error.raise("invalid expression", node)
     }
@@ -269,10 +256,6 @@ private[autopipe] abstract class CNodeEmitter(
         write(emitCall(node) + ";")
     }
 
-    private def emitSpecialProc(node: ASTSpecial) {
-        write(emitSpecial(node) + ";")
-    }
-
     private def emitBlock(node: ASTBlockNode) {
         for (n <- node.children) {
             emit(n)
@@ -315,7 +298,6 @@ private[autopipe] abstract class CNodeEmitter(
             case sw:    ASTSwitchNode   => emitSwitch(sw)
             case loop:  ASTWhileNode    => emitWhile(loop)
             case call:  ASTCallNode     => emitCallProc(call)
-            case sp:    ASTSpecial      => emitSpecialProc(sp)
             case stop:  ASTStopNode     => emitStop(stop)
             case block: ASTBlockNode    => emitBlock(block)
             case ret:   ASTReturnNode   => emitReturn(ret)

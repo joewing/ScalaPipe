@@ -149,7 +149,6 @@ private[autopipe] class TypeChecker(kt: KernelType) {
             case sn: ASTSymbolNode      => getSymbolType(sn)
             case cn: ASTCallNode        => cn.returnType
             case rn: ASTReturnNode      => ValueType.void
-            case sp: ASTSpecial         => sp.valueType
             case _ => sys.error("internal: " + node)
         }
 
@@ -265,16 +264,6 @@ private[autopipe] class TypeChecker(kt: KernelType) {
         result
     }
 
-    private def checkSpecial(node: ASTSpecial, lhs: Boolean): ASTNode = {
-        val result = ASTSpecial(node.obj, node.method)
-        result.args = node.children.map(check(_, false))
-        result.valueType = node.valueType
-        if (lhs) {
-            Error.raise("invalid assignment", node)
-        }
-        result
-    }
-
     private def widen(op: ASTOpNode, lhs: Boolean): ASTOpNode = {
         val a = check(op.a, lhs)
         val b = check(op.b, lhs)
@@ -372,7 +361,6 @@ private[autopipe] class TypeChecker(kt: KernelType) {
             case cn: ASTConvertNode     => checkConvert(cn, lhs)
             case av: ASTAvailableNode   => av
             case rn: ASTReturnNode      => checkReturn(rn, lhs)
-            case sp: ASTSpecial         => checkSpecial(sp, lhs)
             case null                   => null
             case li: Literal            => checkLiteral(li, lhs)
             case _                      => sys.error("internal: " + node)

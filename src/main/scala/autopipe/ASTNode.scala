@@ -1,6 +1,6 @@
 package autopipe
 
-import autopipe.dsl.{Kernel, Func, AutoPipeObject}
+import autopipe.dsl.{Kernel, Func}
 
 abstract class ASTNode(
         val op: NodeType.Value,
@@ -285,20 +285,6 @@ private[autopipe] case class ASTCallNode(
         }
         this
     }
-
-}
-
-private[autopipe] case class ASTSpecial(
-        val obj: AutoPipeObject,
-        val method: String,
-        _kernel: Kernel = null
-    ) extends ASTNode(NodeType.special, _kernel) with ASTStartNode {
-
-    var args = Seq[ASTNode]()
-
-    override def children = args
-
-    private[autopipe] override def pure = false
 
 }
 

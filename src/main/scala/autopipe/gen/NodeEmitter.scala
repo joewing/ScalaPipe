@@ -1,12 +1,9 @@
 package autopipe.gen
 
-import scala.collection.immutable.ListSet
 import scala.collection.mutable.HashSet
-import scala.collection.mutable.HashMap
 import scala.collection.mutable.ListBuffer
 
 import autopipe._
-import autopipe.dsl.AutoPipeObject
 
 private[gen] abstract class NodeEmitter(
         val kt: KernelType
