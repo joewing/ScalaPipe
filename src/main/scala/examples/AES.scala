@@ -330,7 +330,7 @@ object AES extends App {
         stdio.exit(0)
     }
 
-    val app = new AutoPipeApp {
+    val app = new Application {
 
         param('queueDepth, 4)
         param('profile, false)

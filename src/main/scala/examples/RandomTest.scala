@@ -49,7 +49,7 @@ object RandomTest extends App {
         }
     }
 
-    val app = new AutoPipeApp {
+    val app = new Application {
 
         val gen = GenState()
         val random = RNG(gen)

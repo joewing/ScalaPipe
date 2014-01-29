@@ -344,7 +344,7 @@ object CorrelationMatrix {
 
 		val MT = MT19937
 
-		object CorrelationMatrix extends AutoPipeApp {
+		object CorrelationMatrix extends Application {
 
 			val random = Random('seed -> seed)
 			val twister = MT(random, 'iterations -> mtlength)

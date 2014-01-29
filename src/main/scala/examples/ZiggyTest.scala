@@ -149,7 +149,7 @@ object ZiggyTest {
             stdio.exit(0)
 		}
 
-		object ZiggyTest extends AutoPipeApp {
+		object ZiggyTest extends Application {
 
 			param('queueDepth, count)
 			val random = Random()

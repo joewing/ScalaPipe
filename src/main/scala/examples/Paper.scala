@@ -206,7 +206,7 @@ object Paper {
         val SplitU32 = new Split(UNSIGNED32)
         val AverageU32 = new Average(UNSIGNED32)
 
-        trait SplitJoin extends AutoPipeApp {
+        trait SplitJoin extends Application {
             def splitJoin(input:    Stream,
                           levels:   Int,
                           split:    Kernel,
@@ -222,7 +222,7 @@ object Paper {
             }
         }
 
-        val laplace = new AutoPipeApp with SplitJoin {
+        val laplace = new Application with SplitJoin {
 
             val random = Random()
             val result = splitJoin(random, levels, SplitU32, AverageU32) {

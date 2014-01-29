@@ -1,5 +1,5 @@
 package scalapipe.kernels
 
-import scalapipe.dsl._
+import scalapipe.dsl.Kernel
 
-object ANY_KERNEL extends Kernel("any")
+object ANY_KERNEL extends Kernel

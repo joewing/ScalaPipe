@@ -167,7 +167,7 @@ object Mandelbrot {
 
         }
 
-        val Mandelbrot = new AutoPipeApp {
+        val Mandelbrot = new Application {
 
             val pixels = PixelGenerator(Start())
             val splits = pixels.iteratedMap(levels, Split)

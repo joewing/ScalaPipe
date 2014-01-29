@@ -46,7 +46,7 @@ object StructTest {
 
     def main(args: Array[String]) {
         val mapping = if (args.length > 0) args(0).toInt else 0
-        val app = new AutoPipeApp {
+        val app = new Application {
             Print(Gen())
             mapping match {
                 case 0 => ()

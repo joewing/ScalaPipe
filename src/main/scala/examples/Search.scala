@@ -167,7 +167,7 @@ object Search {
             stdio.printf("""Match at offset %lu\n""", x0)
         }
 
-        val Search = new AutoPipeApp {
+        val Search = new Application {
 
             val terms = TermReader()
             val splitTerms = SplitTerms(terms)

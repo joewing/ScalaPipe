@@ -116,7 +116,7 @@ object CholeskyTest {
 		val Dup = new DuplicateBlock(FLOAT32)
 		
 
-		object CholeskyTest extends AutoPipeApp {
+		object CholeskyTest extends Application {
 
 			val iMatrix = Dup(InputMatrix('size -> arraysize))
 			//val printiMatrix = Print2(iMatrix)

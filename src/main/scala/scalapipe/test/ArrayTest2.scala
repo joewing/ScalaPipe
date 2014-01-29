@@ -60,7 +60,7 @@ object ArrayTest2 {
             }
         }
 
-        val app = new AutoPipeApp {
+        val app = new Application {
             Print(Gen())
             mapping match {
                 case 0 => ()

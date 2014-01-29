@@ -135,7 +135,7 @@ object Laplace {
 
         }
 
-        val Laplace = new AutoPipeApp {
+        val Laplace = new Application {
 
 param('queueDepth, 64)
 

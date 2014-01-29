@@ -225,7 +225,7 @@ object BOPM {
 			}
 		}
 
-		object BOPM extends AutoPipeApp {
+		object BOPM extends Application {
 			param('queueDepth, count)
 			val s = Stock()
 			val k = Strike()

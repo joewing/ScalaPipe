@@ -298,7 +298,7 @@ object Cluster {
 
         val Loop = new AutoPipeLoopBack(ClusterType)
 
-        val Cluster = new AutoPipeApp {
+        val Cluster = new Application {
             val csrc = ClusterSource(Loop.output())
             val bmp = BMPReader('file -> "in.bmp")
             val vsrc = ValueSource(bmp(0), bmp(1), bmp(2))

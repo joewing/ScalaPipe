@@ -327,7 +327,7 @@ object Simplex extends App {
     val DupValues = new DuplicateBlock(VALUE_TYPE, rowCount)
     val DupInt = new DuplicateBlock(SIGNED32, rowCount)
 
-    val app = new AutoPipeApp {
+    val app = new Application {
 
         param('queueDepth, 2)
         param('fpga, "Simulation")

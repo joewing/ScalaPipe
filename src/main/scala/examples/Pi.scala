@@ -36,7 +36,7 @@ object Pi extends App {
         stdio.printf("""%g\n""", x0)
     }
 
-    val app = new AutoPipeApp {
+    val app = new Application {
         val state = GenState()
         val darts = MT19937(state)
         val result = PiSim(darts)

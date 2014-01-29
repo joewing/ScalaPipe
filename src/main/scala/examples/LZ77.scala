@@ -259,7 +259,7 @@ object LZ77 extends App {
 
     }
 
-    val app = new AutoPipeApp {
+    val app = new Application {
 
         param('profile, true)
 

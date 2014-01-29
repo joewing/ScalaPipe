@@ -208,7 +208,7 @@ object Maze {
 
         }
 
-        val Maze = new AutoPipeApp {
+        val Maze = new Application {
 
             param('trace, true)
             val random = MT19937(GenState('seed -> seed))

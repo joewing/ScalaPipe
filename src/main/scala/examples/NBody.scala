@@ -455,7 +455,7 @@ object NBody {
         val Print = if (useX) PrintX else PrintText
         val Dup = new DuplicateBlock(PARTICLE, 2)
 
-        val app = new AutoPipeApp {
+        val app = new Application {
 
             val source = Source()
             val buffer = Buffer(source(0), Loop.output())

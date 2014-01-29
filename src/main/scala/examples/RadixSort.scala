@@ -54,7 +54,7 @@ object RadixSort {
 
     }
 
-    val RadixSort = new AutoPipeApp {
+    val RadixSort = new Application {
         var src = Source()()
         for (i <- 0 until bitCount) {
             src = Sort('radix -> (1 << i), src)()

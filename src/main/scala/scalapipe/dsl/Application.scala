@@ -4,7 +4,7 @@ import language.implicitConversions
 import scalapipe._
 
 /** ScalaPipe Application DSL. */
-class AutoPipeApp {
+class Application {
 
     implicit val sp = new ScalaPipe
 

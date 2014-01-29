@@ -655,7 +655,7 @@ object BLSC {
 			
 		
 
-		object BLSC extends AutoPipeApp {
+		object BLSC extends Application {
 
 			param('fpga, "Simulation")
 

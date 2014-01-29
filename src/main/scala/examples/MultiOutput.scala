@@ -54,7 +54,7 @@ object MultiOutput {
 				
 			}
 
-			object MultiOutput extends AutoPipeApp {
+			object MultiOutput extends Application {
 
 				
 				val random0 = Random()
