@@ -1,6 +1,6 @@
 package blocks
 
-import autopipe.dsl._
+import scalapipe.dsl._
 
 class SquareBlock(t: AutoPipeType) extends Kernel {
 

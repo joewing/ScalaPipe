@@ -9,8 +9,8 @@ import blocks.DuplicateBlock
 import blocks.ANY_BLOCK
 
 
-import autopipe._
-import autopipe.dsl._
+import scalapipe._
+import scalapipe.dsl._
 
 object BLSC {
 

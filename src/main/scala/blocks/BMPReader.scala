@@ -1,6 +1,6 @@
 package blocks
 
-import autopipe.dsl._
+import scalapipe.dsl._
 
 /** BMP file reader.
  * Reads 24 or 32 bit bitmaps.

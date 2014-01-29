@@ -3,8 +3,8 @@ package examples
 import blocks.stdio
 
 
-import autopipe._
-import autopipe.dsl._
+import scalapipe._
+import scalapipe.dsl._
 
 object ZiggyTest {
 

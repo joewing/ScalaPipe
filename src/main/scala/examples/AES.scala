@@ -3,8 +3,8 @@ package examples
 import scala.annotation.tailrec
 import scala.collection.immutable.HashMap
 
-import autopipe._
-import autopipe.dsl._
+import scalapipe._
+import scalapipe.dsl._
 import blocks._
 
 object AES extends App {

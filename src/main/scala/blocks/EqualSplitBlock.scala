@@ -1,6 +1,6 @@
 package blocks
 
-import autopipe.dsl._
+import scalapipe.dsl._
 
 class EqualSplitBlock(t: AutoPipeType, n: Int = 2) extends Kernel {
 

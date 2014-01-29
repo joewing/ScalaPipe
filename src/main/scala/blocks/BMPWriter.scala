@@ -1,6 +1,6 @@
 package blocks
 
-import autopipe.dsl._
+import scalapipe.dsl._
 
 /** BMP file writer.
  * Writes 24-bit bitmaps.

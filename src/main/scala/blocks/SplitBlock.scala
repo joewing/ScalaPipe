@@ -1,6 +1,6 @@
 package blocks
 
-import autopipe.dsl._
+import scalapipe.dsl._
 
 class SplitBlock(t: AutoPipeType, n: Int = 2) extends Kernel {
 

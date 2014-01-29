@@ -6,7 +6,7 @@ function run_test {
     TEST=$1
     ARG=$2
     rm -rf $TEST
-    sbt "run-main autopipe.test.$TEST $ARG"
+    sbt "run-main scalapipe.test.$TEST $ARG"
     cd $TEST
     make
     if [ $ARG -gt 0 ] ; then

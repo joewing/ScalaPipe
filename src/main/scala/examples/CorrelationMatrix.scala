@@ -4,8 +4,8 @@ import blocks.DuplicateBlock
 import blocks.MT19937
 import blocks.stdio
 import blocks.GenState
-import autopipe._
-import autopipe.dsl._
+import scalapipe._
+import scalapipe.dsl._
 
 
 

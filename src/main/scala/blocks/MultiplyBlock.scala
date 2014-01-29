@@ -1,6 +1,6 @@
 package blocks
 
-import autopipe.dsl._
+import scalapipe.dsl._
 
 class MultiplyBlock(t: AutoPipeType) extends Kernel {
 

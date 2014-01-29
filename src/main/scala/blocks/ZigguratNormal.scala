@@ -1,7 +1,7 @@
 package blocks
 
-import autopipe._
-import autopipe.dsl._
+import scalapipe._
+import scalapipe.dsl._
 
 object ZigguratNormal extends Kernel {
 

@@ -1,8 +1,8 @@
 package examples
 
 import blocks._
-import autopipe._
-import autopipe.dsl._
+import scalapipe._
+import scalapipe.dsl._
 
 object Search {
 

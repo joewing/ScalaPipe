@@ -1,7 +1,7 @@
 package examples
 
-import autopipe._
-import autopipe.dsl._
+import scalapipe._
+import scalapipe.dsl._
 import blocks._
 
 object RandomTest extends App {

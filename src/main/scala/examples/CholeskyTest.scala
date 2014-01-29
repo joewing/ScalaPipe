@@ -4,8 +4,8 @@ import blocks.stdio
 import blocks.DuplicateBlock
 import blocks.CholeskyDecomposition
 
-import autopipe._
-import autopipe.dsl._
+import scalapipe._
+import scalapipe.dsl._
 
 
 
