@@ -100,7 +100,7 @@ object BOPM {
 			stop
 		}
 
-		val pow = new AutoPipeFunction {
+		val pow = new Func {
 			val x = input(FLOAT32)
 			val y = input(SIGNED32)
 			val counter = local(SIGNED32, 0)

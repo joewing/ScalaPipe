@@ -15,7 +15,7 @@ object StructTest {
         field('y, UNSIGNED32)   // 8 .. 11
     }
 
-    val Gen = new AutoPipeFunction("Gen") {
+    val Gen = new Func("Gen") {
         val y0      = output(Struct2)
         val count   = local(UNSIGNED32, 0)
         val t       = local(Struct2)

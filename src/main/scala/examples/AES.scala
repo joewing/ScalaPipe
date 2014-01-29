@@ -76,7 +76,7 @@ object AES extends App {
 
     val isbox = HashMap(Array.tabulate(256)(sbox).zipWithIndex: _*)
 
-    val xtime = new AutoPipeFunction {
+    val xtime = new Func {
         val x = input(UNSIGNED8)
         returns(UNSIGNED8)
 

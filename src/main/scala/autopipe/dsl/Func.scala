@@ -4,7 +4,7 @@ import scala.collection.mutable.ListBuffer
 import scala.collection.mutable.HashSet
 import autopipe._
 
-class AutoPipeFunction(_name: String) extends Kernel(_name) {
+class Func(_name: String) extends Kernel(_name) {
 
     def this() = this(LabelMaker.getKernelLabel)
 

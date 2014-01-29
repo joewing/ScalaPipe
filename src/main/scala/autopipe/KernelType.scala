@@ -57,11 +57,11 @@ private[autopipe] abstract class KernelType(
         symbols.isOutput(node.symbol)
     }
 
-    private[autopipe] def isInternal(f: AutoPipeFunction): Boolean = {
+    private[autopipe] def isInternal(f: Func): Boolean = {
         f.isInternal(platform)
     }
 
-    private[autopipe] def functions: Seq[AutoPipeFunction] = Seq()
+    private[autopipe] def functions: Seq[Func] = Seq()
 
     private[autopipe] def createTemp(vt: ValueType): TempSymbol =
         symbols.createTemp(vt)

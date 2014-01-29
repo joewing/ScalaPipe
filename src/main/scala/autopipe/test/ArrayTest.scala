@@ -9,7 +9,7 @@ object ArrayTest {
 
     val LargeArray = new AutoPipeArray(SmallArray, 1024)
 
-    val Gen = new AutoPipeFunction("Gen") {
+    val Gen = new Func("Gen") {
         val y0      = output(SmallArray)
         val count   = local(UNSIGNED32, 0)
         val big     = local(LargeArray)

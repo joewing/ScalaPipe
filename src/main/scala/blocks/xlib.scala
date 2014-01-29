@@ -4,7 +4,7 @@ import autopipe.dsl._
 
 object xlib {
 
-    class xlibFunc(_name: String) extends AutoPipeFunction(_name) {
+    class xlibFunc(_name: String) extends Func(_name) {
         include("X11/Xlib.h")
         library("X11")
         lpath("/usr/X11/lib")

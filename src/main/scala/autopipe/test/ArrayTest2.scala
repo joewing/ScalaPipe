@@ -22,7 +22,7 @@ object ArrayTest2 {
 
         val ArrayType = new AutoPipeArray(vtype, 1024)
 
-        val Gen = new AutoPipeFunction("Gen") {
+        val Gen = new Func("Gen") {
             val y0      = output(UNSIGNED32)
             val count   = local(UNSIGNED32, 0)
             val array   = local(ArrayType)

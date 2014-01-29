@@ -5,7 +5,7 @@ import autopipe.dsl._
 
 object FunctionTest {
 
-    val Func1 = new AutoPipeFunction("Func1") {
+    val Func1 = new Func("Func1") {
         val x0 = input(SIGNED32)
         val x1 = input(SIGNED32)
         returns(SIGNED32)

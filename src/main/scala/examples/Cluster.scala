@@ -97,7 +97,7 @@ object Cluster {
 
         }
 
-        val Distance = new AutoPipeFunction {
+        val Distance = new Func {
 
             val a = input(ValueType)
             val b = input(ValueType)

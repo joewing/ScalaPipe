@@ -168,7 +168,7 @@ class Kernel(val name: String) extends EmbeddedControls {
 
     implicit def double(d: Double) = FloatLiteral(d, this)
 
-    implicit def func(f: AutoPipeFunction) = {
+    implicit def func(f: Func) = {
         dependencies.add(f.dependencies)
         ASTCallNode(f, this)
     }

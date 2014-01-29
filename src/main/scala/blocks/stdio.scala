@@ -5,22 +5,22 @@ import autopipe.dsl._
 
 object stdio {
 
-    class stdioFunc(_name: String) extends AutoPipeFunction(_name) {
+    class stdioFunc(_name: String) extends Func(_name) {
         include("stdio.h")
         external("C")
     }
 
-    class stdlibFunc(_name: String) extends AutoPipeFunction(_name) {
+    class stdlibFunc(_name: String) extends Func(_name) {
         include("stdlib.h")
         external("C")
     }
 
-    class unistdFunc(_name: String) extends AutoPipeFunction(_name) {
+    class unistdFunc(_name: String) extends Func(_name) {
         include("unistd.h")
         external("C")
     }
 
-    class timeFunc(_name: String) extends AutoPipeFunction(_name) {
+    class timeFunc(_name: String) extends Func(_name) {
         include("sys/time.h")
         external("C")
     }

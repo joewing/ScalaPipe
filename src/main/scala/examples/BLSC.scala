@@ -40,7 +40,7 @@ object BLSC {
 
 		
 
-		val pow = new AutoPipeFunction {
+		val pow = new Func {
 			val x = input(FLOAT32)
 			val y = input(SIGNED32)
 			val counter = local(SIGNED32, 0)
@@ -61,7 +61,7 @@ object BLSC {
 			ret(answer)
 		}
 
-		val abs = new AutoPipeFunction {
+		val abs = new Func {
 			val x = input(FLOAT32)
 			returns(FLOAT32)
 			if(x < 0) {
@@ -70,7 +70,7 @@ object BLSC {
 			ret(x)
 		}
 
-		val sin = new AutoPipeFunction {
+		val sin = new Func {
 			val x = input(FLOAT32)
 			returns(FLOAT32)
 
@@ -84,7 +84,7 @@ object BLSC {
 			ret(answer)
 		}
 
-		val cos = new AutoPipeFunction {
+		val cos = new Func {
 			val x = input(FLOAT32)
 			returns(FLOAT32)
 

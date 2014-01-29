@@ -31,8 +31,8 @@ private[autopipe] class AutoPipe {
 
         // Create a new instance for the specified platform.
         val kt = k match {
-            case f: AutoPipeFunction =>
-                if (k.externals.contains(p)) {
+            case f: Func =>
+                if (f.externals.contains(p)) {
                     new ExternalFunctionType(this, f, p)
                 } else {
                     new InternalFunctionType(this, f, p)

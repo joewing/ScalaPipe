@@ -1,9 +1,9 @@
 package autopipe
 
-import autopipe.dsl.AutoPipeFunction
+import autopipe.dsl.Func
 
 private[autopipe] class ExternalFunctionType(
         ap: AutoPipe,
-        apf: AutoPipeFunction,
+        func: Func,
         p: Platforms.Value
-    ) extends ExternalKernelType(ap, apf, p)
+    ) extends ExternalKernelType(ap, func, p)

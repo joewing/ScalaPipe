@@ -1,6 +1,6 @@
 package autopipe
 
-import autopipe.dsl.{Kernel, AutoPipeFunction, AutoPipeObject}
+import autopipe.dsl.{Kernel, Func, AutoPipeObject}
 
 abstract class ASTNode(
         val op: NodeType.Value,
@@ -263,7 +263,7 @@ private[autopipe] case class ASTSymbolNode(
 }
 
 private[autopipe] case class ASTCallNode(
-        val func: AutoPipeFunction,
+        val func: Func,
         _kernel: Kernel = null
     ) extends ASTNode(NodeType.call, _kernel) with ASTStartNode {
 

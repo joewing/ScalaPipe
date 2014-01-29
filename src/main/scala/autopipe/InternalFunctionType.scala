@@ -1,6 +1,6 @@
 package autopipe
 
-import autopipe.dsl.AutoPipeFunction
+import autopipe.dsl.Func
 import autopipe.gen.KernelGenerator
 import autopipe.gen.CFunctionGenerator
 import autopipe.gen.HDLFunctionGenerator
@@ -8,9 +8,9 @@ import autopipe.gen.OpenCLFunctionGenerator
 
 private[autopipe] class InternalFunctionType(
         ap: AutoPipe,
-        apf: AutoPipeFunction,
+        func: Func,
         p: Platforms.Value
-    ) extends InternalKernelType(ap, apf, p) {
+    ) extends InternalKernelType(ap, func, p) {
 
     private[autopipe] def returnType = outputs.size match {
         case 0 => ValueType.void

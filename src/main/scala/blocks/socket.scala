@@ -4,7 +4,7 @@ import autopipe.dsl._
 
 object socket {
 
-    class sockFunc(_name: String) extends AutoPipeFunction(_name) {
+    class sockFunc(_name: String) extends Func(_name) {
         include("sys/types.h")
         include("sys/socket.h")
         include("unistd.h")
