@@ -94,23 +94,23 @@ private[scalapipe] abstract class HDLResourceGenerator(
             write(s"input wire O${index}read")
         }
         if (tt.amCount > 0) {
-            write(",")
-            write("output wire [" + (tt.amCount - 1) + ":0] amTap")
+            write(s",")
+            write(s"output wire [${tt.amCount - 1}:0] amTap")
         }
         if (tt.lmCount > 0) {
-            write(",")
-            write("output wire [" + (tt.lmCount - 1) + ":0] lmTap")
+            write(s",")
+            write(s"output wire [${tt.lmCount - 1}:0] lmTap")
         }
         if (tt.qmCount > 0) {
-            write(",")
-            write("output wire [" + (tt.qmCount - 1) + ":0] qRst,")
-            write("output wire [" + (tt.qmCount - 1) + ":0] qWr,")
-            write("output wire [" + (tt.qmCount - 1) + ":0] qRd")
+            write(s",")
+            write(s"output wire [${tt.qmCount - 1}:0] qRst,")
+            write(s"output wire [${tt.qmCount - 1}:0] qWr,")
+            write(s"output wire [${tt.qmCount - 1}:0] qRd")
         }
         if (tt.imCount > 0) {
-            write(",")
-            write("output wire [" + (tt.imCount - 1) + ":0] imAvail,")
-            write("output wire [" + (tt.imCount - 1) + ":0] imRead")
+            write(s",")
+            write(s"output wire [${tt.imCount - 1}:0] imAvail,")
+            write(s"output wire [${tt.imCount - 1}:0] imRead")
         }
         leave
         write(");")
@@ -121,71 +121,69 @@ private[scalapipe] abstract class HDLResourceGenerator(
         for (i <- inStreams) {
             val valueType = i.valueType.baseType
             val width = i.valueType.bits
-            write("wire [" + (width - 1) + ":0] " + i.label + "_input;")
-            write("wire [" + (width - 1) + ":0] " + i.label + "_dout;")
-            write("wire " + i.label + "_avail;")
-            write("wire " + i.label + "_read;")
-            write("wire " + i.label + "_empty;")
+            write(s"wire [${width - 1}:0] ${i.label}_input;")
+            write(s"wire [${width - 1}:0] ${i.label}_dout;")
+            write(s"wire ${i.label}_avail;")
+            write(s"wire ${i.label}_read;")
+            write(s"wire ${i.label}_empty;")
         }
         for (o <- outStreams) {
             val valueType = o.valueType.baseType
             val width = o.valueType.bits
-            write("wire [" + (width - 1) + ":0] " + o.label + "_output;")
-            write("wire [" + (width - 1) + ":0] " + o.label + "_din;")
-            write("wire " + o.label + "_write;")
-            write("wire " + o.label + "_full;")
-            write("wire " + o.label + "_empty;")
+            write(s"wire [${width - 1}:0] ${o.label}_output;")
+            write(s"wire [${width - 1}:0] ${o.label}_din;")
+            write(s"wire ${o.label}_write;")
+            write(s"wire ${o.label}_full;")
+            write(s"wire ${o.label}_empty;")
         }
         for (i <- internalStreams) {
             val valueType = i.valueType.baseType
             val width = i.valueType.bits
-            write("wire [" + (width - 1) + ":0] " + i.label + "_input;")
-            write("wire [" + (width - 1) + ":0] " + i.label + "_output;")
-            write("wire [" + (width - 1) + ":0] " + i.label + "_dout;")
-            write("wire [" + (width - 1) + ":0] " + i.label + "_din;")
-            write("wire " + i.label + "_avail;")
-            write("wire " + i.label + "_read;")
-            write("wire " + i.label + "_write;")
-            write("wire " + i.label + "_full;")
-            write("wire " + i.label + "_empty;")
+            write(s"wire [${width - 1}:0] ${i.label}_input;")
+            write(s"wire [${width - 1}:0] ${i.label}_output;")
+            write(s"wire [${width - 1}:0] ${i.label}_dout;")
+            write(s"wire [${width - 1}:0] ${i.label}_din;")
+            write(s"wire ${i.label}_avail;")
+            write(s"wire ${i.label}_read;")
+            write(s"wire ${i.label}_write;")
+            write(s"wire ${i.label}_full;")
+            write(s"wire ${i.label}_empty;")
         }
         write
 
         // Instantiate kernels.
         for (kernel <- sp.instances if kernel.device == device) {
-            val kernelName = "kernel_" + kernel.name
+            val kernelName = s"kernel_${kernel.name}"
             write(kernelName)
             enter
-            val configs = kernel.getConfigs
-            if (!configs.isEmpty) {
-                write("#(" + configs.foldLeft("")({ (a, c) =>
-                    (if (a.isEmpty) "" else ", ") +
-                    "." + c._1 + "(" + c._2 + ")"
-                }) + ")")
+            if (!kernel.configs.isEmpty) {
+                val configs = kernel.configs.map { case (name, value) =>
+                    s".$name($value)"
+                }.mkString(", ")
+                write(s"#($configs)")
             }
-            write(kernel.label + "(")
+            write(s"${kernel.label}(")
             enter
-            write(".clk(clk), .rst(rst)")
+            write(s".clk(clk), .rst(rst)")
             for (i <- kernel.getInputs) {
                 val destPort = i.destKernel.inputName(i.destPort)
-                write(",")
-                write(".input_" + destPort + "(" + i.label + "_input),")
-                write(".avail_" + destPort + "(" + i.label + "_avail),")
-                write(".read_"  + destPort + "(" + i.label + "_read)")
+                write(s",")
+                write(s".input_$destPort(${i.label}_input),")
+                write(s".avail_$destPort(${i.label}_avail),")
+                write(s".read_$destPort(${i.label}_read)")
             }
             for (o <- kernel.getOutputs) {
                 val srcPort = o.sourceKernel.outputName(o.sourcePort)
-                write(",")
-                write(".output_" + srcPort + "(" + o.label + "_output),")
-                write(".write_"  + srcPort + "(" + o.label + "_write),")
-                write(".afull_"  + srcPort + "(" + o.label + "_full)")
+                write(s",")
+                write(s".output_$srcPort(${o.label}_output),")
+                write(s".write_$srcPort(${o.label}_write),")
+                write(s".afull_$srcPort(${o.label}_full)")
             }
             leave
             write(");")
             leave
             for (i <- kernel.getInputs) {
-                write("assign " + i.label + "_avail = " +
-                        "!" + i.label + "_empty;")
+                write(s"assign ${i.label}_avail = !${i.label}_empty;")
             }
             write
         }
@@ -196,25 +194,22 @@ private[scalapipe] abstract class HDLResourceGenerator(
             val addrWidth = stream.getDepthBits
 
             // Hook up the FIFO.
-            write("ap_fifo #(.WIDTH(" + width + "), " +
-                    ".ADDR_WIDTH(" + addrWidth + "))")
+            write(s"ap_fifo #(.WIDTH($width), .ADDR_WIDTH($addrWidth))")
             enter
-            write("fifo_" + stream.label + "(")
+            write(s"fifo_${stream.label}(")
             enter
-            write(".clk(clk), .rst(rst),")
-            write(".din("    + stream.label + "_din),")
-            write(".dout("  + stream.label + "_dout),")
-            write(".re("     + stream.label + "_read),")
-            write(".we("     + stream.label + "_write),")
-            write(".empty(" + stream.label + "_empty),")
-            write(".full("  + stream.label + "_full)")
+            write(s".clk(clk), .rst(rst),")
+            write(s".din(${stream.label}_din),")
+            write(s".dout(${stream.label}_dout),")
+            write(s".re(${stream.label}_read),")
+            write(s".we(${stream.label}_write),")
+            write(s".empty(${stream.label}_empty),")
+            write(s".full(${stream.label}_full)")
             leave
-            write(");")
+            write(s");")
             leave
-            write("assign " + stream.label + "_din = " +
-                    stream.label + "_output;")
-            write("assign " + stream.label + "_input = " +
-                    stream.label + "_dout;")
+            write(s"assign ${stream.label}_din = ${stream.label}_output;")
+            write(s"assign ${stream.label}_input = ${stream.label}_dout;")
             write
 
             // Add edge instrumentation.
@@ -223,42 +218,34 @@ private[scalapipe] abstract class HDLResourceGenerator(
                 var amIndex = m.sourceActivityOffset
                 var imIndex = m.sourceInterOffset
                 if (m.useQueueMonitor) {
-                    write("assign qRst[" + qmIndex + "] = rst;")
-                    write("assign qWr[" + qmIndex + "] = " +
-                            stream.label + "_write;")
-                    write("assign qRd[" + qmIndex + "] = " +
-                            stream.label + "_read " +
-                            " && !" + stream.label + "_empty;")
+                    write(s"assign qRst[$qmIndex] = rst;")
+                    write(s"assign qWr[$qmIndex] = ${stream.label}_write;")
+                    write(s"assign qRd[$qmIndex] = ${stream.label}_read " +
+                          s" && !${stream.label}_empty;")
                     qmIndex += 1
                 }
                 if (m.useInputActivity) {
-                    write("assign amTap[" + amIndex + "] = " +
-                            stream.label + "_write;")
+                    write(s"assign amTap[$amIndex] = ${stream.label}_write;")
                     amIndex += 1
                 }
                 if (m.useOutputActivity) {
-                    write("assign amTap[" + amIndex + "] = " +
-                            stream.label + "_read " +
-                            "&& !" + stream.label + "_empty;")
+                    write(s"assign amTap[$amIndex] = ${stream.label}_read" +
+                          s" && !${stream.label}_empty;")
                     amIndex += 1
                 }
                 if (m.useFullActivity) {
-                    write("assign amTap[" + amIndex + "] = " +
-                            stream.label + "_full;")
+                    write(s"assign amTap[$amIndex] = ${stream.label}_full;")
                     amIndex += 1
                 }
                 if (m.useInterPush) {
-                    write("assign imAvail[" + imIndex + "] = 1;")
-                    write("assign imRead[" + imIndex + "] = " +
-                            stream.label + "_write;")
+                    write(s"assign imAvail[$imIndex] = 1;")
+                    write(s"assign imRead[$imIndex] = ${stream.label}_write;")
                     imIndex += 1
                 }
                 if (m.useInterPop) {
-                    write("assign imAvail[" + imIndex + "] = !" +
-                            stream.label + "_empty;")
-                    write("assign imRead[" + imIndex + "] = " +
-                            stream.label + "_read " +
-                            "&& !" + stream.label + "_empty;")
+                    write(s"assign imAvail[$imIndex] = !${stream.label}_empty;")
+                    write(s"assign imRead[$imIndex] = ${stream.label}_read" +
+                          s" && !${stream.label}_empty;")
                     imIndex += 1
                 }
             }
@@ -272,23 +259,21 @@ private[scalapipe] abstract class HDLResourceGenerator(
             val srcIndex = stream.index
 
             // Hook up the FIFO.
-            write("ap_fifo #(.WIDTH(" + width + "), " +
-                    ".ADDR_WIDTH(" + addrWidth + "))")
+            write(s"ap_fifo #(.WIDTH($width), .ADDR_WIDTH($addrWidth))")
             enter
-            write("fifo_" + stream.label + "(")
+            write(s"fifo_${stream.label}(")
             enter
-            write(".clk(clk), .rst(rst),")
-            write(".din(I"    + srcIndex + "input),")
-            write(".dout("  + stream.label + "_dout),")
-            write(".re("     + stream.label + "_read),")
-            write(".we(I"     + srcIndex + "write),")
-            write(".empty(" + stream.label + "_empty),")
-            write(".full(I"  + srcIndex + "afull)")
+            write(s".clk(clk), .rst(rst),")
+            write(s".din(I${srcIndex}input),")
+            write(s".dout(${stream.label}_dout),")
+            write(s".re(${stream.label}_read),")
+            write(s".we(I${srcIndex}write),")
+            write(s".empty(${stream.label}_empty),")
+            write(s".full(I${srcIndex}afull)")
             leave
-            write(");")
+            write(s");")
             leave
-            write("assign " + stream.label + "_input = " +
-                    stream.label + "_dout;")
+            write(s"assign ${stream.label}_input = ${stream.label}_dout;")
             write
 
             // Add edge instrumentation.
@@ -297,15 +282,14 @@ private[scalapipe] abstract class HDLResourceGenerator(
                 var amIndex = m.sourceActivityOffset
                 var imIndex = m.sourceInterOffset
                 if (m.useQueueMonitor) {
-                    write("assign qRst[" + qmIndex + "] = rst;")
-                    write("assign qWr[" + qmIndex + "] = I" + srcIndex + "write;")
-                    write("assign qRd[" + qmIndex + "] = " +
-                            stream.label + "_read " +
-                            "&& !" + stream.label + "_empty;")
+                    write(s"assign qRst[$qmIndex] = rst;")
+                    write(s"assign qWr[$qmIndex] = I${srcIndex}write;")
+                    write(s"assign qRd[$qmIndex] = ${stream.label}_read" +
+                          s" && !${stream.label}_empty;")
                     qmIndex += 1
                 }
                 if (m.useInputActivity) {
-                    write("assign amTap[" + amIndex + "] = I" + srcIndex + "write;")
+                    write(s"assign amTap[$amIndex] = I" + srcIndex + "write;")
                     amIndex += 1
                 }
                 if (m.useOutputActivity) {

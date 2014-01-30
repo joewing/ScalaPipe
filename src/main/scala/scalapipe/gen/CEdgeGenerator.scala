@@ -9,7 +9,7 @@ import scalapipe._
 private[scalapipe] class CEdgeGenerator
     extends EdgeGenerator(Platforms.C) with CGenerator {
 
-    private def queueName(stream: Stream) = "q_" + stream.label
+    private def queueName(stream: Stream) = s"q_${stream.label}"
 
     override def emitGlobals(streams: Traversable[Stream]) {
         streams.foreach { s => writeGlobals(s) }

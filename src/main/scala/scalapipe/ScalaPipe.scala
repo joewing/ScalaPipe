@@ -112,7 +112,12 @@ private[scalapipe] class ScalaPipe {
     private[scalapipe] def kernelType(name: String, p: Platforms.Value) =
         kernelTypes((name, p))
 
-    private[scalapipe] def threadCount: Int = deviceManager.threadCount
+    private[scalapipe] def threadCount(host: String): Int = {
+        val cpuDevices = instances.map(_.device).filter { d =>
+            d.deviceType.platform == Platforms.C
+        }
+        return cpuDevices.count { d => d.host == host }
+    }
 
     private def insertEdges {
 

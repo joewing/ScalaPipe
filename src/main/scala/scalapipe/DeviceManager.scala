@@ -29,7 +29,4 @@ private[scalapipe] class DeviceManager(param: Parameters) {
         deviceTypes.foreach { _._2.reassignIndexes }
     }
 
-    def threadCount: Int =
-        deviceTypes.filter(_._1 == Platforms.C).map(_._2.count).sum
-
 }

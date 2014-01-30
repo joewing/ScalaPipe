@@ -19,7 +19,7 @@ private[scalapipe] class CPUResourceGenerator(
     private lazy val openCLEdgeGenerator = new OpenCLEdgeGenerator(sp)
     private lazy val smartFusionEdgeGenerator = new SmartFusionEdgeGenerator(sp)
     private lazy val simulationEdgeGenerator = new SimulationEdgeGenerator(sp)
-    private lazy val sockEdgeGenerator = new SockEdgeGenerator
+    private lazy val sockEdgeGenerator = new SockEdgeGenerator(host)
     private lazy val cEdgeGenerator = new CEdgeGenerator
 
     private def getHDLEdgeGenerator: EdgeGenerator = {
@@ -48,7 +48,7 @@ private[scalapipe] class CPUResourceGenerator(
         }
 
         if (!edgeGenerators.contains(generator)) {
-            edgeGenerators += ((generator, new HashSet[Stream]))
+            edgeGenerators += (generator -> new HashSet[Stream])
         }
         edgeGenerators(generator) += stream
 
@@ -306,7 +306,7 @@ private[scalapipe] class CPUResourceGenerator(
     private def emitCheckRunning(kernel: KernelInstance) {
         val id = threadIds(kernel)
         val instance = kernel.label
-        write("static char is_running" + id + "()")
+        write(s"static char is_running$id()")
         write("{")
         enter
         write("if(XLIKELY(" + instance + ".active_inputs > 0)) {")
@@ -316,11 +316,11 @@ private[scalapipe] class CPUResourceGenerator(
         write("}")
         for (stream <- kernel.getInputs) {
             if (stream.sourceKernel.device == kernel.device) {
-                write("if(!" + stream.label + "_is_empty()) {")
+                write(s"if(!${stream.label}_is_empty()) {")
                 enter
-                write("return 1;")
+                write(s"return 1;")
                 leave
-                write("}")
+                write(s"}")
             }
         }
         write("return 0;")
@@ -494,11 +494,10 @@ private[scalapipe] class CPUResourceGenerator(
         }
 
         if (needTimeTrial) {
-            val threadCount = sp.threadCount
+            val threadCount = sp.threadCount(host)
             val bufferSize = sp.parameters.get[Int]('timeTrialBufferSize)
-            write("static XTTASharedMemory tta(" + threadCount + ", " +
-                    bufferSize + ");")
-            write("static XTTAThread *tta_thread = NULL;")
+            write(s"static XTTASharedMemory tta($threadCount, $bufferSize);")
+            write(s"static XTTAThread *tta_thread = NULL;")
         }
 
         write("static volatile bool stopped = false;")
@@ -510,9 +509,7 @@ private[scalapipe] class CPUResourceGenerator(
         val edgeInit = new ListBuffer[Generator]
         val edgeDestroy = new ListBuffer[Generator]
         val edgeStats = new ListBuffer[Generator]
-        for (i <- edgeGenerators) {
-            val generator = i._1
-            val edgeStreams = i._2
+        for ((generator, edgeStreams) <- edgeGenerators) {
 
             generator.emitCommon()
             edgeTop += generator.extract()

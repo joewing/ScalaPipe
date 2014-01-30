@@ -13,7 +13,7 @@ private[scalapipe] class KernelInstance(
     private[scalapipe] var device: Device = null
     private var outputs = Map[PortName, Stream]()
     private var inputs = Map[PortName, Stream]()
-    private var configs = Map[String, Literal]()
+    private[scalapipe] var configs = Map[String, Literal]()
 
     collectDebugInfo
 
@@ -122,17 +122,9 @@ private[scalapipe] class KernelInstance(
 
     private[scalapipe] def getOutputs: List[Stream] = outputs.toList.map(_._2)
 
+/*
     private[scalapipe] def getConfigs: List[(String, Literal)] = configs.toList
-
-    private def getConfigString: String = {
-        def getAssignment(x: (String, Literal)): String = x._1 + "=" + x._2
-        def getStr(cs: List[(String, Literal)]): String = cs match {
-            case Nil => ""
-            case x :: Nil => getAssignment(x)
-            case x :: y :: ys => getAssignment(x) + "," + getStr(y::ys)
-        }
-        getStr(configs.toList)
-    }
+*/
 
     override def toString = name
 

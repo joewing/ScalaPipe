@@ -6,8 +6,8 @@ import scala.collection.mutable.HashSet
 private[scalapipe] object DependencySet {
     val Include = 0
     val Library = 1
-    val IPath    = 2
-    val LPath    = 3
+    val IPath   = 2
+    val LPath   = 3
 }
 
 private[scalapipe] class DependencySet {
