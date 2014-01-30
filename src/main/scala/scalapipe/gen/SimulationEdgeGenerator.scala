@@ -179,7 +179,8 @@ private[scalapipe] class SimulationEdgeGenerator(
         write("}")
 
         // "allocate"
-        write("static pthread_mutex_t $label$_mutex = PTHREAD_MUTEX_INITIALIZER;")
+        write("static pthread_mutex_t $label$_mutex = " +
+              "PTHREAD_MUTEX_INITIALIZER;")
         write("static void *$label$_allocate(int count)")
         write("{")
         enter

@@ -36,12 +36,24 @@ private[gen] trait HDLGenerator extends Generator {
     }
 
     def getNextState(graph: IRGraph, label: Int): Int = {
-        val block = graph.block(label)
-        if (block.continuous) {
-            getNextState(graph, graph.links(block).head.label)
-        } else {
-            block.label
+
+        var visited = Set[Int]()
+
+        def next(l: Int): Int = {
+            if (visited.contains(l)) {
+                return 0
+            } else {
+                visited += l
+                val block = graph.block(l)
+                if (block.continuous) {
+                    return next(graph.links(block).head.label)
+                } else {
+                    return l
+                }
+            }
         }
+
+        return next(label)
     }
 
     def getTypeString(name: String, vt: ValueType): String = {

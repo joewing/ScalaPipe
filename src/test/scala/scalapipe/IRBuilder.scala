@@ -4,11 +4,11 @@ import scalapipe.dsl._
 import scala.collection.mutable.HashMap
 
 /** A simple DSL for generating IRGraphs to be used for testing. */
-private[scalapipe] class IRBuilder
-    extends KernelType(new ScalaPipe, "test",
-                       new SymbolTable(null),
-                       Platforms.HDL,
-                       false) {
+private[scalapipe] class IRBuilder extends KernelType(
+        new ScalaPipe, "test",
+        new SymbolTable(null),
+        Platforms.HDL
+    ) {
 
     private val blocks = new HashMap[Int, StateBlock]
     private var currentBlock: StateBlock = null

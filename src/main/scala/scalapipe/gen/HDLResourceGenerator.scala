@@ -1,4 +1,3 @@
-
 package scalapipe.gen
 
 import scalapipe._
@@ -74,25 +73,25 @@ private[scalapipe] abstract class HDLResourceGenerator(
             s.sourceKernel.device == device && s.destKernel.device == device
         }
 
-        write("module fpga" + id + "(")
+        write(s"module fpga$id(")
         enter
-        write("input wire clk,")
-        write("input wire rst")
+        write(s"input wire clk,")
+        write(s"input wire rst")
         for (i <- inStreams) {
             val index = i.index
             val width = i.valueType.bits
-            write(",")
-            write("input wire [" + (width - 1) + ":0] I" + index + "input,")
-            write("input wire I" + index + "write,")
-            write("output wire I" + index + "afull")
+            write(s",")
+            write(s"input wire [${width - 1}:0] I${index}input,")
+            write(s"input wire I${index}write,")
+            write(s"output wire I${index}afull")
         }
         for (o <- outStreams) {
             val index = o.index
             val width = o.valueType.bits
-            write(",")
-            write("output wire [" + (width - 1) + ":0] O" + index + "output,")
-            write("output wire O" + index + "avail,")
-            write("input wire O" + index + "read")
+            write(s",")
+            write(s"output wire [${width - 1}:0] O${index}output,")
+            write(s"output wire O${index}avail,")
+            write(s"input wire O${index}read")
         }
         if (tt.amCount > 0) {
             write(",")
@@ -419,4 +418,3 @@ private[scalapipe] abstract class HDLResourceGenerator(
     }
 
 }
-

@@ -233,4 +233,3 @@ object Maze {
     }
 
 }
-

@@ -25,11 +25,11 @@ private[gen] abstract class HDLNodeEmitter(
     }
 
     private def emitBegin(block: StateBlock) {
-        write("if (state == " + block.label + ") begin")
+        write(s"if (state == ${block.label}) begin")
         enter
         beginScope
         checkPorts(block)
-        write("if (guard_" + block.label + ") begin")
+        write(s"if (guard_${block.label}) begin")
         enter
     }
 
@@ -526,29 +526,32 @@ private[gen] abstract class HDLNodeEmitter(
         val testStr = emitSymbol(node.test)
         node.targets.foreach { case (s, b) =>
             if (s == null) {
-                write("state <= " + getNextState(graph, b) + ";")
+                val next = getNextState(graph, b)
+                write(s"state <= $next;")
             }
         }
         node.targets.foreach { case (s, b) =>
             if (s != null) {
                 val condStr = emitSymbol(s)
                 val next = getNextState(graph, b)
-                write("if (" + testStr + " == " + condStr + ") begin")
+                write(s"if ($testStr == $condStr) begin")
                 enter
-                write("state <= " + next + ";")
+                write(s"state <= $next;")
                 leave
-                write("end")
+                write(s"end")
             }
         }
     }
 
     private def emitStart(block: StateBlock, node: IRStart) {
-        write("state <= " + getNextState(graph, node.next) + ";")
+        val next = getNextState(graph, node.next)
+        write(s"state <= $next;")
     }
 
     private def emitGoto(block: StateBlock, node: IRGoto) {
         if (!block.continuous) {
-            write("state <= " + getNextState(graph, node.next) + ";")
+            val next = getNextState(graph, node.next)
+            write(s"state <= $next;")
         }
     }
 
@@ -558,7 +561,7 @@ private[gen] abstract class HDLNodeEmitter(
         val state = block.label
         val args = node.args.map(emitSymbol)
         val result = moduleEmitter.create(node.func, width, state, args)
-        write(dest + " <= " + result + ";")
+        write(s"$dest <= $result;")
     }
 
     private def emitPhi(block: StateBlock, node: IRPhi) {
@@ -581,7 +584,7 @@ private[gen] abstract class HDLNodeEmitter(
             emitBegin(block)
         }
         block.nodes.foreach { node =>
-            write("// " + node)
+            write(s"// $node")
             node match {
                 case inode: IRInstruction   => emitInstruction(block, inode)
                 case ld:    IRLoad          => emitLoad(block, ld)
@@ -595,7 +598,7 @@ private[gen] abstract class HDLNodeEmitter(
                 case snode: IRStart         => emitStart(block, snode)
                 case cnode: IRCall          => emitCall(block, cnode)
                 case phi:   IRPhi           => emitPhi(block, phi)
-                case _ => sys.error("internal: " + node)
+                case _ => sys.error("internal: $node")
             }
         }
         if (block.label > 0) {
@@ -612,4 +615,3 @@ private[gen] abstract class HDLNodeEmitter(
     }
 
 }
-
