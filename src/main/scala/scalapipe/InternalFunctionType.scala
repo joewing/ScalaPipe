@@ -12,10 +12,16 @@ private[scalapipe] class InternalFunctionType(
         p: Platforms.Value
     ) extends InternalKernelType(sp, func, p) {
 
-    private[scalapipe] def returnType = outputs.size match {
+    // Infer the return type if unspecified.
+    if (outputs.size == 1 && outputs.head.valueType == ValueType.any) {
+        inferReturnType
+    }
+
+    private[scalapipe] val returnType = outputs.size match {
         case 0 => ValueType.void
         case 1 => outputs.head.valueType
-        case _ => sys.error("internal")
+        case _ => Error.raise("multiple outputs not allowed for a Func",
+                              expression); ValueType.any
     }
 
     protected override def getGenerator: KernelGenerator = platform match {
@@ -24,5 +30,32 @@ private[scalapipe] class InternalFunctionType(
         case Platforms.HDL      => new HDLFunctionGenerator(this)
         case _                  => sys.error("internal")
     }
+
+    private def inferReturnType {
+
+        def getReturnTypes(node: ASTNode): Set[ValueType] = {
+            node match {
+                case rn: ASTReturnNode => Set(rn.a.valueType)
+                case _ =>
+                    val start = Set[ValueType]()
+                    node.children.foldLeft(start) { (a, c) =>
+                        a ++ getReturnTypes(c)
+                    }
+            }
+        }
+
+        val returnTypes = getReturnTypes(expression)
+        if (!returnTypes.isEmpty) {
+            val valueType = returnTypes.reduce { (a, b) =>
+                TypeChecker.widestType(a, b)
+            }
+            symbols.setOutputType(valueType)
+            val name = func.outputs.head.name
+            func.outputs.clear
+            func.outputs += new KernelOutput(name, valueType)
+        }
+
+    }
+
 
 }

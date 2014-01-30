@@ -16,6 +16,11 @@ private[scalapipe] object TypeChecker {
         ValueType.float96
     )
 
+    def getType(kt: KernelType, root: ASTNode): ValueType = {
+        val checker = new TypeChecker(kt)
+        checker.getType(root)
+    }
+
     def check(kt: KernelType, root: ASTNode): ASTNode = {
         val checker = new TypeChecker(kt)
         checker.check(root, false)

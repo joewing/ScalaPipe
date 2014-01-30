@@ -8,7 +8,6 @@ object FunctionTest {
     val Func1 = new Func("Func1") {
         val x0 = input(SIGNED32)
         val x1 = input(SIGNED32)
-        returns(SIGNED32)
         ret(x0 + x1)
     }
 

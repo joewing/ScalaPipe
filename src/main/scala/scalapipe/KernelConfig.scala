@@ -1,13 +1,7 @@
 package scalapipe
 
-import scalapipe.dsl.Type
-
 private[scalapipe] class KernelConfig(
         val name: String,
-        val t: Type,
+        val valueType: ValueType,
         val default: Any
-    ) {
-
-    def valueType = t.create
-
-}
+    )

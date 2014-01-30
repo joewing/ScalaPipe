@@ -33,29 +33,25 @@ class Kernel(val name: String) extends EmbeddedControls {
         !externals.contains(p)
     }
 
-    private def getLabel: String = labelCounter.next()
-
-    def inputType(i: Int): Type = inputs(i).t
-
-    def outputType(i: Int): Type = outputs(i).t
+    private[dsl] def getLabel: String = labelCounter.next()
 
     def output(t: Type, n: Symbol = null): Variable = {
         val label = if (n != null) n.name else getLabel
         val node = new Variable(label, this)
-        outputs += new KernelOutput(label, t)
+        outputs += new KernelOutput(label, t.create())
         node
     }
 
     def input(t: Type, n: Symbol = null): Variable = {
         val label = if (n != null) n.name else getLabel
         val node = new Variable(label, this)
-        inputs += new KernelInput(label, t)
+        inputs += new KernelInput(label, t.create())
         node
     }
 
     def config(t: Type, n: Symbol, v: Any = null): Variable = {
         val node = new Variable(n.name, this)
-        configs += new KernelConfig(n.name, t, v)
+        configs += new KernelConfig(n.name, t.create(), v)
         node
     }
 

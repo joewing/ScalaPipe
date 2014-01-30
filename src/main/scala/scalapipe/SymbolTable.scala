@@ -7,6 +7,7 @@ private[scalapipe] class SymbolTable(kernel: Kernel) {
 
     private var symbols = Map[String, BaseSymbol]()
     private var freeTemps = Set[TempSymbol]()
+
     private[scalapipe] val inputs = new ListBuffer[InputSymbol]
     private[scalapipe] val outputs = new ListBuffer[OutputSymbol]
     private[scalapipe] val configs = new ListBuffer[ConfigSymbol]
@@ -41,6 +42,14 @@ private[scalapipe] class SymbolTable(kernel: Kernel) {
     def addOutput(name: String, vt: ValueType) {
         val s = new OutputSymbol(name, vt, outputs.size)
         add(s)
+        outputs += s
+    }
+
+    def setOutputType(vt: ValueType) {
+        val name = outputs.head.name
+        val s = new OutputSymbol(name, vt, 0)
+        outputs.clear
+        symbols += (name -> s)
         outputs += s
     }
 
@@ -145,4 +154,3 @@ private[scalapipe] class SymbolTable(kernel: Kernel) {
     }
 
 }
-
