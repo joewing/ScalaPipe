@@ -116,6 +116,7 @@ private[scalapipe] class ScalaPipe {
 
     private def insertEdges {
 
+        val anyName = ANY_KERNEL.name
         for (e <- edges) {
             val fromKernel = e.fromKernel.name
             val toKernel = e.toKernel.name
@@ -123,8 +124,8 @@ private[scalapipe] class ScalaPipe {
                 for (s <- i.getOutputs) {
                     val sname = s.sourceKernel.name
                     val dname = s.destKernel.name
-                    if ((sname == fromKernel || fromKernel == ANY_KERNEL) &&
-                        (dname == toKernel || toKernel == ANY_KERNEL)) {
+                    if ((sname == fromKernel || fromKernel == anyName) &&
+                        (dname == toKernel || toKernel == anyName)) {
                         s.setEdge(e.edge)
                     }
                 }
@@ -136,6 +137,7 @@ private[scalapipe] class ScalaPipe {
     private def insertMeasures {
 
         // Insert measures specified using edge aspects.
+        val anyName = ANY_KERNEL.name
         for (m <- measures) {
             val fromKernel = m.fromKernel.name
             val toKernel = m.toKernel.name
@@ -145,8 +147,8 @@ private[scalapipe] class ScalaPipe {
                 for (s <- i.getOutputs) {
                     val sname = s.sourceKernel.name
                     val dname = s.destKernel.name
-                    if ((sname == fromKernel || fromKernel == ANY_KERNEL) &&
-                        (dname == toKernel || toKernel == ANY_KERNEL)) {
+                    if ((sname == fromKernel || fromKernel == anyName) &&
+                        (dname == toKernel || toKernel == anyName)) {
                         s.addMeasure(stat, metric)
                     }
                 }
