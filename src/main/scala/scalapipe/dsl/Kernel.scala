@@ -60,10 +60,14 @@ class Kernel(val name: String) extends EmbeddedControls {
     }
 
     def external(platform: String, file: String = name) {
-        if (!Platforms.values.exists( p => p.toString == platform)) {
-            Error.raise("invalid platform: " + platform)
+        if (platform.equals("all")) {
+            externals ++= Platforms.values
+        } else {
+            if (!Platforms.values.exists( p => p.toString == platform)) {
+                Error.raise("invalid platform: " + platform)
+            }
+            externals += Platforms.withName(platform)
         }
-        externals += Platforms.withName(platform)
     }
 
     def local(t: Type, v: Any = null): Variable = {
