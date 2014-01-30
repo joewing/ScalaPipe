@@ -224,7 +224,6 @@ object NBody {
 
         }
 
-        val Loop = new AutoPipeLoopBack(PARTICLE)
 
         val Buffer = new Kernel("Buffer") {
 
@@ -457,8 +456,9 @@ object NBody {
 
         val app = new Application {
 
+            val cycle = Cycle(PARTICLE)
             val source = Source()
-            val buffer = Buffer(source(0), Loop.output())
+            val buffer = Buffer(source(0), cycle)
             val stream = Streamer(buffer(0))
 
             val oldParticle = Dup(stream(0))
@@ -467,7 +467,7 @@ object NBody {
             val updated = Dup(newParticle)
 
             Print(updated(0))
-            Loop.input(updated(1))
+            cycle(updated(1))
 
             if (hw) {
                 map(ANY_KERNEL -> Force, CPU2FPGA());

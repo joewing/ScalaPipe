@@ -6,8 +6,7 @@ private[scalapipe] abstract class KernelType(
         val sp: ScalaPipe,
         val name: String,
         val symbols: SymbolTable,
-        val platform: Platforms.Value,
-        val loopBack: Boolean
+        val platform: Platforms.Value
     ) {
 
     private[scalapipe] val configs = symbols.configs
@@ -20,7 +19,7 @@ private[scalapipe] abstract class KernelType(
     private[scalapipe] val outputs = symbols.outputs
 
     def this(sp: ScalaPipe, kernel: Kernel, p: Platforms.Value) = {
-        this(sp, kernel.name, new SymbolTable(kernel), p, kernel.loopBack)
+        this(sp, kernel.name, new SymbolTable(kernel), p)
         kernel.inputs.foreach { i =>
             symbols.addInput(i.name, i.valueType)
         }

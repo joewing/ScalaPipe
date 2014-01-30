@@ -15,7 +15,6 @@ class Kernel(val name: String) extends EmbeddedControls {
     private[scalapipe] val externals = new ListBuffer[Platforms.Value]
     private[scalapipe] val dependencies = new DependencySet
     private[scalapipe] val scopeStack = new ListBuffer[scalapipe.Scope]
-    private[scalapipe] var loopBack = false
 
     def this() = this(LabelMaker.getKernelLabel)
 
@@ -32,10 +31,6 @@ class Kernel(val name: String) extends EmbeddedControls {
 
     private[scalapipe] def isInternal(p: Platforms.Value): Boolean = {
         !externals.contains(p)
-    }
-
-    private[scalapipe] def setLoopBack {
-        super.__assign(loopBack, true)
     }
 
     private def getLabel: String = labelCounter.next()

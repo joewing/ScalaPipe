@@ -296,17 +296,16 @@ object Cluster {
 
         }
 
-        val Loop = new AutoPipeLoopBack(ClusterType)
-
         val Cluster = new Application {
-            val csrc = ClusterSource(Loop.output())
+            val loop = Cycle(ClusterType)
+            val csrc = ClusterSource(loop)
             val bmp = BMPReader('file -> "in.bmp")
             val vsrc = ValueSource(bmp(0), bmp(1), bmp(2))
             val assignments = Assign(vsrc(0), vsrc(1), vsrc(2), csrc(0))
             val updated = UpdateClusters(assignments(0), assignments(1),
                                          assignments(2), assignments(3))
             val out = Output(updated(0), assignments(4), updated(1), updated(2))
-            Loop.input(out(0))
+            loop(out(0))
             BMPWriter(out(1), out(2), out(3), 'file -> "out.bmp")
         }
         Cluster.emit("cluster")

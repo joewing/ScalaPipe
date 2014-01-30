@@ -286,9 +286,6 @@ object Simplex extends App {
 
     }
 
-    // Loop-back kernel.
-    val Loop = AutoPipeLoopBack(VALUE_TYPE)
-
     // Output the result.
     // This will terminate the program when a solution is found.
     val Output = new Kernel("Output") {
@@ -334,7 +331,8 @@ object Simplex extends App {
         map(Parser -> ANY_KERNEL, CPU2FPGA())
         map(ANY_KERNEL -> Output, FPGA2CPU())
 
-        val stream = Streamer(Parser(), Loop.output())
+        val cycle = Cycle(VALUE_TYPE)
+        val stream = Streamer(Parser(), cycle)
         val split = ArraySplitter(stream(0))
         val pivot = PivotSelect(stream(1))
         val prow = DupValues(pivot(0))
@@ -346,7 +344,7 @@ object Simplex extends App {
                                           pindex(i), column(i), 'index -> i)
             RowBuffer(row)
         }
-        Loop.input(ArrayBuilder(rows))
+        cycle(ArrayBuilder(rows))
         Output(stream(2))
     }
     app.emit("simplex")

@@ -49,6 +49,8 @@ class Application {
 
     implicit def streamList2Stream(sl: StreamList) = sl.apply()
 
+    implicit def cycle2Arg(cycle: Cycle) = (null, cycle.output(sp))
+
     implicit def objToEdge[T <: Edge](e: EdgeObject[T]): T = e.apply()
 
     def measure(streamList: StreamList, stat: Symbol, metric: Symbol) {
