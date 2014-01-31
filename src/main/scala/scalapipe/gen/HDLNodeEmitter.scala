@@ -365,7 +365,8 @@ private[gen] abstract class HDLNodeEmitter(
             val updateBuilder = new Generator
             updateBuilder.write(s"if (ram_ready && " +
                                 s"!ram_re && " +
-                                s"state == last_state) begin")
+                                s"state == last_state && " +
+                                s"ram_state != $wordCount) begin")
             updateBuilder.enter
             if (bits > ramWidth) {
                 // Multi-word load.
@@ -383,7 +384,7 @@ private[gen] abstract class HDLNodeEmitter(
                 updateBuilder.write(s"endcase")
                 updateBuilder.write(s"ram_addr <= ram_addr + 1;")
                 updateBuilder.write(s"ram_state <= ram_state + 1;")
-                updateBuilder.write(s"ram_re <= ram_state < ${wordCount - 1};")
+                updateBuilder.write(s"ram_re <= 1;")
             } else if (bits == ramWidth) {
                 // Single-word load.
                 updateBuilder.write(s"$dest <= ram_out;")
@@ -461,12 +462,12 @@ private[gen] abstract class HDLNodeEmitter(
             addGuard(block, "!ram_we")
             addGuard(block, "(state == last_state)")
             if (bits > ramWidth) {
-                addGuard(block, s"(ram_state == ${wordCount - 1})")
+                addGuard(block, s"(ram_state == $wordCount)")
             }
 
             // Emit the code to run for the first word of the store.
             val initBuilder = new Generator
-            initBuilder.write(s"ram_state <= 0;")
+            initBuilder.write(s"ram_state <= 1;")
             initBuilder.write(s"ram_addr <= $start + ($offset >> $wordShift);")
             initBuilder.write(s"ram_we <= 1;")
             if (bits > ramWidth) {
@@ -508,7 +509,7 @@ private[gen] abstract class HDLNodeEmitter(
                 updateBuilder.write(s"if (ram_ready" +
                                     s" && !ram_we" +
                                     s" && state == last_state" +
-                                    s" && ram_state < ${wordCount - 1}) begin")
+                                    s" && ram_state != $wordCount) begin")
                 updateBuilder.enter
                 updateBuilder.write(s"ram_we <= 1;")
                 updateBuilder.write(s"ram_addr <= ram_addr + 1;")
