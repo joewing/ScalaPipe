@@ -21,6 +21,10 @@ private[opt] object StrengthReduction extends Pass {
 
     }
 
+    private def isPower2(im: ImmediateSymbol): Boolean = {
+        (im.value.long & (im.value.long - 1)) == 0
+    }
+
     // Sort arguments so the first argument is the immediate
     // if one of the arguments is an immediate.
     // Note that both arguments shouldn't be immediates due
@@ -218,8 +222,27 @@ private[opt] object StrengthReduction extends Pass {
     private def reduceDiv(node: IRInstruction): IRInstruction = {
         node.dest.valueType match {
             case it: IntegerValueType => reduceIntDiv(node)
-            case ft: FixedValueType => null // FIXME
-            case ft: FloatValueType => null // FIXME
+            case ft: FixedValueType => null // TODO
+            case ft: FloatValueType => null // TODO
+            case _ => null
+        }
+    }
+
+    private def reduceIntMod(node: IRInstruction): IRInstruction = {
+        node.srcb match {
+            case im: ImmediateSymbol if isPower2(im) =>
+                val lit = IntLiteral(im.valueType, im.value.long - 1, null)
+                val sym = new ImmediateSymbol(lit)
+                new IRInstruction(NodeType.and, node.dest, node.srca, sym)
+            case _ => null
+        }
+    }
+
+    // Attempt to get a better modulus.
+    private def reduceMod(node: IRInstruction): IRInstruction = {
+        node.dest.valueType match {
+            case it: IntegerValueType => reduceIntMod(node)
+            case ft: FixedValueType => null // TODO
             case _ => null
         }
     }
@@ -230,6 +253,7 @@ private[opt] object StrengthReduction extends Pass {
         case NodeType.sub => reduceSub(node)
         case NodeType.mul => reduceMul(node)
         case NodeType.div => reduceDiv(node)
+        case NodeType.mod => reduceMod(node)
         case _ => null
     }
 
