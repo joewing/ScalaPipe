@@ -148,15 +148,26 @@ private[scalapipe] abstract class RecordValueType(
 
     def fieldTypes: Seq[ValueType] = fields.map(_._2)
 
-    def fieldType(name: String): ValueType = fields.find(_._1 == name) match {
-        case Some(f)    => f._2
-        case None       =>
-            Error.raise(s"field not found: $name")
-            ValueType.void
+    protected def fieldName(node: ASTNode): Option[String] = node match {
+        case sl: SymbolLiteral if fieldNames.contains(sl.symbol) =>
+            Some(sl.symbol)
+        case sl: SymbolLiteral =>
+            Error.raise(s"invalid field: ${sl.symbol}", node)
+            None
+        case _ =>
+            Error.raise(s"invalid field specifier", node)
+            None
+    }
+
+    def fieldType(node: ASTNode): ValueType = {
+        fieldName(node) match {
+            case Some(name) => fields.find(_._1 == name).get._2
+            case None       => ValueType.void
+        }
     }
 
     /** Get the byte offset of a field. */
-    def offset(name: String): Int
+    def offset(node: ASTNode): Int
 
     override def pure = fieldTypes.forall(_.pure)
 
@@ -171,7 +182,7 @@ private object StructValueType {
 
     // Pad an offset for proper alignment.
     def pad(offset: Int, vt: ValueType): Int = {
-        val align = math.min(alignment, vt.bytes)
+        val align = math.max(math.min(alignment, vt.bytes), 1)
         val left = offset % align
         if (left > 0) {
             offset + alignment - left
@@ -200,12 +211,14 @@ private[scalapipe] class StructValueType(
             (k.name, v.create())
         }
 
-    def offset(name: String): Int = {
-        val ftype = fieldType(name)
-        val skip = fields.takeWhile(_._1 != name).foldLeft(0) { (t, f) =>
-            StructValueType.pad(t, f._2) + f._2.bytes
-        }
-        return StructValueType.pad(skip, ftype)
+    def offset(node: ASTNode): Int = fieldName(node) match {
+        case Some(name) =>
+            val skip = fields.takeWhile(_._1 != name).foldLeft(0) { (t, f) =>
+                StructValueType.pad(t, f._2) + f._2.bytes
+            }
+            return StructValueType.pad(skip, fieldType(node))
+        case None =>
+            return 0
     }
 
 }
@@ -233,7 +246,7 @@ private[scalapipe] class UnionValueType(
             (k.name, v.create())
         }
 
-    def offset(name: String): Int = 0
+    def offset(node: ASTNode): Int = 0
 
 }
 

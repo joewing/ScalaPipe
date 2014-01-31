@@ -144,19 +144,15 @@ private[scalapipe] case class IRNodeEmitter(
     private def emitOffset(vt: ValueType,
                            base: Option[BaseSymbol],
                            comp: ASTNode): (Option[BaseSymbol], ValueType) = {
-        val sym: String = comp match {
-            case sl: SymbolLiteral  => sl.symbol
-            case _                  => null
-        }
         val nvt = vt match {
             case at: ArrayValueType     => at.itemType
-            case rt: RecordValueType    => rt.fieldType(sym)
+            case rt: RecordValueType    => rt.fieldType(comp)
             case nt: NativeValueType    => ValueType.any
             case _                      => ValueType.void
         }
 
         val expr: BaseSymbol = vt match {
-            case rt: RecordValueType    => emitS32(rt.offset(sym))
+            case rt: RecordValueType    => emitS32(rt.offset(comp))
             case at: ArrayValueType     =>
                 val multiplier = emitS32(at.itemType.bytes)
                 val temp = emitMul(comp, multiplier, emitExpr(comp))

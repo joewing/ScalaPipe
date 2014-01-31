@@ -12,18 +12,13 @@ private[scalapipe] class CFunctionNodeEmitter(
     private def emitComponent(base: String,
                               vt: ValueType,
                               comp: ASTNode): (String, ValueType) = {
-        val sym: String = comp match {
-            case sl: SymbolLiteral  => sl.symbol
-            case _                  => null
-        }
-        val expr = if (sym != null) {
-            "." + comp
-        } else {
-            "[" + emitExpr(comp) + "]"
+        val expr = comp match {
+            case sl: SymbolLiteral  => "." + comp
+            case _                  => "[" + emitExpr(comp) + "]"
         }
         val nvt = vt match {
             case at: ArrayValueType     => at.itemType
-            case rt: RecordValueType    => rt.fieldType(sym)
+            case rt: RecordValueType    => rt.fieldType(comp)
             case nt: NativeValueType    => ValueType.any
             case _                      => ValueType.void
         }

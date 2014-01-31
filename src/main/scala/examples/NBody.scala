@@ -24,7 +24,12 @@ object NBody {
             field('vy, VTYPE)
             field('vz, VTYPE)
         }
-        val POINT = new Vector(VTYPE, 4)        // x, y, z, command
+        val POINT = new Struct {
+            field('x, VTYPE)
+            field('y, VTYPE)
+            field('z, VTYPE)
+            field('mass, VTYPE)
+        }
 
         val gravity = 0.0000000000667428
 
@@ -51,23 +56,23 @@ object NBody {
 
             // If the mass of the other particle is less than zero, we
             // start processing a new particle.
-            if (other(3) < 0) {
+            if (other('mass) < 0) {
                 p = pin
                 out = other
-                forces(3) = 0
+                forces('mass) = 0
             } else {
-                if (other(0) <> p('x) ||
-                    other(1) <> p('y) ||
-                    other(2) <> p('z)) {
+                if (other('x) <> p('x) ||
+                    other('y) <> p('y) ||
+                    other('z) <> p('z)) {
 
-                    dx = other(0) - p('x)
-                    dy = other(1) - p('y)
-                    dz = other(2) - p('z)
+                    dx = other('x) - p('x)
+                    dy = other('y) - p('y)
+                    dz = other('z) - p('z)
                     rsq = dx * dx + dy * dy + dz * dz
-                    mult = (gravity * other(3)) / (rsq * sqrt(rsq))
-                    forces(0) = dx * mult
-                    forces(1) = dy * mult
-                    forces(2) = dz * mult
+                    mult = (gravity * other('mass)) / (rsq * sqrt(rsq))
+                    forces('x) = dx * mult
+                    forces('y) = dy * mult
+                    forces('z) = dz * mult
                     out = forces
                 }
             }
@@ -88,18 +93,18 @@ object NBody {
             val count   = local(UNSIGNED32, 0)
 
             f = fin
-            if (f(3) < 0) {
+            if (f('mass) < 0) {
                 if (count > 0) {
                     fout = sum
                 }
-                sum(0) = 0
-                sum(1) = 0
-                sum(2) = 0
+                sum('x) = 0
+                sum('y) = 0
+                sum('z) = 0
                 count = 0
             } else {
-                sum(0) += f(0)
-                sum(1) += f(1)
-                sum(2) += f(2)
+                sum('x) += f('x)
+                sum('y) += f('y)
+                sum('z) += f('z)
                 count += 1
             }
 
@@ -129,9 +134,9 @@ object NBody {
                 p('z) += p('vz)
 
                 // Update velocity.
-                p('vx) += f(0)
-                p('vy) += f(1)
-                p('vz) += f(2)
+                p('vx) += f('x)
+                p('vy) += f('y)
+                p('vz) += f('z)
 
                 pout = p
 
@@ -258,22 +263,22 @@ object NBody {
                 }
             } else {
                 if (i == 0) {
-                    other(3) = -1
+                    other('mass) = -1
                     oout = other
                     pout = particles(j)
                     j += 1;
                 }
                 temp = particles(i)
-                other(0) = temp('x)
-                other(1) = temp('y)
-                other(2) = temp('z)
-                other(3) = temp('mass)
+                other('x) = temp('x)
+                other('y) = temp('y)
+                other('z) = temp('z)
+                other('mass) = temp('mass)
                 oout = other
                 i += 1
                 if (i == count) {
                     i = 0
                     if (j == count) {
-                        other(3) = -1
+                        other('mass) = -1
                         oout = other
                         temp('mass) = -1
                         pout = temp

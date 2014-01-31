@@ -4,19 +4,25 @@ import scalapipe.dsl.Kernel
 
 private[scalapipe] object Error {
 
-    private[scalapipe] var errorCount = 0
-    private[scalapipe] var warnCount = 0
+    private var errorContexts = Set[String]()
+    private[scalapipe] def errorCount = errorContexts.size
 
-    def raise(msg: String): String = {
-        errorCount += 1
-        println("ERROR: " + msg)
-        "<error " + msg + ">"
+    private var warnContexts = Set[String]()
+    private[scalapipe] def warnCount = warnContexts.size
+
+    def raise(msg: String, prefix: String = ""): String = {
+        val context = if (prefix.isEmpty) msg else prefix
+        if (!errorContexts.contains(context)) {
+            errorContexts += context
+            println(s"ERROR: $prefix$msg")
+        }
+        s"<error $prefix$msg>"
     }
 
     def raise(msg: String, info: DebugInfo): String = {
         if (info != null) {
-            val prefix = info.fileName + "[" + info.lineNumber + "]: "
-            raise(prefix + msg)
+            val prefix = s"${info.fileName}[${info.lineNumber}]: "
+            raise(msg, prefix)
         } else {
             raise(msg)
         }
@@ -43,11 +49,12 @@ private[scalapipe] object Error {
     }
 
     def warn(msg: String) {
-        warnCount += 1
-        println("WARN: " + msg)
+        warnContexts += msg
+        println(s"WARN: $msg")
     }
 
     def exit {
+        println(s"$errorCount errors, $warnCount warnings")
         if (errorCount > 0) {
             sys.exit(-1)
         } else {

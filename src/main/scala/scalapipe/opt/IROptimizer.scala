@@ -10,7 +10,13 @@ private[scalapipe] case class IROptimizer(
     private val parameters = kt.parameters
 
     def optimize(graph: IRGraph): IRGraph = {
-        println("Optimizing " + kt.name)
+
+        // Don't waste time optimizing if there were errors.
+        if (Error.errorCount > 0) {
+            return graph
+        }
+
+        println(s"Optimizing ${kt.name}")
         val initialStateCount = countStates(graph)
         val initialVarCount = kt.states.size + kt.temps.size
 
