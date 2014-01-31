@@ -304,20 +304,29 @@ private[gen] abstract class HDLNodeEmitter(
             val maxOffset = node.src.valueType.bytes -
                             node.dest.valueType.bytes
             val builder = new Generator
-            builder.write(s"case ($offset)")
-            builder.enter
-            for (i <- 0 to maxOffset) {
-                val bottom = i * 8
+            if (maxOffset == 0) {
+                builder.write(s"$dest <= $src;")
+            } else if (node.offset.isInstanceOf[ImmediateSymbol]) {
+                val im = node.offset.asInstanceOf[ImmediateSymbol]
+                val bottom = im.value.long * 8
                 val top = bottom + node.dest.valueType.bits - 1
-                builder.write(s"$i: $dest <= $src[$top:$bottom];")
-            }
-            builder.write(s"default: $dest <= 0;")
-            builder.leave
-            builder.write(s"endcase")
-            if (block.continuous) {
-                moduleEmitter.addAssignment(builder.getOutput)
+                write(s"$dest <= $src[$top:$bottom];")
             } else {
-                write(builder)
+                builder.write(s"case ($offset)")
+                builder.enter
+                for (i <- 0 to maxOffset) {
+                    val bottom = i * 8
+                    val top = bottom + node.dest.valueType.bits - 1
+                    builder.write(s"$i: $dest <= $src[$top:$bottom];")
+                }
+                builder.write(s"default: $dest <= 0;")
+                builder.leave
+                builder.write(s"endcase")
+                if (block.continuous) {
+                    moduleEmitter.addAssignment(builder.getOutput)
+                } else {
+                    write(builder)
+                }
             }
 
         } else {
@@ -409,15 +418,24 @@ private[gen] abstract class HDLNodeEmitter(
             val maxOffset = node.dest.valueType.bytes -
                             node.src.valueType.bytes
             val builder = new Generator
-            builder.write(s"case ($offset)")
-            builder.enter
-            for (i <- 0 to maxOffset) {
-                val bottom = i * 8
+            if (maxOffset == 0) {
+                builder.write(s"$dest <= $src;")
+            } else if (node.offset.isInstanceOf[ImmediateSymbol]) {
+                val im = node.offset.asInstanceOf[ImmediateSymbol]
+                val bottom = im.value.long * 8
                 val top = bottom + node.src.valueType.bits - 1
-                builder.write(s"$i: $dest[$top:$bottom] <= $src;")
+                builder.write(s"$dest[$top:$bottom] <= $src;")
+            } else {
+                builder.write(s"case ($offset)")
+                builder.enter
+                for (i <- 0 to maxOffset) {
+                    val bottom = i * 8
+                    val top = bottom + node.src.valueType.bits - 1
+                    builder.write(s"$i: $dest[$top:$bottom] <= $src;")
+                }
+                builder.leave
+                builder.write(s"endcase")
             }
-            builder.leave
-            builder.write(s"endcase")
             if (block.continuous) {
                 moduleEmitter.addAssignment(builder.getOutput)
             } else {
