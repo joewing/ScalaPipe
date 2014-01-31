@@ -9,7 +9,7 @@ private[scalapipe] class SmartFusionEdgeGenerator(
     ) extends EdgeGenerator(Platforms.HDL) {
 
     override def emitCommon() {
-        write("#include <sys/ioctl.h>")
+        write(s"#include <sys/ioctl.h>")
     }
 
     override def emitGlobals(streams: Traversable[Stream]) {
@@ -20,12 +20,12 @@ private[scalapipe] class SmartFusionEdgeGenerator(
         for (d <- devices) {
 
             val fd = d.label + "_fd"
-            write("static int " + fd + " = -1;")
+            write(s"static int $fd = -1;")
 
             val senderStreams = getSenderStreams(d, streams)
             val receiverStreams = getReceiverStreams(d, streams)
             for (stream <- senderStreams ++ receiverStreams) {
-                write("static APQ *q_" + stream.label + " = NULL;")
+                write(s"static APQ *q_${stream.label} = NULL;")
             }
 
         }
@@ -67,23 +67,22 @@ private[scalapipe] class SmartFusionEdgeGenerator(
 
         // Open the device.
         val fd = device.label + "_fd"
-        write(fd + " = open(\"/dev/sp\", O_RDWR);")
-        write("if(" + fd + " < 0) {")
+        write(s"""$fd = open(\"/dev/sp\", O_RDWR);""")
+        write(s"if($fd < 0) {")
         enter
         write("perror(\"could not open /dev/sp\");")
         write("exit(-1);")
         leave
-        write("}")
+        write(s"}")
 
         // Create buffers.
         for (stream <- senderStreams ++ receiverStreams) {
             val depth = stream.depth
             val valueType = stream.valueType
-            val queueName = "q_" + stream.label
-            write(queueName + " = (APQ*)malloc(APQ_GetSize(" + depth +
-                    ", sizeof(" + valueType + ")));")
-            write("APQ_Initialize(" + queueName + ", " + depth +
-                    ", sizeof(" + valueType + "));")
+            val queueName = s"q_${stream.label}"
+            write(s"$queueName = (APQ*)malloc(APQ_GetSize($depth" +
+                  s", sizeof($valueType)));")
+            write(s"APQ_Initialize($queueName, $depth, sizeof($valueType));")
         }
 
     }
@@ -91,17 +90,17 @@ private[scalapipe] class SmartFusionEdgeGenerator(
     private def writeDestroy(device: Device, streams: Traversable[Stream]) {
 
         val fd = device.label + "_fd"
-        write("close(" + fd + ");")
+        write(s"close($fd);")
 
         for (s <- streams) {
             val queueName = "q_" + s.label
-            write("free(" + queueName + ");")
+            write(s"free($queueName);")
         }
 
     }
 
     private def writeSendFunctions(device: Device,
-                                             streams: Traversable[Stream]) {
+                                   streams: Traversable[Stream]) {
 
         val fd = device.label + "_fd"
 
@@ -112,51 +111,51 @@ private[scalapipe] class SmartFusionEdgeGenerator(
             val valueType = stream.valueType
 
             // "get_free"
-            write("static int " + stream.label + "_get_free()")
-            write("{")
+            write(s"static int ${stream.label}_get_free()")
+            write(s"{")
             enter
-            write("return APQ_GetFree(" + queueName + ");")
+            write(s"return APQ_GetFree($queueName);")
             leave
-            write("}")
+            write(s"}")
 
             // "is_empty"
-            write("static int " + stream.label + "_is_empty()")
-            write("{")
+            write(s"static int ${stream.label}_is_empty()")
+            write(s"{")
             enter
-            write("return APQ_IsEmpty(" + queueName + ");")
+            write(s"return APQ_IsEmpty($queueName);")
             leave
-            write("}")
+            write(s"}")
 
             // "allocate"
-            write("static void *" + stream.label + "_allocate(int count)")
-            write("{")
+            write(s"static void *${stream.label}_allocate(int count)")
+            write(s"{")
             enter
-            write("return APQ_StartWrite(" + queueName + ", count);")
+            write(s"return APQ_StartWrite($queueName, count);")
             leave
-            write("}")
+            write(s"}")
 
             // "send"
-            write("static void " + stream.label + "_send(int count)")
-            write("{")
+            write(s"static void ${stream.label}_send(int count)")
+            write(s"{")
             enter
-            write("APQ_FinishWrite(" + queueName + ", count);")
-            write("char *data;")
-            write("uint32_t c = APQ_StartRead(" + queueName + ", &data);")
-            write("const ssize_t sz = (sizeof(" + valueType + ") + 3) & ~3;")
-            write("ioctl(" + fd + ", 0, " + stream.index + ");")
-            write("for(uint32_t i = 0; i < c * sz; i += sz) {");
+            write(s"APQ_FinishWrite($queueName, count);")
+            write(s"char *data;")
+            write(s"uint32_t c = APQ_StartRead($queueName, &data);")
+            write(s"const ssize_t sz = (sizeof($valueType) + 3) & ~3;")
+            write(s"ioctl($fd, 0, ${stream.index});")
+            write(s"for(uint32_t i = 0; i < c * sz; i += sz) {");
             enter
-            write("ssize_t offset = 0;")
-            write("while(offset < sz) {")
+            write(s"ssize_t offset = 0;")
+            write(s"while(offset < sz) {")
             enter
-            write("offset += write(" + fd + ", &data[i + offset], sz - offset);")
+            write(s"offset += write($fd, &data[i + offset], sz - offset);")
             leave
-            write("}")
+            write(s"}")
             leave
-            write("}")
-            write("APQ_FinishRead(" + queueName + ", c);")
+            write(s"}")
+            write(s"APQ_FinishRead($queueName, c);")
             leave
-            write("}")
+            write(s"}")
 
         }
 
@@ -174,88 +173,82 @@ private[scalapipe] class SmartFusionEdgeGenerator(
             val valueType = stream.valueType
             val destKernel = stream.destKernel
             val destIndex = stream.destIndex
-
-            reset
-            set("fd", fd)
-            set("index", stream.index)
-            set("label", stream.label)
-            set("queueName", queueName)
-            set("valueType", valueType)
-            set("destLabel", destKernel.label)
-            set("destIndex", destIndex)
-            set("destName", destKernel.kernelType.name)
+            val destName = destKernel.kernelType.name
+            val destLabel = destKernel.label
+            val index = stream.index
+            val label = stream.label
 
             // "process"
-            write("static void $label$_process()")
-            write("{")
+            write(s"static void ${label}_process()")
+            write(s"{")
             enter
-            write("char *data;")
-            write("bool got_read;")
-            write("do {")
+            write(s"char *data;")
+            write(s"bool got_read;")
+            write(s"do {")
             enter
-            write("got_read = false;")
-            write("data = APQ_StartWrite($queueName$, 1);")
-            write("if(data != NULL) {")
+            write(s"got_read = false;")
+            write(s"data = APQ_StartWrite($queueName, 1);")
+            write(s"if(data != NULL) {")
             enter
-            write("ioctl($fd$, 0, $index$);")
+            write(s"ioctl($fd, 0, $index);")
             if (valueType.bits <= 32) {
-                write("ssize_t offset = 0;")
-                write("UNSIGNED32 temp;")
-                write("offset = read($fd$, &temp, 4);")
-                write("if(offset > 0) {")
+                write(s"ssize_t offset = 0;")
+                write(s"UNSIGNED32 temp;")
+                write(s"offset = read($fd, &temp, 4);")
+                write(s"if(offset > 0) {")
                 enter
-                write("memcpy(data, &temp, sizeof($valueType$));")
-                write("got_read = true;")
-                write("APQ_FinishWrite($queueName$, 1);")
+                write(s"memcpy(data, &temp, sizeof($valueType));")
+                write(s"got_read = true;")
+                write(s"APQ_FinishWrite($queueName, 1);")
                 leave
-                write("}")
+                write(s"}")
             } else {
-                write("ssize_t offset = 0;")
-                write("const ssize_t sz = (sizeof($valueType$) + 3) & ~3;")
-                write("offset = read($fd$, &data[0], sz);")
-                write("if(offset > 0) {")
+                write(s"ssize_t offset = 0;")
+                write(s"const ssize_t sz = (sizeof($valueType) + 3) & ~3;")
+                write(s"offset = read($fd, &data[0], sz);")
+                write(s"if(offset > 0) {")
                 enter
-                write("while(offset < sz) {")
+                write(s"while(offset < sz) {")
                 enter
-                write("offset += read($fd$, &data[offset], sz - offset);")
+                write(s"offset += read($fd, &data[offset], sz - offset);")
                 leave
-                write("}")
-                write("got_read = true;")
-                write("APQ_FinishWrite($queueName$, 1);")
+                write(s"}")
+                write(s"got_read = true;")
+                write(s"APQ_FinishWrite($queueName, 1);")
                 leave
-                write("}")
+                write(s"}")
                 leave
-                write("}")
+                write(s"}")
             }
             leave
-            write("} while(got_read);")
+            write(s"} while(got_read);")
             write
 
-            write("if(!APQ_IsEmpty($queueName$) && " +
-                    "$destLabel$.inputs[$destIndex$].data == NULL) {")
+            write(s"if(!APQ_IsEmpty($queueName) && " +
+                    "${destLabel}.inputs[$destIndex].data == NULL) {")
             enter
-            write("uint32_t c = APQ_StartBlockingRead($queueName$, &data);")
-            write("$destLabel$.inputs[$destIndex$].data = ($valueType$*)data;")
-            write("$destLabel$.inputs[$destIndex$].count = c;")
-            write("$destLabel$.clock.count += 1;")
-            write("APC_Start(&$destLabel$.clock);")
-            write("ap_$destName$_push(&$destLabel$.priv, $destIndex$, " +
-                    "$destLabel$.inputs[$destIndex$].data, c);")
-            write("APC_Stop(&$destLabel$.clock);")
+            write(s"uint32_t c = APQ_StartBlockingRead($queueName, &data);")
+            write(s"${destLabel}.inputs[$destIndex].data = ($valueType*)data;")
+            write(s"${destLabel}.inputs[$destIndex].count = c;")
+            write(s"${destLabel}.clock.count += 1;")
+            write(s"APC_Start(&$destLabel.clock);")
+            write(s"ap_${destName}_push(&$destLabel.priv, $destIndex, " +
+                    "$destLabel.inputs[$destIndex].data, c);")
+            write(s"APC_Stop(&$destLabel.clock);")
             leave
-            write("}")
+            write(s"}")
             write
 
             leave
-            write("}")
+            write(s"}")
 
             // "release"
-            write("static void $label$_release(int count)")
-            write("{")
+            write(s"static void ${label}_release(int count)")
+            write(s"{")
             enter
-            write("APQ_FinishRead($queueName$, count);")
+            write(s"APQ_FinishRead($queueName, count);")
             leave
-            write("}")
+            write(s"}")
 
         }
 

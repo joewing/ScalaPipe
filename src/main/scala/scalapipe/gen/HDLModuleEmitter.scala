@@ -197,14 +197,11 @@ private[gen] class HDLModuleEmitter(
 
     private def emitSimpleComponents {
         simpleComponents.values.foreach { c =>
-            set("width", c.width)
-            set("name", c.name)
-            set("instanceName", c.instanceName)
-            set("args", c.args.mkString(", "))
-            write("wire [$width - 1$:0] $instanceName$_result;");
-            write("$name$ #(.WIDTH($width$))")
+            val args = c.args.mkString(", ")
+            write(s"wire [${c.width - 1}:0] ${c.instanceName}_result;");
+            write(s"${c.name} #(.WIDTH(${c.width}))")
             enter
-            write("$instanceName$($args$, $instanceName$_result);")
+            write(s"${c.instanceName}($args, ${c.instanceName}_result);")
             leave
             write
         }

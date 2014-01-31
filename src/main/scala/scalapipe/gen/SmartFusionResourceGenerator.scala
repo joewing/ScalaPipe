@@ -38,128 +38,119 @@ private[scalapipe] class SmartFusionResourceGenerator(
         }
 
         // Write the FIFO module (in this case, just a register).
-        write("module ap_fifo(clk, rst, din, dout, re, we, avail, empty, full);")
+        write(s"module ap_fifo(clk, rst, din, dout, " +
+              "re, we, avail, empty, full);")
         enter
         write
-        write("parameter WIDTH = 8;")
-        write("parameter ADDR_WIDTH = 1;")
+        write(s"parameter WIDTH = 8;")
+        write(s"parameter ADDR_WIDTH = 1;")
         write
-        write("input wire clk;")
-        write("input wire rst;")
-        write("input wire [WIDTH-1:0] din;")
-        write("output wire [WIDTH-1:0] dout;")
-        write("input wire re;")
-        write("input wire we;")
-        write("output wire avail;")
-        write("output wire empty;")
-        write("output wire full;")
+        write(s"input wire clk;")
+        write(s"input wire rst;")
+        write(s"input wire [WIDTH-1:0] din;")
+        write(s"output wire [WIDTH-1:0] dout;")
+        write(s"input wire re;")
+        write(s"input wire we;")
+        write(s"output wire avail;")
+        write(s"output wire empty;")
+        write(s"output wire full;")
         write
-        write("reg [WIDTH-1:0] mem;")
-        write("reg has_data;")
-        write("wire do_read;")
-        write("wire do_write;")
+        write(s"reg [WIDTH-1:0] mem;")
+        write(s"reg has_data;")
+        write(s"wire do_read;")
+        write(s"wire do_write;")
         write
-        write("assign full = has_data;")
-        write("assign avail = has_data;")
-        write("assign empty = !has_data;")
-        write("assign do_read = full & re;")
-        write("assign do_write = empty & we;")
+        write(s"assign full = has_data;")
+        write(s"assign avail = has_data;")
+        write(s"assign empty = !has_data;")
+        write(s"assign do_read = full & re;")
+        write(s"assign do_write = empty & we;")
         write
-        write("always @(posedge clk) begin")
+        write(s"always @(posedge clk) begin")
         enter
-        write("if (rst) begin")
+        write(s"if (rst) begin")
         enter
-        write("has_data <= 0;")
+        write(s"has_data <= 0;")
         leave
-        write("end else begin")
+        write(s"end else begin")
         enter
-        write("if (do_write) begin")
+        write(s"if (do_write) begin")
         enter
-        write("mem <= din;")
-        write("has_data <= 1;")
+        write(s"mem <= din;")
+        write(s"has_data <= 1;")
         leave
-        write("end")
-        write("if (do_read) begin")
+        write(s"end")
+        write(s"if (do_read) begin")
         enter
-        write("has_data <= 0;")
+        write(s"has_data <= 0;")
         leave
-        write("end")
+        write(s"end")
         leave
-        write("end")
+        write(s"end")
         leave
-        write("end")
+        write(s"end")
         write
-        write("assign dout = mem;")
+        write(s"assign dout = mem;")
         write
         leave
-        write("endmodule")
+        write(s"endmodule")
         write
 
         // Wrapper around the ScalaPipe kernels.
-        write("module XModule(")
+        write(s"module XModule(")
         enter
-        write("input wire clk,")
-        write("input wire rst")
+        write(s"input wire clk,")
+        write(s"input wire rst")
         for (i <- inputStreams) {
-            reset
-            set("index", i.index)
-            write(",input wire [31:0] din$index$")
-            write(",input wire write$index$")
-            write(",output reg [31:0] count$index$")
+            write(s",input wire [31:0] din${i.index}")
+            write(s",input wire write${i.index}")
+            write(s",output reg [31:0] count${i.index}")
         }
         for (o <- outputStreams) {
-            reset
-            set("index", o.index)
-            write(",output wire [31:0] dout$index$")
-            write(",input wire read$index$")
-            write(",output reg [31:0] count$index$")
+            write(s",output wire [31:0] dout${o.index}")
+            write(s",input wire read${o.index}")
+            write(s",output reg [31:0] count${o.index}")
         }
         leave
-        write(");")
+        write(s");")
         enter
         write
 
         // Input signals.
         for (i <- inputStreams) {
-            reset
-            set("index", i.index)
-            set("width", i.valueType.bits)
-            write("wire [$width - 1$:0] data$index$;")
-            write("wire full$index$;")
-            write("wire do_write$index$ = !full$index$ && count$index$ == 0;")
+            val width = i.valueType.bits
+            write(s"wire [${width - 1}:0] data${i.index};")
+            write(s"wire full${i.index};")
+            write(s"wire do_write${i.index} = !full${i.index}" +
+                  s" && count${i.index} == 0;")
         }
         write
 
         // Output signals.
         for (o <- outputStreams) {
-            reset
-            set("index", o.index)
-            set("width", o.valueType.bits)
-            write("wire [$width - 1$:0] data$index$;")
-            write("wire avail$index$;")
-            write("wire do_read$index$ = avail$index$ && count$index$ == 0;")
+            val width = o.valueType.bits
+            write(s"wire [${width - 1}:0] data${o.index};")
+            write(s"wire avail${o.index};")
+            write(s"wire do_read${o.index} = avail${o.index}" +
+                  s" && count${o.index} == 0;")
         }
         write
 
         // Instantiate the ScalaPipe kernels.
-        write("fpga0 x(.clk(clk), .rst(rst)")
+        write(s"fpga0 x(.clk(clk), .rst(rst)")
         enter
         for (i <- inputStreams) {
-            reset
-            set("index", i.index)
-            write(", .I$index$input(data$index$), " +
-                    ".I$index$write(do_write$index$), " +
-                    ".I$index$afull(full$index$)")
+            write(s", .I${i.index}input(data${i.index}), " +
+                  s".I${i.index}write(do_write${i.index}), " +
+                  s".I${i.index}afull(full${i.index})")
         }
         for (o <- outputStreams) {
-            reset
-            set("index", o.index)
-            write(", .O$index$output(data$index$), " +
-                    ".O$index$avail(avail$index$), " +
-                    ".O$index$read(do_read$index$)")
+            write(s", .O${o.index}output(data${o.index}), " +
+                  s".O${o.index}avail(avail${o.index}), " +
+                  s".O${o.index}read(do_read${o.index})")
         }
         leave
-        write(");")
+        write(s");")
         write
 
         // Input decoders.
@@ -169,55 +160,49 @@ private[scalapipe] class SmartFusionResourceGenerator(
             val cmax = width / 32
             val cwidth = log2(cmax + 1)
 
-            reset
-            set("index", i.index)
-            set("width", width)
-            set("cmax", cmax)
-            set("cwidth", cwidth)
-
-            write("reg [$cwidth - 1$:0] next_count$index$;")
-            write("reg [$width - 1$:0] buffer$index$;")
-            write("always @(*) begin")
+            write(s"reg [${cwidth - 1}:0] next_count${i.index};")
+            write(s"reg [${width - 1}:0] buffer${i.index};")
+            write(s"always @(*) begin")
             enter
-            write("if (do_write$index$) begin")
+            write(s"if (do_write${i.index}) begin")
             enter
-            write("next_count$index$ <= $cmax$;")
+            write(s"next_count${i.index} <= $cmax;")
             leave
-            write("end else if (write$index$) begin")
+            write(s"end else if (write${i.index}) begin")
             enter
-            write("next_count$index$ <= count$index$ - 1;")
+            write(s"next_count${i.index} <= count${i.index} - 1;")
             leave
-            write("end else begin")
+            write(s"end else begin")
             enter
-            write("next_count$index$ <= count$index$;")
+            write(s"next_count${i.index} <= count${i.index};")
             leave
-            write("end")
+            write(s"end")
             leave
-            write("end")
-            write("always @(posedge clk) begin")
+            write(s"end")
+            write(s"always @(posedge clk) begin")
             enter
-            write("if (rst) begin")
+            write(s"if (rst) begin")
             enter
-            write("count$index$ <= $cmax$;")
+            write(s"count${i.index} <= $cmax;")
             leave
-            write("end else begin")
+            write(s"end else begin")
             enter
-            write("if (write$index$) begin")
+            write(s"if (write${i.index}) begin")
             enter
-            write("buffer$index$[31:0] <= din$index$;")
+            write(s"buffer${i.index}[31:0] <= din${i.index};")
             if (width > 32) {
-                write("buffer$index$[$width - 1$:32] <= " +
-                        "buffer$index$[$width - 32 - 1$:0];")
+                write(s"buffer${i.index}[${width - 1}:32] <= " +
+                      s"buffer${i.index}[${width - 32 - 1}:0];")
             }
             leave
-            write("end")
-            write("count$index$ <= next_count$index$;")
+            write(s"end")
+            write(s"count${i.index} <= next_count${i.index};")
             leave
-            write("end")
+            write(s"end")
             leave
-            write("end")
+            write(s"end")
             write
-            write("assign data$index$ = buffer$index$;")
+            write(s"assign data${i.index} = buffer${i.index};")
             write
         }
 
@@ -227,64 +212,58 @@ private[scalapipe] class SmartFusionResourceGenerator(
             val cmax = width / 32
             val cwidth = log2(cmax + 1)
 
-            reset
-            set("index", o.index)
-            set("width", width)
-            set("cmax", cmax)
-            set("cwidth", log2(cmax + 1))
-
-            write("reg [$cwidth - 1$:0] next_count$index$;")
-            write("reg [$width - 1$:0] buffer$index$;")
-            write("always @(*) begin")
+            write(s"reg [${cwidth - 1}:0] next_count${o.index};")
+            write(s"reg [${width - 1}:0] buffer${o.index};")
+            write(s"always @(*) begin")
             enter
-            write("if (do_read$index$) begin")
+            write(s"if (do_read${o.index}) begin")
             enter
-            write("next_count$index$ <= $cmax$;")
+            write(s"next_count${o.index} <= $cmax;")
             leave
-            write("end else if (read$index$) begin")
+            write(s"end else if (read${o.index}) begin")
             enter
-            write("next_count$index$ <= count$index$ - 1;")
+            write(s"next_count${o.index} <= count${o.index} - 1;")
             leave
-            write("end else begin")
+            write(s"end else begin")
             enter
-            write("next_count$index$ <= count$index$;")
+            write(s"next_count${o.index} <= count${o.index};")
             leave
-            write("end")
+            write(s"end")
             leave
-            write("end")
-            write("always @(posedge clk) begin")
+            write(s"end")
+            write(s"always @(posedge clk) begin")
             enter
-            write("if (rst) begin")
+            write(s"if (rst) begin")
             enter
-            write("count$index$ <= 0;")
+            write(s"count${o.index} <= 0;")
             leave
-            write("end else begin")
+            write(s"end else begin")
             enter
-            write("if (do_read$index$) begin")
+            write(s"if (do_read${o.index}) begin")
             enter
-            write("buffer$index$ <= data$index$;")
+            write(s"buffer${o.index} <= data${o.index};")
             leave
             if (width > 32) {
-                write("end else if (read$index$) begin")
+                write(s"end else if (read${o.index}) begin")
                 enter
-                write("buffer$index$[$width - 1$:32] <= " +
-                        "buffer$index$[$width - 32 - 1$:0];")
+                write(s"buffer${o.index}[${width - 1}:32] <= " +
+                        "buffer${o.index}[${width - 32 - 1}:0];")
                 leave
             }
-            write("end")
-            write("count$index$ <= next_count$index$;")
+            write(s"end")
+            write(s"count${o.index} <= next_count${o.index};")
             leave
-            write("end")
+            write(s"end")
             leave
-            write("end")
+            write(s"end")
             write
-            write("assign dout$index$ = " +
-                    "buffer$index$[$width - 1$:$width - 32$];")
+            write(s"assign dout${o.index} = " +
+                  s"buffer${o.index}[${width - 1}:${width - 32}];")
             write
         }
 
         leave
-        write("endmodule")
+        write(s"endmodule")
 
         writeFile(dir, "fpga_wrap.v")
 
@@ -299,167 +278,155 @@ private[scalapipe] class SmartFusionResourceGenerator(
             s.sourceKernel.device == device && s.destKernel.device != device
         }
 
-        write("module sp_interface(")
+        write(s"module sp_interface(")
         enter
-        write("input wire PRESETn,")
-        write("input wire PCLK,")
-        write("input wire PSELx,")
-        write("input wire PENABLE,")
-        write("input wire PWRITE,")
-        write("input wire [4:0] PADDR,")
-        write("input wire [31:0] PWDATA,")
-        write("output reg [31:0] PRDATA,")
-        write("output wire PREADY,")
-        write("output wire PSLVERR")
+        write(s"input wire PRESETn,")
+        write(s"input wire PCLK,")
+        write(s"input wire PSELx,")
+        write(s"input wire PENABLE,")
+        write(s"input wire PWRITE,")
+        write(s"input wire [4:0] PADDR,")
+        write(s"input wire [31:0] PWDATA,")
+        write(s"output reg [31:0] PRDATA,")
+        write(s"output wire PREADY,")
+        write(s"output wire PSLVERR")
         leave
-        write(");")
+        write(s");")
         enter
         write
 
-        write("localparam COMMAND_ADDR    = 0;")
-        write("localparam PORT_ADDR        = 4;")
-        write("localparam COUNT_ADDR      = 8;")
-        write("localparam DATA_ADDR        = 12;")
+        write(s"localparam COMMAND_ADDR    = 0;")
+        write(s"localparam PORT_ADDR        = 4;")
+        write(s"localparam COUNT_ADDR      = 8;")
+        write(s"localparam DATA_ADDR        = 12;")
 
-        write("assign PREADY = 1;")
-        write("assign PSLVERR = 0;")
+        write(s"assign PREADY = 1;")
+        write(s"assign PSLVERR = 0;")
         write
 
         // Control wires.
-        write("wire do_read = PSELx & PENABLE & !PWRITE;")
-        write("wire do_write = PSELx & PENABLE & PWRITE;")
-        write("wire write_command = do_write && PADDR == COMMAND_ADDR;")
-        write("wire write_port = do_write && PADDR == PORT_ADDR;")
-        write("wire read_count = do_read && PADDR == COUNT_ADDR;")
-        write("wire write_data = do_write && PADDR == DATA_ADDR;")
-        write("wire read_data = do_read && PADDR == DATA_ADDR;")
+        write(s"wire do_read = PSELx & PENABLE & !PWRITE;")
+        write(s"wire do_write = PSELx & PENABLE & PWRITE;")
+        write(s"wire write_command = do_write && PADDR == COMMAND_ADDR;")
+        write(s"wire write_port = do_write && PADDR == PORT_ADDR;")
+        write(s"wire read_count = do_read && PADDR == COUNT_ADDR;")
+        write(s"wire write_data = do_write && PADDR == DATA_ADDR;")
+        write(s"wire read_data = do_read && PADDR == DATA_ADDR;")
         write
 
         // Handle resets and clock.
-        write("reg x_reset;")
-        write("reg running;")
-        write("reg was_running;")
-        write("wire clk = running & PCLK;")
-        write("always @(posedge PCLK or negedge PRESETn) begin")
+        write(s"reg x_reset;")
+        write(s"reg running;")
+        write(s"reg was_running;")
+        write(s"wire clk = running & PCLK;")
+        write(s"always @(posedge PCLK or negedge PRESETn) begin")
         enter
-        write("if (!PRESETn) begin")
+        write(s"if (!PRESETn) begin")
         enter
-        write("x_reset <= 1;")
-        write("running <= 0;")
-        write("was_running <= 0;")
+        write(s"x_reset <= 1;")
+        write(s"running <= 0;")
+        write(s"was_running <= 0;")
         leave
-        write("end else if (write_command) begin")
+        write(s"end else if (write_command) begin")
         enter
-        write("x_reset <= 1;")
-        write("running <= PWDATA == 1;")
-        write("was_running <= 0;")
+        write(s"x_reset <= 1;")
+        write(s"running <= PWDATA == 1;")
+        write(s"was_running <= 0;")
         leave
-        write("end else begin")
+        write(s"end else begin")
         enter
-        write("x_reset <= !was_running;")
-        write("was_running <= running;")
+        write(s"x_reset <= !was_running;")
+        write(s"was_running <= running;")
         leave
-        write("end")
+        write(s"end")
         leave
-        write("end")
+        write(s"end")
 
         // Determine the port ID.
-        write("reg [31:0] port_id;")
-        write("always @(posedge clk) begin")
+        write(s"reg [31:0] port_id;")
+        write(s"always @(posedge clk) begin")
         enter
-        write("if (write_port) begin")
+        write(s"if (write_port) begin")
         enter
-        write("port_id <= PWDATA;")
+        write(s"port_id <= PWDATA;")
         leave
-        write("end")
+        write(s"end")
         leave
-        write("end")
+        write(s"end")
         write
 
         // Create the write signals.
         for (i <- inputStreams) {
-            reset
-            set("index", i.index)
-            write("wire write$index$ = write_data && port_id == $index$;")
+            write(s"wire write${i.index} = write_data" +
+                  s"&& port_id == ${i.index};")
         }
         write
 
         // Create the read signals.
         for (o <- outputStreams) {
-            reset
-            set("index", o.index)
-            write("wire read$index$ = read_data && port_id == $index$;")
-            write("wire [31:0] dout$index$;")
+            write(s"wire read${o.index} = read_data && port_id == ${o.index};")
+            write(s"wire [31:0] dout${o.index};")
         }
         write
 
         // Create the count wires.
         for (s <- inputStreams ++ outputStreams) {
-            reset
-            set("index", s.index)
-            write("wire [31:0] count$index$;")
+            write(s"wire [31:0] count${s.index};")
         }
         write
 
         // Instantiate the module.
-        write("XModule X(.clk(clk), .rst(x_reset)")
+        write(s"XModule X(.clk(clk), .rst(x_reset)")
         enter
-        for (i <- inputStreams) {
-            reset
-            set("index", i.index)
-            write(", .din$index$(PWDATA), " +
-                    ".write$index$(write$index$), " +
-                    ".count$index$(count$index$)")
+        for (i <- inputStreams.map(_.index)) {
+            write(s", .din$i(PWDATA), " +
+                  s".write$i(write$i), " +
+                  s".count$i(count$i)")
         }
-        for (o <- outputStreams) {
-            reset
-            set("index", o.index)
-            write(", .dout$index$(dout$index$), " +
-                    ".read$index$(read$index$), " +
-                    ".count$index$(count$index$)")
+        for (o <- outputStreams.map(_.index)) {
+            write(s", .dout$o(dout$o), " +
+                  s".read$o(read$o), " +
+                  s".count$o(count$o)")
         }
         leave
-        write(");")
+        write(s");")
         write
 
         // Drive PRDATA.
-        write("always @(posedge clk) begin")
+        write(s"always @(posedge clk) begin")
         enter
-        write("if (PSELx & !PENABLE & !PWRITE) begin")
+        write(s"if (PSELx & !PENABLE & !PWRITE) begin")
         enter
-        write("if (PADDR == COUNT_ADDR) begin")
+        write(s"if (PADDR == COUNT_ADDR) begin")
         enter
-        write("case (port_id)")
+        write(s"case (port_id)")
         enter
         for (s <- inputStreams ++ outputStreams) {
-            reset
-            set("index", s.index)
-            write("$index$: PRDATA <= count$index$;")
+            val index = s.index
+            write(s"$index: PRDATA <= count$index;")
         }
         leave
-        write("endcase")
+        write(s"endcase")
         leave
-        write("end else begin")
+        write(s"end else begin")
         enter
-        write("case (port_id)")
+        write(s"case (port_id)")
         enter
-        for (o <- outputStreams) {
-            reset
-            set("index", o.index)
-            write("$index$: PRDATA <= dout$index$;")
+        for (o <- outputStreams.map(_.index)) {
+            write(s"$o: PRDATA <= dout$o;")
         }
         leave
-        write("endcase")
+        write(s"endcase")
         leave
-        write("end")
+        write(s"end")
         leave
-        write("end")
+        write(s"end")
         leave
-        write("end")
+        write(s"end")
         write
 
         leave
-        write("endmodule")
+        write(s"endmodule")
 
         writeFile(dir, "sp_interface.v")
 

@@ -26,7 +26,7 @@ private[scalapipe] class SimulationResourceGenerator(
         val names = kernelTypes.map(_.name)
         val base = "sim.v fp.v int.v fpga_x.v fpga_wrap.v"
         val bstr = names.foldLeft(base) { (s, name) =>
-            s + " " + name + "/" + name + ".v"
+            s"$s $name/$name.v"
         }
 
         write("SIM_BLOCKS =" + bstr)
@@ -63,145 +63,139 @@ private[scalapipe] class SimulationResourceGenerator(
         }
 
         // Write the FIFO module (in this case, just a register).
-        write("module ap_fifo(clk, rst, din, dout, " +
+        write(s"module ap_fifo(clk, rst, din, dout, " +
               "re, we, avail, empty, full);")
         enter
         write
-        write("parameter WIDTH = 8;")
-        write("parameter ADDR_WIDTH = 1;")
+        write(s"parameter WIDTH = 8;")
+        write(s"parameter ADDR_WIDTH = 1;")
         write
-        write("input wire clk;")
-        write("input wire rst;")
-        write("input wire [WIDTH-1:0] din;")
-        write("output wire [WIDTH-1:0] dout;")
-        write("input wire re;")
-        write("input wire we;")
-        write("output wire avail;")
-        write("output wire empty;")
-        write("output wire full;")
+        write(s"input wire clk;")
+        write(s"input wire rst;")
+        write(s"input wire [WIDTH-1:0] din;")
+        write(s"output wire [WIDTH-1:0] dout;")
+        write(s"input wire re;")
+        write(s"input wire we;")
+        write(s"output wire avail;")
+        write(s"output wire empty;")
+        write(s"output wire full;")
         write
-        write("reg [WIDTH-1:0] mem;")
-        write("reg has_data;")
-        write("wire do_read;")
-        write("wire do_write;")
+        write(s"reg [WIDTH-1:0] mem;")
+        write(s"reg has_data;")
+        write(s"wire do_read;")
+        write(s"wire do_write;")
         write
-        write("assign full = has_data;")
-        write("assign avail = has_data;")
-        write("assign empty = !has_data;")
-        write("assign do_read = full & re;")
-        write("assign do_write = empty & we;")
+        write(s"assign full = has_data;")
+        write(s"assign avail = has_data;")
+        write(s"assign empty = !has_data;")
+        write(s"assign do_read = full & re;")
+        write(s"assign do_write = empty & we;")
         write
-        write("always @(posedge clk) begin")
+        write(s"always @(posedge clk) begin")
         enter
-        write("if (rst) begin")
+        write(s"if (rst) begin")
         enter
-        write("has_data <= 0;")
+        write(s"has_data <= 0;")
         leave
-        write("end else begin")
+        write(s"end else begin")
         enter
-        write("if (do_write) begin")
+        write(s"if (do_write) begin")
         enter
-        write("mem <= din;")
-        write("has_data <= 1;")
+        write(s"mem <= din;")
+        write(s"has_data <= 1;")
         leave
-        write("end")
-        write("if (do_read) begin")
+        write(s"end")
+        write(s"if (do_read) begin")
         enter
-        write("has_data <= 0;")
+        write(s"has_data <= 0;")
         leave
-        write("end")
+        write(s"end")
         leave
-        write("end")
+        write(s"end")
         leave
-        write("end")
+        write(s"end")
         write
-        write("assign dout = mem;")
+        write(s"assign dout = mem;")
         write
         leave
-        write("endmodule")
+        write(s"endmodule")
         write
 
         // Wrapper around the ScalaPipe kernels.
-        write("module XModule(")
+        write(s"module XModule(")
         enter
-        write("input wire clk,")
-        write("input wire rst")
+        write(s"input wire clk,")
+        write(s"input wire rst")
         for (i <- inputStreams) {
-            reset
-            set("index", i.index)
-            set("width", i.valueType.bits)
-            write(",input wire [$width - 1$:0] din$index$")
-            write(",input wire write$index$")
-            write(",output wire full$index$")
+            val index = i.index
+            val width = i.valueType.bits
+            write(s",input wire [${width - 1}:0] din$index")
+            write(s",input wire write$index")
+            write(s",output wire full$index")
         }
         for (o <- outputStreams) {
-            reset
-            set("index", o.index)
-            set("width", o.valueType.bits)
-            write(",output wire [$width - 1$:0] dout$index$")
-            write(",input wire read$index$")
-            write(",output wire avail$index$")
+            val index = o.index
+            val width = o.valueType.bits
+            write(s",output wire [${width - 1}:0] dout$index")
+            write(s",input wire read$index")
+            write(s",output wire avail$index")
         }
         leave
-        write(");")
+        write(s");")
         enter
         write
 
         // Input signals.
         for (i <- inputStreams) {
-            reset
-            set("index", i.index)
-            set("width", i.valueType.bits)
-            write("wire [$width - 1$:0] data$index$;")
-            write("wire do_write$index$ = !full$index$ && write$index$;")
+            val index = i.index
+            val width = i.valueType.bits
+            write(s"wire [${width - 1}:0] data$index;")
+            write(s"wire do_write$index = !full$index && write$index;")
             for (b <- 0 until i.valueType.bits / 8) {
-                set("a", b * 8)
-                set("b", i.valueType.bits - b * 8 - 8)
-                write("assign data$index$[$a + 7$:$a$] = " +
-                      "din$index$[$b + 7$:$b$];")
+                val dest = b * 8
+                val src = i.valueType.bits - b * 8 - 8
+                write(s"assign data$index[${dest + 7}:$dest] = " +
+                      s"din$index[${src + 7}:$src];")
             }
         }
         write
 
         // Output signals.
         for (o <- outputStreams) {
-            reset
-            set("index", o.index)
-            set("width", o.valueType.bits)
-            write("wire [$width - 1$:0] data$index$;")
-            write("wire do_read$index$ = avail$index$ && read$index$;")
+            val index = o.index
+            val width = o.valueType.bits
+            write(s"wire [${width - 1}:0] data$index;")
+            write(s"wire do_read$index = avail$index && read$index;")
             for (b <- 0 until o.valueType.bits / 8) {
-                set("a", b * 8)
-                set("b", o.valueType.bits - b * 8 - 8)
-                write("assign dout$index$[$a + 7$:$a$] = " +
-                      "data$index$[$b + 7$:$b$];")
+                val dest = b * 8
+                val src = o.valueType.bits - b * 8 - 8
+                write(s"assign dout$index[${dest + 7}:$dest] = " +
+                      s"data$index[${src + 7}:$src];")
             }
         }
         write
 
         // Instantiate the ScalaPipe kernels.
-        write("fpga0 x(.clk(clk), .rst(rst)")
+        write(s"fpga0 x(.clk(clk), .rst(rst)")
         enter
         for (i <- inputStreams) {
-            reset
-            set("index", i.index)
-            write(", .I$index$input(data$index$), " +
-                    ".I$index$write(do_write$index$), " +
-                    ".I$index$afull(full$index$)")
+            val index = i.index
+            write(s", .I${index}input(data$index), " +
+                  s".I${index}write(do_write$index), " +
+                  s".I${index}afull(full$index)")
         }
         for (o <- outputStreams) {
-            reset
-            set("index", o.index)
-            write(", .O$index$output(data$index$), " +
-                    ".O$index$avail(avail$index$), " +
-                    ".O$index$read(do_read$index$)")
+            val index = o.index
+            write(s", .O${index}output(data$index), " +
+                  s".O${index}avail(avail$index), " +
+                  s".O${index}read(do_read$index)")
         }
         leave
-        write(");")
+        write(s");")
         write
 
         leave
-        write("endmodule")
+        write(s"endmodule")
 
         writeFile(dir, "fpga_wrap.v")
 
@@ -216,86 +210,77 @@ private[scalapipe] class SimulationResourceGenerator(
             s.sourceKernel.device == device && s.destKernel.device != device
         }
 
-        write("module sim;")
+        write(s"module sim;")
         enter
         write
 
-        write("reg clk;")
-        write("reg rst;")
-        write("integer rc;")
+        write(s"reg clk;")
+        write(s"reg rst;")
+        write(s"integer rc;")
         write
         for (s <- inputStreams ++ outputStreams) {
-            reset
-            set("fd", "stream" + s.label)
-            write("integer $fd$;")
+            val fd = s"stream${s.label}"
+            write(s"integer $fd;")
         }
         write
 
         for (s <- inputStreams) {
-            reset
-            set("index", s.index)
-            set("width", s.valueType.bits)
-            write("reg [31:0] count$index$;")
-            write("reg [$width - 1$:0] din$index$;")
-            write("wire write$index$;")
-            write("wire full$index$;")
-            write("reg got_data$index$;")
-            write("reg sent_data$index$;")
+            val index = s.index
+            val width = s.valueType.bits
+            write(s"reg [31:0] count$index;")
+            write(s"reg [${width - 1}:0] din$index;")
+            write(s"wire write$index;")
+            write(s"wire full$index;")
+            write(s"reg got_data$index;")
+            write(s"reg sent_data$index;")
         }
         for (s <- outputStreams) {
-            reset
-            set("index", s.index)
-            set("width", s.valueType.bits)
-            write("wire [$width - 1$:0] dout$index$;")
-            write("wire read$index$;")
-            write("wire avail$index$;")
+            val index = s.index
+            val width = s.valueType.bits
+            write(s"wire [${width - 1}:0] dout$index;")
+            write(s"wire read$index;")
+            write(s"wire avail$index;")
         }
         write
 
-        write("XModule dut(.clk(clk), .rst(rst)")
+        write(s"XModule dut(.clk(clk), .rst(rst)")
         enter
-        for (s <- inputStreams) {
-            reset
-            set("index", s.index)
-            write(", .din$index$(din$index$)")
-            write(", .write$index$(write$index$)")
-            write(", .full$index$(full$index$)")
+        for (s <- inputStreams.map(_.index)) {
+            write(s", .din$s(din$s)")
+            write(s", .write$s(write$s)")
+            write(s", .full$s(full$s)")
         }
-        for (s <- outputStreams) {
-            reset
-            set("index", s.index)
-            write(", .dout$index$(dout$index$)")
-            write(", .read$index$(read$index$)")
-            write(", .avail$index$(avail$index$)")
+        for (s <- outputStreams.map(_.index)) {
+            write(s", .dout$s(dout$s)")
+            write(s", .read$s(read$s)")
+            write(s", .avail$s(avail$s)")
         }
         leave
-        write(");")
+        write(s");")
         write
 
-        write("initial begin")
+        write(s"initial begin")
         enter
         write
         for (s <- inputStreams) {
-            reset
-            set("fd", "stream" + s.label)
-            write("$fd$ = $$fopen(\"$fd$\", \"rb\");")
-            write("if($fd$ == 0) begin")
+            val fd = s"stream{$s.label}"
+            write(s"""$fd = $$fopen(\"$fd\", \"rb\");""")
+            write(s"if($fd == 0) begin")
             enter
-            write("$$display(\"could not open $fd$\");")
-            write("$$finish;")
+            write(s"""$$display(\"could not open $fd\");""")
+            write(s"$$finish;")
             leave
-            write("end")
+            write(s"end")
         }
         for (s <- outputStreams) {
-            reset
-            set("fd", "stream" + s.label)
-            write("$fd$ = $$fopen(\"$fd$\", \"wb\");")
-            write("if($fd$ == 0) begin")
+            val fd = s"stream${s.label}"
+            write(s"""$fd = $$fopen(\"$fd\", \"wb\");""")
+            write(s"if($fd == 0) begin")
             enter
-            write("$$display(\"could not open $fd$\");")
-            write("$$finish;")
+            write(s"""$$display(\"could not open $fd\");""")
+            write(s"$$finish;")
             leave
-            write("end")
+            write(s"end")
         }
         write
 
@@ -304,79 +289,79 @@ private[scalapipe] class SimulationResourceGenerator(
             write
         }
 
-        write("clk <= 0;")
-        write("rst <= 1;")
-        write("#10 clk <= 1; #10 clk <= 0;")
-        write("rst <= 0;")
+        write(s"clk <= 0;")
+        write(s"rst <= 1;")
+        write(s"#10 clk <= 1; #10 clk <= 0;")
+        write(s"rst <= 0;")
         write
-        write("forever begin")
+        write(s"forever begin")
         enter
-        write("#10 clk <= !clk;")
+        write(s"#10 clk <= !clk;")
         leave
-        write("end")
+        write(s"end")
         leave
-        write("end")
+        write(s"end")
         write
 
         for (s <- inputStreams) {
-            reset
-            set("index", s.index)
-            set("fd", "stream" + s.label)
-            write("always @(posedge clk) begin")
+            val index = s.index
+            val fd = s"stream${s.label}"
+            write(s"always @(posedge clk) begin")
             enter
-            write("got_data$index$ <= 0;")
-            write("sent_data$index$ <= got_data$index$;")
-            write("if (rst) begin")
+            write(s"got_data$index <= 0;")
+            write(s"sent_data$index <= got_data$index;")
+            write(s"if (rst) begin")
             enter
-            write("count$index$ <= 0;")
+            write(s"count$index <= 0;")
             leave
-            write("end else if (!full$index$ && count$index$ > 0) begin")
+            write(s"end else if (!full$index && count$index > 0) begin")
             enter
             for (i <- (s.valueType.bits + 7) / 8 until 0 by -1) {
-                set("i", i * 8)
-                write("din$index$[$i - 1$:$i - 8$] <= $$fgetc($fd$);")
+                val top = i * 8 - 1
+                val bottom = i * 8 - 8
+                write(s"din$index[$top:$bottom] <= $$fgetc($fd);")
             }
-            write("got_data$index$ <= 1;")
-            write("count$index$ <= count$index$ - 1;")
+            write(s"got_data$index <= 1;")
+            write(s"count$index <= count$index - 1;")
             leave
-            write("end else if (!full$index$ && count$index$ == 0) begin")
+            write(s"end else if (!full$index && count$index == 0) begin")
             enter
-            write("count$index$[7:0] <= $$fgetc($fd$);")
-            write("count$index$[15:8] <= $$fgetc($fd$);")
-            write("count$index$[23:16] <= $$fgetc($fd$);")
-            write("count$index$[31:24] <= $$fgetc($fd$);")
+            write(s"count$index[7:0] <= $$fgetc($fd);")
+            write(s"count$index[15:8] <= $$fgetc($fd);")
+            write(s"count$index[23:16] <= $$fgetc($fd);")
+            write(s"count$index[31:24] <= $$fgetc($fd);")
             leave
-            write("end")
+            write(s"end")
             leave
-            write("end")
-            write("assign write$index$ = got_data$index$ & !sent_data$index$;")
+            write(s"end")
+            write(s"assign write$index = got_data$index & !sent_data$index;")
             write
         }
 
         for (s <- outputStreams) {
-            reset
-            set("index", s.index)
-            set("fd", "stream" + s.label)
-            set("width", s.valueType.bits)
-            write("always @(posedge clk) begin")
+            val index = s.index
+            val fd = s"stream${s.label}"
+            val width = s.valueType.bits
+            write(s"always @(posedge clk) begin")
             enter
-            write("if(!rst & avail$index$) begin")
+            write(s"if(!rst & avail$index) begin")
             enter
             for (i <- (s.valueType.bits + 7) / 8 until 0 by -1) {
-                set("i", i * 8)
-                write("rc <= $$fputc(dout$index$[$i - 1$:$i - 8$], $fd$);")
+                val top = i * 8 - 1
+                val bottom = i * 8 - 8
+                write(s"rc <= $$fputc(dout$index[$top:$bottom], $fd);")
             }
-            write("$$fflush($fd$);")
+            write(s"$$fflush($fd);")
             leave
-            write("end")
+            write(s"end")
             leave
-            write("end")
-            write("assign read$index$ = !rst & avail$index$;")
+            write(s"end")
+            write(s"assign read$index = !rst & avail$index;")
             write
         }
 
         leave
-        write("endmodule")
+        write(s"endmodule")
 
         writeFile(dir, "sim.v")
 
