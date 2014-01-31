@@ -7,10 +7,9 @@ private[scalapipe] class Device(
     ) {
 
     private[scalapipe] val label = LabelMaker.getDeviceLabel
-    private[scalapipe] val name: String = deviceType + "[" + index + "]"
+    private[scalapipe] val name: String = s"$deviceType[$index]"
     private[scalapipe] val platform = deviceType.platform
 
-    override def toString =
-        deviceType.toString + "(" + host + ", " + index + ")"
+    override def toString = s"$deviceType($host, $index)"
 
 }

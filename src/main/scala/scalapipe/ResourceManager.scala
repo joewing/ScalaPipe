@@ -15,10 +15,8 @@ private[scalapipe] class ResourceManager(val sp: ScalaPipe) {
         val platform = device.deviceType.platform
         platform match {
             case Platforms.HDL => createHDLResourceGenerator(device)
-            case Platforms.OpenCL =>
-                new OpenCLResourceGenerator(sp, device)
-            case _ =>
-                sys.error("unknown platform: " + platform)
+            case Platforms.OpenCL => new OpenCLResourceGenerator(sp, device)
+            case _ => sys.error("unknown platform: " + platform)
         }
     }
 

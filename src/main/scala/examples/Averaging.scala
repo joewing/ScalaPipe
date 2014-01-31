@@ -87,8 +87,11 @@ object Averaging {
             val result = Half(Add(random0, random1))
             Print(result)
 
+/*
             map(Random -> ANY_KERNEL, CPU2FPGA())
             map(ANY_KERNEL -> Print, FPGA2CPU())
+*/
+            map(Add -> Half, CPU2CPU(host="sindy"))
 
         }
 

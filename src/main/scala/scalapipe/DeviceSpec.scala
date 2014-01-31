@@ -29,13 +29,13 @@ private[scalapipe] class DeviceSpec(
 
     override def toString =
         if (host != null && index != Int.MaxValue) {
-            platform.toString + "(" + host + ", " + index + ")"
+            s"$platform($host, $index)"
         } else if (host != null) {
-            platform.toString + "(" + host + ")"
+            s"$platform($host)"
         } else if (index != Int.MaxValue) {
-            platform.toString + "(" + index + ")"
+            s"$platform($index)"
         } else {
-            platform.toString
+            s"$platform"
         }
 
 }

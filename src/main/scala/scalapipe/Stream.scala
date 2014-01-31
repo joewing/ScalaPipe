@@ -10,7 +10,7 @@ class Stream(
     ) {
 
     private[scalapipe] val index = LabelMaker.getEdgeIndex
-    private[scalapipe] val label = "edge" + index
+    private[scalapipe] val label = s"edge$index"
     private[scalapipe] var destKernel: KernelInstance = null
     private[scalapipe] var destPort: PortName = null
     private[scalapipe] val measures = new HashSet[Measure]
