@@ -1,5 +1,6 @@
 package scalapipe
 
+import scala.language.dynamics
 import scalapipe.dsl.{Kernel, Func}
 
 abstract class ASTNode(
@@ -223,7 +224,7 @@ private[scalapipe] case class ASTAvailableNode(
 private[scalapipe] case class ASTSymbolNode(
         val symbol: String,
         _kernel: Kernel = null
-    ) extends ASTNode(NodeType.symbol, _kernel) {
+    ) extends ASTNode(NodeType.symbol, _kernel) with Dynamic {
 
     private[scalapipe] var indexes = Seq[ASTNode]()
 
@@ -256,6 +257,20 @@ private[scalapipe] case class ASTSymbolNode(
         index.parent = this
         indexes = indexes :+ index
         ASTAssignNode(this, r, kernel)
+    }
+
+    def selectDynamic(name: String): ASTNode = {
+        val index = SymbolLiteral(name, kernel)
+        index.parent = this
+        indexes = indexes :+ index
+        this
+    }
+
+    def updateDynamic(name: String)(value: ASTNode): ASTNode = {
+        val index = SymbolLiteral(name, kernel)
+        index.parent = this
+        indexes = indexes :+ index
+        ASTAssignNode(this, value, kernel)
     }
 
     override def toString = symbol + "(" + indexes.mkString(",") + ")"

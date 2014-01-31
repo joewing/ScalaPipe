@@ -61,18 +61,15 @@ object NBody {
                 out = other
                 forces('mass) = 0
             } else {
-                if (other('x) <> p('x) ||
-                    other('y) <> p('y) ||
-                    other('z) <> p('z)) {
-
-                    dx = other('x) - p('x)
-                    dy = other('y) - p('y)
-                    dz = other('z) - p('z)
+                if (other.x <> p.x || other.y <> p.y || other.z <> p.z) {
+                    dx = other.x - p.x
+                    dy = other.y - p.y
+                    dz = other.z - p.z
                     rsq = dx * dx + dy * dy + dz * dz
-                    mult = (gravity * other('mass)) / (rsq * sqrt(rsq))
-                    forces('x) = dx * mult
-                    forces('y) = dy * mult
-                    forces('z) = dz * mult
+                    mult = (gravity * other.mass) / (rsq * sqrt(rsq))
+                    forces.x = dx * mult
+                    forces.y = dy * mult
+                    forces.z = dz * mult
                     out = forces
                 }
             }
@@ -93,18 +90,18 @@ object NBody {
             val count   = local(UNSIGNED32, 0)
 
             f = fin
-            if (f('mass) < 0) {
+            if (f.mass < 0) {
                 if (count > 0) {
                     fout = sum
                 }
-                sum('x) = 0
-                sum('y) = 0
-                sum('z) = 0
+                sum.x = 0
+                sum.y = 0
+                sum.z = 0
                 count = 0
             } else {
-                sum('x) += f('x)
-                sum('y) += f('y)
-                sum('z) += f('z)
+                sum.x += f.x
+                sum.y += f.y
+                sum.z += f.z
                 count += 1
             }
 
@@ -172,17 +169,17 @@ object NBody {
                               addr(line(6)))
             if (rc == 7 && count < maxParticles) {
                 count += 1
-                temp('mass) = line(0)
-                temp('x)    = line(1)
-                temp('y)    = line(2)
-                temp('z)    = line(3)
-                temp('vx)   = line(4)
-                temp('vy)   = line(5)
-                temp('vz)   = line(6)
+                temp.mass   = line(0)
+                temp.x      = line(1)
+                temp.y      = line(2)
+                temp.z      = line(3)
+                temp.vx     = line(4)
+                temp.vy     = line(5)
+                temp.vz     = line(6)
                 pout = temp
             } else {
                 stdio.printf("""Loaded %u particles\n""", count)
-                temp('mass) = -1
+                temp.mass = -1
                 pout = temp
                 stdio.fclose(fd)
                 stop

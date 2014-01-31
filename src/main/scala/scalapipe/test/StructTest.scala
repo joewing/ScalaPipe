@@ -20,9 +20,9 @@ object StructTest {
         val count   = local(UNSIGNED32, 0)
         val t       = local(Struct2)
 
-        t('x)('a) = count + 1
-        t('x)('b) = count & 1
-        t('y) = count
+        t.x.a = count + 1
+        t.x.b = count & 1
+        t.y = count
         y0 = t
         count += 1
     }
@@ -32,14 +32,14 @@ object StructTest {
         val t   = local(Struct2)
 
         t = x0
-        stdio.printf("""OUTPUT %d\n""", t('y))
-        if (t('x)('a) <> t('y) + 1) {
+        stdio.printf("""OUTPUT %d\n""", t.y)
+        if (t.x.a <> t.y + 1) {
             stdio.printf("""OUTPUT: ERROR a\n""")
         }
-        if (t('x)('b) <> (t('y) & 1)) {
+        if (t.x.b <> (t.y & 1)) {
             stdio.printf("""OUTPUT: ERROR b\n""")
         }
-        if (t('y) == 9) {
+        if (t.y == 9) {
             stdio.exit(0)
         }
     }
