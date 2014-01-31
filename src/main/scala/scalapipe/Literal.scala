@@ -35,8 +35,6 @@ abstract class Literal(
 
     def double: Double = 0.0
 
-    def isTrue: Boolean = false
-
     def apply(index: Literal): Literal = this
 
     def set(index: Literal, value: Literal): Literal = null
@@ -83,8 +81,6 @@ class IntLiteral(
     override def double: Double = value.toDouble
 
     override def toString = value.toString
-
-    override def isTrue: Boolean = value != 0
 
     override def set(index: Literal, value: Literal): Literal =
         IntLiteral(valueType, value.long, kernel)
@@ -137,8 +133,6 @@ class FloatLiteral(
 
     override def toString = value.toString
 
-    override def isTrue: Boolean = value != 0.0
-
     override def set(index: Literal, value: Literal): Literal =
         new FloatLiteral(valueType, value.double, null)
 
@@ -167,8 +161,6 @@ class StringLiteral(
 
     override def toString = "\"" + value + "\""
 
-    override def isTrue: Boolean = value != null
-
     override def equals(other: Any): Boolean = other match {
         case l: StringLiteral => value.equals(l.value)
         case _ => false
@@ -192,9 +184,9 @@ class SymbolLiteral(
         _kernel: Kernel
     ) extends Literal(_t, _kernel) {
 
-    override def toString = symbol
+    SymbolValidator.validate(symbol, this)
 
-    override def isTrue: Boolean = false
+    override def toString = symbol
 
     override def equals(other: Any): Boolean = other match {
         case l: SymbolLiteral => symbol.equals(l.symbol)

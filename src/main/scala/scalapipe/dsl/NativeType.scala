@@ -7,7 +7,13 @@ object NativeType {
 }
 
 class NativeType(_name: String) extends Type(_name) {
+
     private[scalapipe] override def create() = {
         ValueType.create(this, () => new NativeValueType(this))
     }
+
+    protected override def validateTypeName {
+        // Don't validate native types.
+    }
+
 }

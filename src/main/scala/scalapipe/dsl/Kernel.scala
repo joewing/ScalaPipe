@@ -5,7 +5,10 @@ import scala.collection.mutable.ListBuffer
 import scala.collection.mutable.HashSet
 import scalapipe._
 
-class Kernel(val name: String) extends EmbeddedControls {
+class Kernel(val name: String) extends EmbeddedControls with DebugInfo {
+
+    collectDebugInfo
+    SymbolValidator.validate(name, this)
 
     private val labelCounter = new LabelMaker("S")
     private[scalapipe] val inputs = new ListBuffer[KernelInput]

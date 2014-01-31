@@ -1,6 +1,6 @@
 package scalapipe.dsl
 
-import scalapipe._
+import scalapipe.{StructValueType, ValueType, SymbolValidator}
 
 class Struct extends Type {
 
@@ -11,7 +11,12 @@ class Struct extends Type {
      * @param t The type of the field.
      */
     def field(n: Symbol, t: Type) {
+        SymbolValidator.validate(n.name, this)
         fields = fields :+ (n -> t)
+    }
+
+    def field(n: String, t: Type) {
+        field(Symbol(n), t)
     }
 
     private[scalapipe] override def create = {

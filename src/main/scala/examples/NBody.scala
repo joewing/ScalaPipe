@@ -56,10 +56,10 @@ object NBody {
 
             // If the mass of the other particle is less than zero, we
             // start processing a new particle.
-            if (other('mass) < 0) {
+            if (other.mass < 0) {
                 p = pin
                 out = other
-                forces('mass) = 0
+                forces.mass = 0
             } else {
                 if (other.x <> p.x || other.y <> p.y || other.z <> p.z) {
                     dx = other.x - p.x
@@ -119,21 +119,21 @@ object NBody {
             val f = local(POINT)
 
             p = pin
-            if (p('mass) < 0) {
+            if (p.mass < 0) {
                 pout = p
             } else {
 
                 f = fin
 
                 // Update position.
-                p('x) += p('vx)
-                p('y) += p('vy)
-                p('z) += p('vz)
+                p.x += p.vx
+                p.y += p.vy
+                p.z += p.vz
 
                 // Update velocity.
-                p('vx) += f('x)
-                p('vy) += f('y)
-                p('vz) += f('z)
+                p.vx += f.x
+                p.vy += f.y
+                p.vz += f.z
 
                 pout = p
 
@@ -203,7 +203,7 @@ object NBody {
 
             if (!loaded) {
                 temp = fin
-                if (temp('mass) < 0) {
+                if (temp.mass < 0) {
                     loaded = true
                 } else {
                     particles(count) = temp
@@ -214,14 +214,14 @@ object NBody {
                     pout = particles(sentIndex)
                     sentIndex += 1
                     if (sentIndex == count) {
-                        temp('mass) = -1
+                        temp.mass = -1
                         pout = temp
                     }
                 }
                 if (updateIndex < sentIndex) {
                     if (avail(lin)) {
                         temp = lin
-                        if (temp('mass) >= 0) {
+                        if (temp.mass >= 0) {
                             particles(updateIndex) = temp
                             updateIndex += 1
                         }
@@ -252,7 +252,7 @@ object NBody {
 
             if (load) {
                 temp = pin
-                if (temp('mass) < 0) {
+                if (temp.mass < 0) {
                     load = false
                 } else {
                     particles(count) = temp
@@ -260,24 +260,24 @@ object NBody {
                 }
             } else {
                 if (i == 0) {
-                    other('mass) = -1
+                    other.mass = -1
                     oout = other
                     pout = particles(j)
                     j += 1;
                 }
                 temp = particles(i)
-                other('x) = temp('x)
-                other('y) = temp('y)
-                other('z) = temp('z)
-                other('mass) = temp('mass)
+                other.x = temp.x
+                other.y = temp.y
+                other.z = temp.z
+                other.mass = temp.mass
                 oout = other
                 i += 1
                 if (i == count) {
                     i = 0
                     if (j == count) {
-                        other('mass) = -1
+                        other.mass = -1
                         oout = other
-                        temp('mass) = -1
+                        temp.mass = -1
                         pout = temp
                         j = 0
                         load = true
@@ -302,8 +302,8 @@ object NBody {
                 val tv = local(stdio.TIMEVAL)
                 val result = local(UNSIGNED64)
                 stdio.gettimeofday(addr(tv), 0)
-                result = cast(tv('tv_sec), UNSIGNED64) * 1000000
-                result += cast(tv('tv_usec), UNSIGNED64)
+                result = cast(tv.tv_sec, UNSIGNED64) * 1000000
+                result += cast(tv.tv_usec, UNSIGNED64)
                 result
             }
 
@@ -350,8 +350,8 @@ object NBody {
                 val tv = local(stdio.TIMEVAL)
                 val result = local(UNSIGNED64)
                 stdio.gettimeofday(addr(tv), 0)
-                result = cast(tv('tv_sec), UNSIGNED64) * 1000000
-                result += cast(tv('tv_usec), UNSIGNED64)
+                result = cast(tv.tv_sec, UNSIGNED64) * 1000000
+                result += cast(tv.tv_usec, UNSIGNED64)
                 result
             }
 
@@ -378,10 +378,10 @@ object NBody {
             }
 
             p = pin
-            if (p('mass) < 0) {
+            if (p.mass < 0) {
                 currentTime = getTime()
                 stdio.printf("""Frame time: %lu us\n""",
-                                 currentTime - lastTime)
+                             currentTime - lastTime)
                 lastTime = currentTime
                 i = 0
                 j += 1
@@ -390,8 +390,8 @@ object NBody {
                 }
                 xlib.XClearWindow(display, w)
             } else {
-                x = width / 2 + p('x)
-                y = height / 2 + p('y)
+                x = width / 2 + p.x
+                y = height / 2 + p.y
                 xlib.XDrawPoint(display, w, gc, x, y)
                 i += 1
             }
