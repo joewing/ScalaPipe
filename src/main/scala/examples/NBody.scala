@@ -12,7 +12,7 @@ object NBody {
 
         val maxParticles = 1000
         val useX = true
-        val hw = false
+        val hw = true
 
         val VTYPE = FLOAT32
         val PARTICLE = new Struct {
@@ -20,9 +20,9 @@ object NBody {
             field('y, VTYPE)
             field('z, VTYPE)
             field('mass, VTYPE)
-            field('dx, VTYPE)
-            field('dy, VTYPE)
-            field('dz, VTYPE)
+            field('vx, VTYPE)
+            field('vy, VTYPE)
+            field('vz, VTYPE)
         }
         val POINT = new Vector(VTYPE, 4)        // x, y, z, command
 
@@ -124,14 +124,14 @@ object NBody {
                 f = fin
 
                 // Update position.
-                p('x) += p('dx)
-                p('y) += p('dy)
-                p('z) += p('dz)
+                p('x) += p('vx)
+                p('y) += p('vy)
+                p('z) += p('vz)
 
                 // Update velocity.
-                p('dx) += f(0)
-                p('dy) += f(1)
-                p('dz) += f(2)
+                p('vx) += f(0)
+                p('vy) += f(1)
+                p('vz) += f(2)
 
                 pout = p
 
@@ -165,15 +165,15 @@ object NBody {
                               addr(line(0)), addr(line(1)), addr(line(2)),
                               addr(line(3)), addr(line(4)), addr(line(5)),
                               addr(line(6)))
-            if (rc == 7 || count == maxParticles - 1) {
+            if (rc == 7 && count < maxParticles) {
                 count += 1
                 temp('mass) = line(0)
                 temp('x)    = line(1)
                 temp('y)    = line(2)
                 temp('z)    = line(3)
-                temp('dx)   = line(4)
-                temp('dy)   = line(5)
-                temp('dz)   = line(6)
+                temp('vx)   = line(4)
+                temp('vy)   = line(5)
+                temp('vz)   = line(6)
                 pout = temp
             } else {
                 stdio.printf("""Loaded %u particles\n""", count)
@@ -192,8 +192,7 @@ object NBody {
             val lin = input(PARTICLE)
             val pout = output(PARTICLE)
 
-            val arrayType   = Vector(PARTICLE, maxParticles)
-            val particles   = local(arrayType)
+            val particles   = local(Vector(PARTICLE, maxParticles))
             val temp        = local(PARTICLE)
             val updateIndex = local(UNSIGNED32, 0)
             val sentIndex   = local(UNSIGNED32, 0)
@@ -241,8 +240,7 @@ object NBody {
             val pout = output(PARTICLE)
             val oout = output(POINT)
 
-            val arrayType   = Vector(PARTICLE, maxParticles)
-            val particles   = local(arrayType)
+            val particles   = local(Vector(PARTICLE, maxParticles))
             val temp        = local(PARTICLE)
             val other       = local(POINT)
             val count       = local(UNSIGNED32, 0)
@@ -277,7 +275,7 @@ object NBody {
                     if (j == count) {
                         other(3) = -1
                         oout = other
-                        temp('z) = -1
+                        temp('mass) = -1
                         pout = temp
                         j = 0
                         load = true
@@ -320,13 +318,6 @@ object NBody {
                 i = 0
                 j += 1
             } else {
-/*
-                stdio.printf("""%d %d %lg (%lg %lg %lg) (%lg %lg %lg)\n""", j, i,
-                                 cast(p(3), FLOAT64), cast(p(0), FLOAT64),
-                                 cast(p(1), FLOAT64), cast(p(2), FLOAT64),
-                                 cast(p(4), FLOAT64), cast(p(5), FLOAT64),
-                                 cast(p(6), FLOAT64))
-*/
                 i += 1
             }
 
@@ -397,13 +388,6 @@ object NBody {
                 }
                 xlib.XClearWindow(display, w)
             } else {
-/*
-                stdio.printf("""%d %d %lg (%lg %lg %lg) (%lg %lg %lg)\n""", j, i,
-                                 cast(p(3), FLOAT64), cast(p(0), FLOAT64),
-                                 cast(p(1), FLOAT64), cast(p(2), FLOAT64),
-                                 cast(p(4), FLOAT64), cast(p(5), FLOAT64),
-                                 cast(p(6), FLOAT64))
-*/
                 x = width / 2 + p('x)
                 y = height / 2 + p('y)
                 xlib.XDrawPoint(display, w, gc, x, y)
