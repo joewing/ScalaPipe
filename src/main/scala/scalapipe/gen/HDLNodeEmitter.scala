@@ -68,11 +68,11 @@ private[gen] abstract class HDLNodeEmitter(
         val destWidth = node.dest.valueType.bits
         val srca = emitSymbol(node.srca)
         node.srca.valueType match {
-            case ivt: IntegerValueType if srcWidth < destWidth =>
+            case ivt: IntegerValueType if srcWidth >= destWidth =>
                 val top = destWidth - 1
                 s"$srca[$top:0]"
-            case ivt: IntegerValueType if srcWidth >= destWidth =>
-                val repeat = srcWidth - destWidth
+            case ivt: IntegerValueType if srcWidth < destWidth =>
+                val repeat = destWidth - srcWidth
                 if (ivt.signed) {
                     s"{{$repeat{$srca[${srcWidth - 1}]}},$srca}"
                 } else {
@@ -440,7 +440,7 @@ private[gen] abstract class HDLNodeEmitter(
             addGuard(block, "!ram_we")
             addGuard(block, "(state == last_state)")
             if (bits > ramWidth) {
-                addGuard(block, s"(ram_state == $wordCount)")
+                addGuard(block, s"(ram_state == ${wordCount - 1})")
             }
 
             // Emit the code to run for the first word of the store.
@@ -452,7 +452,7 @@ private[gen] abstract class HDLNodeEmitter(
                 // First word of a multi-word store.
                 // Note that this store will be aligned.
                 val top = ramWidth - 1
-                initBuilder.write(s"ram_in <= $src[$top:0]")
+                initBuilder.write(s"ram_in <= $src[$top:0];")
                 initBuilder.write(s"ram_mask <= {$wordBytes{1'b1}};")
             } else if (bits == ramWidth) {
                 // Single-word store.
@@ -486,8 +486,8 @@ private[gen] abstract class HDLNodeEmitter(
                 val updateBuilder = new Generator
                 updateBuilder.write(s"if (ram_ready" +
                                     s" && !ram_we" +
-                                    s" && state != last_state" +
-                                    s" && ram_state < $wordCount) begin")
+                                    s" && state == last_state" +
+                                    s" && ram_state < ${wordCount - 1}) begin")
                 updateBuilder.enter
                 updateBuilder.write(s"ram_we <= 1;")
                 updateBuilder.write(s"ram_addr <= ram_addr + 1;")
@@ -509,6 +509,8 @@ private[gen] abstract class HDLNodeEmitter(
                 }
                 updateBuilder.leave
                 updateBuilder.write(s"endcase")
+                updateBuilder.leave
+                updateBuilder.write(s"end")
                 addUpdater(updateBuilder)
             }
 
