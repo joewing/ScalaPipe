@@ -144,15 +144,18 @@ private[scalapipe] class SockEdgeGenerator(val host: String)
         writeEnd
         writeIf(s"ptr != NULL")
         write(s"ssize_t rc = recv($sock, ptr, max_size, 0);")
-        writeIf(s"XUNLIKELY(rc < 0 && errno != EAGAIN)")
+        writeIf(s"rc < 0")
+        writeIf(s"XUNLIKELY(errno != EAGAIN)")
         write("perror(\"recv\");")
         write("exit(-1);")
         writeEnd
+        writeElse
         write(s"const size_t total = rc + leftovers;")
         write(s"const size_t count = total / sizeof($vtype);")
         write(s"leftovers = total % sizeof($vtype);")
         write(s"ptr += rc;")
         write(s"APQ_FinishWrite($qname, count);")
+        writeEnd
         writeEnd
         writeIf(s"$destLabel.inputs[$destIndex].data == NULL")
         write(s"char *buf;")
@@ -188,18 +191,73 @@ private[scalapipe] class SockEdgeGenerator(val host: String)
     }
 
     private def writeInitProducer(stream: Stream) {
-        // Nothing to do here.
+
+        val sock = s"sock${stream.label}"
+        val remoteHost = stream.destKernel.device.host
+        val port = 9000
+
+        // Create the client socket and connect to the server.
+        enter
+        write(s"$sock = socket(PF_INET, SOCK_STREAM, 0);")
+        writeIf(s"$sock < 0")
+        write("perror(\"socket\");")
+        write("exit(-1);")
+        writeEnd
+        write(s"struct hostent *host;")
+        write("host = gethostbyname(\"" + remoteHost + "\");")
+        writeIf("host == NULL")
+        write("perror(\"gethostbyname\");")
+        write("exit(-1);")
+        writeEnd
+        write(s"struct sockaddr_in addr;")
+        write(s"memset(&addr, 0, sizeof(addr));")
+        write(s"addr.sin_family = PF_INET;")
+        write(s"addr.sin_port = $port;")
+        write(s"addr.sin_addr = *(struct in_addr*)host->h_addr;")
+        write(s"int rc = connect($sock, (struct sockaddr*)&addr, " +
+              s"sizeof(addr));")
+        writeIf("rc")
+        write("perror(\"connect\");")
+        write("exit(-1);")
+        writeEnd
+        leave
+
     }
 
     private def writeInitConsumer(stream: Stream) {
 
+        val lsock = s"server${stream.label}"
         val qname = s"q_${stream.label}"
         val depth = stream.depth
         val vtype = stream.valueType
+        val port = 9000
 
         // Initialize the queue.
         write(s"$qname = (APQ*)malloc(APQ_GetSize($depth, sizeof($vtype)));")
         write(s"APQ_Initialize($qname, $depth, sizeof($vtype));")
+
+        // Create the server socket.
+        enter
+        write(s"$lsock = socket(PF_INET, SOCK_STREAM, 0);")
+        writeIf(s"$lsock < 0")
+        write("perror(\"socket\");")
+        write("exit(-1);")
+        writeEnd
+        write(s"struct sockaddr_in addr;")
+        write(s"memset(&addr, 0, sizeof(addr));")
+        write(s"addr.sin_family = PF_INET;")
+        write(s"addr.sin_port = $port;")
+        write(s"int rc = bind($lsock, (struct sockaddr*)&addr, sizeof(addr));")
+        writeIf(s"rc")
+        write("perror(\"bind\");")
+        write("exit(-1);")
+        writeEnd
+        write(s"rc = listen($lsock, 1);")
+        writeIf(s"rc")
+        write("perror(\"listen\");")
+        write("exit(-1);")
+        writeEnd
+        leave
 
     }
 
