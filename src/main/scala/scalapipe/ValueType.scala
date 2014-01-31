@@ -136,6 +136,34 @@ private[scalapipe] class ArrayValueType(v: Vector)
 
 }
 
+/** Base value type for types with fields (structs and unions). */
+private[scalapipe] abstract class RecordValueType(
+        _name: String,
+        _bits: Int
+    ) extends ValueType(_name, _bits) {
+
+    protected val fields: Seq[(String, ValueType)]
+
+    def fieldNames: Seq[String] = fields.map(_._1)
+
+    def fieldTypes: Seq[ValueType] = fields.map(_._2)
+
+    def fieldType(name: String): ValueType = fields.find(_._1 == name) match {
+        case Some(f)    => f._2
+        case None       =>
+            Error.raise(s"field not found: $name")
+            ValueType.void
+    }
+
+    /** Get the byte offset of a field. */
+    def offset(name: String): Int
+
+    override def pure = fieldTypes.forall(_.pure)
+
+    override def dependencies = fieldTypes.toSet
+
+}
+
 private object StructValueType {
 
     // TODO: This assumes 4-byte alignment
@@ -165,29 +193,20 @@ private object StructValueType {
 
 private[scalapipe] class StructValueType(
         struct: Struct
-    ) extends ValueType(struct.name, StructValueType.bits(struct)) {
+    ) extends RecordValueType(struct.name, StructValueType.bits(struct)) {
 
-    private[scalapipe] val fields = struct.fields.map { case (k, v) =>
-        (k.name, v.create())
-    }
-
-    // Get the byte offset of a field in the structure.
-    def offset(name: String): Int = {
-        val ftype = fields.find(_._1 == name) match {
-            case Some(t) => t._2
-            case None =>
-                Error.raise(s"struct field not found: $name")
-                null
+    protected val fields: Seq[(String, ValueType)] =
+        struct.fields.map { case (k, v) =>
+            (k.name, v.create())
         }
+
+    def offset(name: String): Int = {
+        val ftype = fieldType(name)
         val skip = fields.takeWhile(_._1 != name).foldLeft(0) { (t, f) =>
             StructValueType.pad(t, f._2) + f._2.bytes
         }
-        StructValueType.pad(skip, ftype)
+        return StructValueType.pad(skip, ftype)
     }
-
-    override def pure = fields.forall(_._2.pure)
-
-    override def dependencies = fields.map(_._2).toSet
 
 }
 
@@ -207,15 +226,14 @@ private object UnionValueType {
 
 private[scalapipe] class UnionValueType(
         union: Union
-    ) extends ValueType(union.name, UnionValueType.bits(union)) {
+    ) extends RecordValueType(union.name, UnionValueType.bits(union)) {
 
-    private[scalapipe] val fields = union.fields.map { case (k, v) =>
-        (k.name, v.create())
-    }
+    protected val fields: Seq[(String, ValueType)] =
+        union.fields.map { case (k, v) =>
+            (k.name, v.create())
+        }
 
-    override def pure = fields.forall(_._2.pure)
-
-    override def dependencies = fields.map(_._2).toSet
+    def offset(name: String): Int = 0
 
 }
 

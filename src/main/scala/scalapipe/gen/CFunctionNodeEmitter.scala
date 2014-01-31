@@ -12,21 +12,20 @@ private[scalapipe] class CFunctionNodeEmitter(
     private def emitComponent(base: String,
                               vt: ValueType,
                               comp: ASTNode): (String, ValueType) = {
-        val lit: SymbolLiteral = comp match {
-            case sl: SymbolLiteral => sl
-            case _ => null
+        val sym: String = comp match {
+            case sl: SymbolLiteral  => sl.symbol
+            case _                  => null
         }
-        val expr = if (lit != null) {
+        val expr = if (sym != null) {
             "." + comp
         } else {
             "[" + emitExpr(comp) + "]"
         }
         val nvt = vt match {
-            case at: ArrayValueType                 => at.itemType
-            case st: StructValueType if lit != null => st.fields(lit.symbol)
-            case ut: UnionValueType  if lit != null => ut.fields(lit.symbol)
-            case nt: NativeValueType if lit != null => ValueType.any
-            case _                                  => sys.error("internal")
+            case at: ArrayValueType     => at.itemType
+            case rt: RecordValueType    => rt.fieldType(sym)
+            case nt: NativeValueType    => ValueType.any
+            case _                      => ValueType.void
         }
         val str = if (isNative(vt)) {
             s"$base$expr"

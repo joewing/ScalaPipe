@@ -11,7 +11,7 @@ private[scalapipe] object XGenerator extends Generator {
         case at: ArrayValueType =>
             s"array<${at.baseType}>[${at.length}]"
         case st: StructValueType =>
-            val fieldTypes = st.fields.map(f => getTypeName(f._2))
+            val fieldTypes = st.fieldTypes.map(getTypeName(_))
             val fieldString = fieldTypes.mkString(",")
             s"struct<$fieldString>"
         case td: TypeDefValueType => td.value

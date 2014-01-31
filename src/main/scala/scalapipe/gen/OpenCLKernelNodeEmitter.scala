@@ -31,7 +31,7 @@ private[scalapipe] class OpenCLKernelNodeEmitter(
 
     private def send(name: String, index: Int): String = {
         "barrier(CLK_GLOBAL_MEM_FENCE); " +
-        "if(id == 0) { " + 
+        "if(id == 0) { " +
         "control->" + name + "_sent += unit_size; " +
         "} " +
         "barrier(CLK_GLOBAL_MEM_FENCE);"
@@ -76,18 +76,17 @@ private[scalapipe] class OpenCLKernelNodeEmitter(
     private def emitComponent(base: String,
                               vt: ValueType,
                               comp: ASTNode): (String, ValueType) = {
-        val lit: SymbolLiteral = comp match {
-            case sl: SymbolLiteral => sl
+        val sym: String = comp match {
+            case sl: SymbolLiteral => sl.symbol
             case _ => null
         }
         val nvt = vt match {
-            case at: ArrayValueType                 => at.itemType
-            case st: StructValueType if lit != null => st.fields(lit.symbol)
-            case ut: UnionValueType  if lit != null => ut.fields(lit.symbol)
-            case nt: NativeValueType if lit != null => ValueType.any
-            case _                                  => sys.error("internal")
+            case at: ArrayValueType     => at.itemType
+            case rt: RecordValueType    => rt.fieldType(sym)
+            case nt: NativeValueType    => ValueType.any
+            case _                      => ValueType.void
         }
-        val expr = if (lit != null) {
+        val expr = if (sym != null) {
             "." + comp
         } else {
             "[" + emitExpr(comp) + "]"

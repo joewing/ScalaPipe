@@ -46,10 +46,8 @@ private[gen] class CTypeEmitter extends CGenerator {
                     write(s"#define DECLARED_$name")
                     write(s"typedef struct")
                     enter
-                    st.fields.foreach { f =>
-                        val fname = f._1
-                        val ftype = f._2.name
-                        write(s"$ftype $fname;")
+                    for ((fn, ft) <- st.fieldNames.zip(st.fieldTypes)) {
+                        write(s"$ft $fn;")
                     }
                     leave
                     write(s"$name;")
@@ -59,10 +57,8 @@ private[gen] class CTypeEmitter extends CGenerator {
                     write(s"#define DECLARED_$name")
                     write(s"typedef union")
                     enter
-                    for (f <- ut.fields) {
-                        val fname = f._1
-                        val ftype = f._2.name
-                        write("$ftype $fname;")
+                    for ((fn, ft) <- ut.fieldNames.zip(ut.fieldTypes)) {
+                        write(s"$ft $fn;")
                     }
                     leave
                     write(s"$name;")

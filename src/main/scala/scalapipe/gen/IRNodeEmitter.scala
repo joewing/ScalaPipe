@@ -150,21 +150,19 @@ private[scalapipe] case class IRNodeEmitter(
         }
         val nvt = vt match {
             case at: ArrayValueType     => at.itemType
-            case st: StructValueType    => st.fields(sym)
-            case ut: UnionValueType     => ut.fields(sym)
+            case rt: RecordValueType    => rt.fieldType(sym)
             case nt: NativeValueType    => ValueType.any
-            case _ => sys.error(s"internal: $vt")
+            case _                      => ValueType.void
         }
 
         val expr: BaseSymbol = vt match {
-            case st: StructValueType    => emitS32(st.offset(sym))
-            case ut: UnionValueType     => emitS32(0)
+            case rt: RecordValueType    => emitS32(rt.offset(sym))
             case at: ArrayValueType     =>
                 val multiplier = emitS32(at.itemType.bytes)
                 val temp = emitMul(comp, multiplier, emitExpr(comp))
                 kt.releaseTemp(multiplier)
                 temp
-            case _ => sys.error(s"internal: $vt")
+            case _ => emitS32(0)
         }
         val offset = base.foldLeft(expr) { (a, b) =>
             val temp = emitAdd(comp, a, b)

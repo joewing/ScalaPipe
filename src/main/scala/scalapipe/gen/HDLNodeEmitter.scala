@@ -107,18 +107,21 @@ private[gen] abstract class HDLNodeEmitter(
             case NodeType.shl if vt.signed  => s"$srca <<< $srcb"
             case NodeType.shl if !vt.signed => s"$srca << $srcb"
             case NodeType.add   =>
-                moduleEmitter.createSimple("ap_addI", width, List(srca, srcb))
+                moduleEmitter.createSimple("ap_addI", width, Seq(srca, srcb))
             case NodeType.sub   =>
-                moduleEmitter.createSimple("ap_subI", width, List(srca, srcb))
+                moduleEmitter.createSimple("ap_subI", width, Seq(srca, srcb))
             case NodeType.mul if node.srca.isInstanceOf[ImmediateSymbol] =>
                 s"$srca * $srcb"
             case NodeType.mul if !node.srca.isInstanceOf[ImmediateSymbol] =>
-                moduleEmitter.create("ap_mulI", width, state, List(srca, srcb))
+                moduleEmitter.create("ap_mulI", width, state, Seq(srca, srcb))
             case NodeType.div if vt.signed =>
-                moduleEmitter.create("ap_divS", width, state, List(srca, srcb))
+                moduleEmitter.create("ap_divS", width, state, Seq(srca, srcb))
             case NodeType.div if !vt.signed =>
-                moduleEmitter.create("ap_divU", width, state, List(srca, srcb))
-            case NodeType.mod       => s"$srca % $srcb"
+                moduleEmitter.create("ap_divU", width, state, Seq(srca, srcb))
+            case NodeType.mod if vt.signed =>
+                moduleEmitter.create("ap_modS", width, state, Seq(srca, srcb))
+            case NodeType.mod if !vt.signed =>
+                moduleEmitter.create("ap_modU", width, state, Seq(srca, srcb))
             case NodeType.eq        => s"$srca == $srcb"
             case NodeType.ne        => s"$srca != $srcb"
             case NodeType.gt        => s"$srca > $srcb"

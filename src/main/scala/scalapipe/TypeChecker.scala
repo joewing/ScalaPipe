@@ -117,15 +117,14 @@ private[scalapipe] class TypeChecker(kt: KernelType) {
     }
 
     private def getComponentType(vt: ValueType, comp: ASTNode): ValueType = {
-        val lit: SymbolLiteral = comp match {
-            case sl: SymbolLiteral => sl
+        val sym: String = comp match {
+            case sl: SymbolLiteral => sl.symbol
             case _ => null
         }
         vt match {
-            case at: ArrayValueType                 => at.itemType
-            case st: StructValueType if lit != null => st.fields(lit.symbol)
-            case ut: UnionValueType  if lit != null => ut.fields(lit.symbol)
-            case nt: NativeValueType if lit != null => ValueType.any
+            case at: ArrayValueType     => at.itemType
+            case rt: RecordValueType    => rt.fieldType(sym)
+            case nt: NativeValueType    => ValueType.any
             case _ =>
                 Error.raise("invalid component specifier", comp)
                 ValueType.void
