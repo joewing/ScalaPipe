@@ -263,7 +263,7 @@ private[scalapipe] class SimulationResourceGenerator(
         enter
         write
         for (s <- inputStreams) {
-            val fd = s"stream{$s.label}"
+            val fd = s"stream${s.label}"
             write(s"""$fd = $$fopen(\"$fd\", \"rb\");""")
             write(s"if($fd == 0) begin")
             enter
