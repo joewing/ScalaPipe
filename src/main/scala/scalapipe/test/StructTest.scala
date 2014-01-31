@@ -33,10 +33,10 @@ object StructTest {
 
         t = x0
         stdio.printf("""OUTPUT %d\n""", t.y)
-        if (t.x.a != t.y + 1) {
+        if (t.x.a <> t.y + 1) {
             stdio.printf("""OUTPUT: ERROR a\n""")
         }
-        if (t.x.b != (t.y & 1)) {
+        if (t.x.b <> (t.y & 1)) {
             stdio.printf("""OUTPUT: ERROR b\n""")
         }
         if (t.y == 9) {

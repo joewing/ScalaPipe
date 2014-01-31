@@ -38,7 +38,7 @@ object BLSC {
 		val SmallArray = new Vector(FLOAT32, size)
 		val BigArray = new Vector(FLOAT32, size*size)
 
-		
+
 
 		val pow = new Func {
 			val x = input(FLOAT32)
@@ -57,7 +57,7 @@ object BLSC {
 					answer = answer / x
 					counter -= 1
 				}
-			}	
+			}
 			return answer
 		}
 
@@ -89,7 +89,7 @@ object BLSC {
 			returns(FLOAT32)
 
 			val z = local(FLOAT32, 0)
-			val y = local(FLOAT32, 0) 
+			val y = local(FLOAT32, 0)
 			y = x
 			val answer = local(FLOAT32, 0)
 			y += (pi / 2)
@@ -130,13 +130,13 @@ object BLSC {
 				}
 
 			}
-			
+
 			//stop
 		}
 
 
 
-		
+
 
 		val CorrelationMatrixGenerator = new Kernel("CorrelationMatrixGenerator") {
 			/*The correlation matrix generator makes use of the method for creating
@@ -150,48 +150,48 @@ object BLSC {
 			populated with numbers in the range [-pi, pi] in the lower trangle. Everything
 			else (including the diagonal) is set to 0. From there, a matrix, B, is populated
 			with numbers in the range [-1, 1] where each cell in the lower triangle (and
-			diagonal) is assigned a number based on some combination sine and cosine of the 
+			diagonal) is assigned a number based on some combination sine and cosine of the
 			values in theta. B is then transposed and B is multiplied by BT to give the full
 			correlation matrix C. C is then Cholesky decomposed.
 
 			Example:
-			
+
 			(n = 5)
 
 			--Theta--
-			0.000	0.000	0.000	0.000	0.000	
-			1.533	0.000	0.000	0.000	0.000	
-			4.455	4.847	0.000	0.000	0.000	
-			3.548	5.704	6.041	0.000	0.000	
-			0.897	6.242	1.779	4.628	0.000	
+			0.000	0.000	0.000	0.000	0.000
+			1.533	0.000	0.000	0.000	0.000
+			4.455	4.847	0.000	0.000	0.000
+			3.548	5.704	6.041	0.000	0.000
+			0.897	6.242	1.779	4.628	0.000
 
 			--B--
-			1.000	0.000	0.000	0.000	0.000	
-			0.038	0.999	0.000	0.000	0.000	
-			-0.254	-0.130	0.958	0.000	0.000	
-			-0.918	-0.331	0.210	-0.052	0.000	
-			0.624	0.781	0.007	0.003	0.031	
+			1.000	0.000	0.000	0.000	0.000
+			0.038	0.999	0.000	0.000	0.000
+			-0.254	-0.130	0.958	0.000	0.000
+			-0.918	-0.331	0.210	-0.052	0.000
+			0.624	0.781	0.007	0.003	0.031
 
 			--Transpose B--
-			1.000	0.038	-0.254	-0.918	0.624	
-			0.000	0.999	-0.130	-0.331	0.781	
-			0.000	0.000	0.958	0.210	0.007	
-			0.000	0.000	0.000	-0.052	0.003	
-			0.000	0.000	0.000	0.000	0.031	
+			1.000	0.038	-0.254	-0.918	0.624
+			0.000	0.999	-0.130	-0.331	0.781
+			0.000	0.000	0.958	0.210	0.007
+			0.000	0.000	0.000	-0.052	0.003
+			0.000	0.000	0.000	0.000	0.031
 
 			--C--
-			1.000	0.038	-0.254	-0.918	0.624	
-			0.038	1.000	-0.140	-0.366	0.804	
-			-0.254	-0.140	1.000	0.478	-0.254	
-			-0.918	-0.366	0.478	1.000	-0.830	
-			0.624	0.804	-0.254	-0.830	1.000	
+			1.000	0.038	-0.254	-0.918	0.624
+			0.038	1.000	-0.140	-0.366	0.804
+			-0.254	-0.140	1.000	0.478	-0.254
+			-0.918	-0.366	0.478	1.000	-0.830
+			0.624	0.804	-0.254	-0.830	1.000
 
 			--Cholseky Decomposed C--
-			1.000	0.000	0.000	0.000	0.000	
-			0.038	0.999	0.000	0.000	0.000	
-			-0.254	-0.130	0.958	0.000	0.000	
-			-0.918	-0.331	0.210	0.052	0.000	
-			0.624	0.781	0.007	-0.003	0.031	
+			1.000	0.000	0.000	0.000	0.000
+			0.038	0.999	0.000	0.000	0.000
+			-0.254	-0.130	0.958	0.000	0.000
+			-0.918	-0.331	0.210	0.052	0.000
+			0.624	0.781	0.007	-0.003	0.031
 
 			*/
 			val n = config(SIGNED32, 'n, 5)
@@ -227,9 +227,9 @@ object BLSC {
 						if(j < n) {
 							//stdio.printf("""i: %d j: %d\t""", i, j)
 							if(i > j) {
-								switcher = cast(x0 % 6283, FLOAT32) 
+								switcher = cast(x0 % 6283, FLOAT32)
 								//switcher = switcher % 6283
-								switcher = switcher / 1000.0 
+								switcher = switcher / 1000.0
 								switcher -= 3.14159
 								theta(i*n+j) = switcher
 							} else {
@@ -465,14 +465,14 @@ object BLSC {
 						} else {
 							j = 0
 							i += 1
-						}						
+						}
 					} else {
 						state = 0
 						i = 0
 						j = 0
 						//stdio.printf("""\n\n""")
 					}
-					
+
 				}
 
 				when(0) {
@@ -488,7 +488,7 @@ object BLSC {
 						state = 1
 						//stdio.printf("""\n\n""")
 					}
-					
+
 				}
 
 				when(1) {
@@ -558,7 +558,7 @@ object BLSC {
 			switch(state) {
 
 				when(0) {
-					
+
 					if(i < n) {
 						stocks(i) = x0
 						spot(i) = x1
@@ -619,7 +619,7 @@ object BLSC {
 						price(i) = temp
 						stdio.printf("""price(%d): %f\n""", i, price(i))
 						i += 1
-						
+
 					}
 					counter += 1
 					stdio.printf("""\nCounter:\t%d\n""", counter)
@@ -644,16 +644,14 @@ object BLSC {
 							dummy = x4
 							i += 1
 							runcount = 100
-						}	
+						}
 					} else {
 						state = 3
 					}
 				}
 			}
 		}
-			
-			
-		
+
 
 		object BLSC extends Application {
 
@@ -666,7 +664,7 @@ object BLSC {
 			val trans = Transform(matrix, ziggy, 'n -> size)
 			val spotR = Random('seed -> seed)
 			val spotT = MT(spotR, 'iterations -> mtlength)
-			val spotC = RandomCleaner(spotT, 'n -> size, 'upperrange -> 100) 
+			val spotC = RandomCleaner(spotT, 'n -> size, 'upperrange -> 100)
 			val volR = Random('seed -> seed)
 			val volT = MT(volR, 'iterations -> mtlength)
 			val volC = RandomCleaner(volT, 'n -> size, 'upperrange -> .5, 'resolution -> 1000)

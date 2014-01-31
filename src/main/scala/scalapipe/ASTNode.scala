@@ -6,7 +6,7 @@ import scalapipe.dsl.{Kernel, Func, Type}
 abstract class ASTNode(
         val op: NodeType.Value,
         val kernel: Kernel
-    ) extends AnyRef with DebugInfo {
+    ) extends DebugInfo {
 
     private[scalapipe] var parent: ASTNode = null
     private[scalapipe] def children: Seq[ASTNode]
@@ -51,6 +51,8 @@ abstract class ASTNode(
     final def /[T <% ASTNode](o: T) = ASTOpNode(NodeType.div, this, o, kernel)
 
     final def %[T <% ASTNode](o: T) = ASTOpNode(NodeType.mod, this, o, kernel)
+
+    final def <>[T <% ASTNode](o: T) = ASTOpNode(NodeType.ne, this, o, kernel)
 
     final def >[T <% ASTNode](o: T) = ASTOpNode(NodeType.gt, this, o, kernel)
 

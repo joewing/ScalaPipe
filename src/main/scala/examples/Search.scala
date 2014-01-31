@@ -43,7 +43,7 @@ object Search {
                     done = 0
                     while (!done) {
                         ch = stdio.fgetc(fp)
-                        if (ch != '\n' && ch < 255) {
+                        if (ch <> '\n' && ch < 255) {
                             buffer(0) = (buffer(0) << 8) | ch
                             buffer(1) = (buffer(1) << 8) | 255
                         } else {

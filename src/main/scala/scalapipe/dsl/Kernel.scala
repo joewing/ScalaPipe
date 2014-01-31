@@ -110,6 +110,11 @@ class Kernel(val name: String) extends DebugInfo {
         ASTOpNode(NodeType.eq, a, b, this)
     }
 
+    def __notEqual[A <% ASTNode, B <% ASTNode](a: A, b: B): ASTNode = {
+        ASTOpNode(NodeType.ne, a, b, this)
+    }
+
+
     def __assign[A <% ASTNode, B <% ASTNode](a: A, b: B): ASTNode = {
         ASTAssignNode(a, b, this)
     }

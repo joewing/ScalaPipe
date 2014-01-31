@@ -219,7 +219,7 @@ object Cluster {
                     // Send an updated cluster.
                     i = 0
                     while (i < clusterCount) {
-                        if (counts(i) != 0) {
+                        if (counts(i) <> 0) {
                             clusters(i) /= counts(i)
                         }
                         i += 1
