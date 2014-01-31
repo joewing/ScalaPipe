@@ -22,9 +22,12 @@ object RunnableExpressions extends DataFlowProblem {
         }
     }
 
-    private def disjoint(a: BaseSymbol, b: BaseSymbol) = (a, b) match {
-        case (ia: ImmediateSymbol, ib: ImmediateSymbol) => ia.value != ib.value
-        case _ => false
+    private def disjoint(a: BaseSymbol, b: BaseSymbol): Boolean  = {
+        (a, b) match {
+            case (ia: ImmediateSymbol, ib: ImmediateSymbol) =>
+                ia.value != ib.value
+            case _ => false
+        }
     }
 
     private def hasSymbolConflict(a: IRNode, b: IRNode) = {

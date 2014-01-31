@@ -107,7 +107,7 @@ object BMPWriter extends Kernel {
 
     } else {
 
-        pixel = data_in        
+        pixel = data_in
         stdio.fputc((pixel >>  0) & 0xFF, fd)
         stdio.fputc((pixel >>  8) & 0xFF, fd)
         stdio.fputc((pixel >> 16) & 0xFF, fd)
@@ -116,7 +116,7 @@ object BMPWriter extends Kernel {
         if (x == width) {
 
             // Pad row to a four-byte multiple.
-            while ((x & 3) <> 0) {
+            while ((x & 3) != 0) {
                 stdio.fputc(0, fd)
                 x += 1
             }

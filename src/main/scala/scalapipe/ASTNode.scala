@@ -1,12 +1,12 @@
 package scalapipe
 
 import scala.language.dynamics
-import scalapipe.dsl.{Kernel, Func}
+import scalapipe.dsl.{Kernel, Func, Type}
 
 abstract class ASTNode(
         val op: NodeType.Value,
         val kernel: Kernel
-    ) extends DebugInfo {
+    ) extends AnyRef with DebugInfo {
 
     private[scalapipe] var parent: ASTNode = null
     private[scalapipe] def children: Seq[ASTNode]
@@ -15,7 +15,7 @@ abstract class ASTNode(
 
     private[scalapipe] def pure: Boolean = children.forall(_.pure)
 
-    // Dirty way to get the line number and file name in case of an error.
+    // Only collect debug info if this is being created from a kernel.
     if (kernel != null) {
         collectDebugInfo
     }
@@ -51,10 +51,6 @@ abstract class ASTNode(
     final def /[T <% ASTNode](o: T) = ASTOpNode(NodeType.div, this, o, kernel)
 
     final def %[T <% ASTNode](o: T) = ASTOpNode(NodeType.mod, this, o, kernel)
-
-    final def ===[T <% ASTNode](o: T) = ASTOpNode(NodeType.eq, this, o, kernel)
-
-    final def <>[T <% ASTNode](o: T) = ASTOpNode(NodeType.ne, this, o, kernel)
 
     final def >[T <% ASTNode](o: T) = ASTOpNode(NodeType.gt, this, o, kernel)
 

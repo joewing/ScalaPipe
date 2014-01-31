@@ -80,7 +80,7 @@ object AES extends App {
         val x = input(UNSIGNED8)
         returns(UNSIGNED8)
 
-        if ((x & 0x80) <> 0) {
+        if ((x & 0x80) != 0) {
             return (x << 1) ^ 0x1B
         } else {
             return x << 1

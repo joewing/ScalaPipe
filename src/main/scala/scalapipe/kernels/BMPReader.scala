@@ -40,7 +40,7 @@ object BMPReader extends Kernel {
         //     reserved (4 bytes)
         //     offset (4 bytes)
         stdio.fread(addr(header), 1, 14, fd)
-        if (header(0) <> 'B' || header(1) <> 'M') {
+        if (header(0) != 'B' || header(1) != 'M') {
             stdio.fclose(fd)
             stdio.printf("""ERROR: invalid BMP header in %s\n""", file_name)
             stdio.exit(-1)
@@ -53,8 +53,8 @@ object BMPReader extends Kernel {
 
         // Read the DIB header.
         stdio.fread(addr(dib_header), 1, 40, fd)
-        if (dib_header(0) <> 40 || dib_header(1) <> 0 ||
-            dib_header(2) <> 0 || dib_header(3) <> 0) {
+        if (dib_header(0) != 40 || dib_header(1) != 0 ||
+            dib_header(2) != 0 || dib_header(3) != 0) {
             stdio.fclose(fd)
             stdio.printf("""ERROR: unknown DIB header in %s\n""", file_name)
             stdio.exit(-1)
@@ -76,7 +76,7 @@ object BMPReader extends Kernel {
         // We support 24 or 32.
         depth  = dib_header(14) << 0
         depth |= dib_header(15) << 8
-        if (depth <> 24 && depth <> 32) {
+        if (depth != 24 && depth != 32) {
             stdio.printf("""ERROR: unsupported bit depth in %s: %hu\n""",
                          file_name, depth)
             stdio.exit(-1)
@@ -87,7 +87,7 @@ object BMPReader extends Kernel {
         compression |= dib_header(17) << 8
         compression |= dib_header(18) << 16
         compression |= dib_header(19) << 24
-        if (compression <> 0) {
+        if (compression != 0) {
             stdio.printf("""ERROR: unsupported compression in %s: %u\n""",
                          file_name, compression)
             stdio.exit(-1)
@@ -109,7 +109,7 @@ object BMPReader extends Kernel {
 
         x += 1
         if (x == width) {
-            while ((x & 3) <> 0) {
+            while ((x & 3) != 0) {
                 stdio.fgetc(fd)
                 x += 1
             }

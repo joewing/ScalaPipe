@@ -116,7 +116,7 @@ object Maze {
             while (i < run) {
 
                 // Northward passage.
-                maze = i <> north
+                maze = i != north
                 maze = 1
 
                 // Eastward passage.

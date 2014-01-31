@@ -219,7 +219,7 @@ object Cluster {
                     // Send an updated cluster.
                     i = 0
                     while (i < clusterCount) {
-                        if (counts(i) <> 0) {
+                        if (counts(i) != 0) {
                             clusters(i) /= counts(i)
                         }
                         i += 1
@@ -230,7 +230,7 @@ object Cluster {
                     i = 0
                     while (i < clusterCount) {
                         clusters(i) = 0
-                        counts(i)    = 0
+                        counts(i) = 0
                         i += 1
                     }
 
@@ -248,23 +248,23 @@ object Cluster {
         /** Block to output the cluster data. */
         val Output = new Kernel("Output") {
 
-            val cluster_in     = input(ClusterType)
-            val value_in        = input(ValueType)
-            val width_in        = input(SIGNED32)
-            val height_in      = input(SIGNED32)
+            val cluster_in  = input(ClusterType)
+            val value_in    = input(ValueType)
+            val width_in    = input(SIGNED32)
+            val height_in   = input(SIGNED32)
 
-            val cluster_out    = output(ClusterType)
-            val value_out      = output(ValueType)
-            val width_out      = output(SIGNED32)
-            val height_out     = output(SIGNED32)
+            val cluster_out = output(ClusterType)
+            val value_out   = output(ValueType)
+            val width_out   = output(SIGNED32)
+            val height_out  = output(SIGNED32)
 
             val cluster = local(ClusterType)
-            val i         = local(SIGNED32, 0)
-            val width    = local(SIGNED32, 0)
+            val i       = local(SIGNED32, 0)
+            val width   = local(SIGNED32, 0)
             val height  = local(SIGNED32)
-            val value    = local(ValueType)
-            val x         = local(SIGNED32, 0)
-            val y         = local(SIGNED32, 0)
+            val value   = local(ValueType)
+            val x       = local(SIGNED32, 0)
+            val y       = local(SIGNED32, 0)
 
             if (width == 0) {
                 width = width_in

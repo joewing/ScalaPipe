@@ -61,7 +61,7 @@ object NBody {
                 out = other
                 forces.mass = 0
             } else {
-                if (other.x <> p.x || other.y <> p.y || other.z <> p.z) {
+                if (other.x != p.x || other.y != p.y || other.z != p.z) {
                     dx = other.x - p.x
                     dy = other.y - p.y
                     dz = other.z - p.z
