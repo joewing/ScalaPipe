@@ -6,12 +6,6 @@ private[opt] object ExpandExpressions extends Pass {
 
     override def toString = "expand expressions"
 
-    private def multipart(vt: ValueType) = vt match {
-        case at: ArrayValueType     => true
-        case st: StructValueType    => true
-        case _                      => false
-    }
-
     def run(context: IRContext, graph: IRGraph): IRGraph = {
 
         println("\tExpanding expressions")
@@ -24,7 +18,7 @@ private[opt] object ExpandExpressions extends Pass {
             // can rename.
             val srcs = bb.foldLeft(Seq[BaseSymbol]()) { (a, b) =>
                 a ++ ng.block(b).srcs.filter {
-                    case st: StateSymbol    => !multipart(st.valueType)
+                    case st: StateSymbol    => st.valueType.flat
                     case _                  => false
                 }
             }

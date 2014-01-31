@@ -15,10 +15,7 @@ object LiveVariables extends DataFlowProblem {
 
     def kill(sb: StateBlock, in: Set[T]): Set[T] = {
         val dests = sb.nodes.flatMap { node =>
-            node match {
-                case st: IRStore        => Seq[T]()
-                case _ => node.dests.filter(isVariable)
-            }
+            node.dests.filter(isVariable)
         }
         dests.toSet
     }

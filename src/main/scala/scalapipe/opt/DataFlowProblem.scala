@@ -26,9 +26,9 @@ abstract class DataFlowProblem {
     protected def isPort(s: BaseSymbol): Boolean = s.isInstanceOf[PortSymbol]
 
     protected def isVariable(s: BaseSymbol): Boolean = s match {
-        case t: TempSymbol        => true
-        case s: StateSymbol      => true 
-        case _                        => false
+        case t: TempSymbol  => true
+        case s: StateSymbol => true
+        case _              => false
     }
 
     private def inputs(sb: StateBlock, graph: IRGraph): Seq[StateBlock] = {
