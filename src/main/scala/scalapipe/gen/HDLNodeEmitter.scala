@@ -310,7 +310,7 @@ private[gen] abstract class HDLNodeEmitter(
                 val im = node.offset.asInstanceOf[ImmediateSymbol]
                 val bottom = im.value.long * 8
                 val top = bottom + node.dest.valueType.bits - 1
-                write(s"$dest <= $src[$top:$bottom];")
+                builder.write(s"$dest <= $src[$top:$bottom];")
             } else {
                 builder.write(s"case ($offset)")
                 builder.enter
@@ -322,11 +322,11 @@ private[gen] abstract class HDLNodeEmitter(
                 builder.write(s"default: $dest <= 0;")
                 builder.leave
                 builder.write(s"endcase")
-                if (block.continuous) {
-                    moduleEmitter.addAssignment(builder.getOutput)
-                } else {
-                    write(builder)
-                }
+            }
+            if (block.continuous) {
+                moduleEmitter.addAssignment(builder.getOutput)
+            } else {
+                write(builder)
             }
 
         } else {
