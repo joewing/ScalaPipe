@@ -4,12 +4,13 @@ set -e
 
 function run_test {
     TEST=$1
-    ARG=$2
+    ARG1=$2
+    ARG2=$3
     rm -rf $TEST
-    sbt "run-main scalapipe.test.$TEST $ARG"
+    sbt "run-main scalapipe.test.$TEST $ARG1 $ARG2"
     cd $TEST
     make
-    if [ $ARG -gt 0 ] ; then
+    if [ $ARG1 -gt 0 ] ; then
         make sim | grep OUTPUT > ../test.out
     else
         ./proc_localhost | grep OUTPUT > ../test.out
@@ -36,16 +37,16 @@ echo "OUTPUT 9: 72 73 74 75 76 77 78 79 "       >> test.expected
 run_test ArrayTest 0
 run_test ArrayTest 1
 
-echo "OUTPUT 524800"    >  test.expected
-echo "OUTPUT 525824"    >> test.expected
-echo "OUTPUT 526848"    >> test.expected
-echo "OUTPUT 527872"    >> test.expected
-echo "OUTPUT 528896"    >> test.expected
-echo "OUTPUT 529920"    >> test.expected
-echo "OUTPUT 530944"    >> test.expected
-echo "OUTPUT 531968"    >> test.expected
-echo "OUTPUT 532992"    >> test.expected
-echo "OUTPUT 534016"    >> test.expected
+echo "OUTPUT 0"         >  test.expected
+echo "OUTPUT 2"         >> test.expected
+echo "OUTPUT 7"         >> test.expected
+echo "OUTPUT 7"         >> test.expected
+echo "OUTPUT 12"        >> test.expected
+echo "OUTPUT 10"        >> test.expected
+echo "OUTPUT 11"        >> test.expected
+echo "OUTPUT 15"        >> test.expected
+echo "OUTPUT 24"        >> test.expected
+echo "OUTPUT 18"        >> test.expected
 run_test ArrayTest2 0 0
 run_test ArrayTest2 0 1
 run_test ArrayTest2 0 2
@@ -54,7 +55,6 @@ run_test ArrayTest2 1 0
 run_test ArrayTest2 1 1
 run_test ArrayTest2 1 2
 run_test ArrayTest2 1 3
-
 
 # Test structures.
 echo "OUTPUT 0"     >  test.expected

@@ -7,17 +7,12 @@ object ArrayTest2 {
 
     def main(args: Array[String]) {
 
-        // First argument is the mapping.
         val mapping = if (args.length > 0) args(0).toInt else 0
-
-        // Second argument is the array element type.
-        val vtype = if (args.length > 1) args(0).toInt match {
+        val vtype = (if (args.length > 1) args(1).toInt else 0) match {
             case 0 => UNSIGNED8
             case 1 => UNSIGNED16
             case 2 => UNSIGNED32
             case 3 => UNSIGNED64
-        } else {
-            UNSIGNED32
         }
 
         val ArrayType = new Vector(vtype, 1024)
@@ -37,15 +32,15 @@ object ArrayTest2 {
                 }
             }
 
-            i = 0
+            i = count
             sum = 0
             while (i < 1024) {
                 array(i) += 1
-                sum += array(i)
+                sum ^= array(i)
                 i += 1
             }
 
-            y0 = sum
+            y0 = sum % 256
             count += 1
 
         }
