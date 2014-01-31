@@ -5,7 +5,7 @@ import scala.collection.mutable.ListBuffer
 import scala.collection.mutable.HashSet
 import scalapipe._
 
-class Kernel(val name: String) extends EmbeddedControls with DebugInfo {
+class Kernel(val name: String) extends DebugInfo {
 
     collectDebugInfo
     SymbolValidator.validate(name, this)
@@ -26,9 +26,8 @@ class Kernel(val name: String) extends EmbeddedControls with DebugInfo {
     scopeStack += new scalapipe.Scope(this, NodeType.BLOCK)
 
     private[scalapipe] def getRoot: ASTNode = {
-        if (scopeStack.size > 1) {
-            Error.raise("missing end", this)
-        }
+        DSLHelper.ifThen(scopeStack.size > 1,
+                         Error.raise("missing end", this))
         scopeStack.last.handleEnd
     }
 
@@ -39,14 +38,14 @@ class Kernel(val name: String) extends EmbeddedControls with DebugInfo {
     private[dsl] def getLabel: String = labelCounter.next()
 
     def output(t: Type, n: Symbol = null): Variable = {
-        val label = if (n != null) n.name else getLabel
+        val label = DSLHelper.ifThenElse(n != null, n.name, getLabel)
         val node = new Variable(label, this)
         outputs += new KernelOutput(label, t.create())
         node
     }
 
     def input(t: Type, n: Symbol = null): Variable = {
-        val label = if (n != null) n.name else getLabel
+        val label = DSLHelper.ifThenElse(n != null, n.name, getLabel)
         val node = new Variable(label, this)
         inputs += new KernelInput(label, t.create())
         node
@@ -59,14 +58,11 @@ class Kernel(val name: String) extends EmbeddedControls with DebugInfo {
     }
 
     def external(platform: String, file: String = name) {
-        if (platform.equals("all")) {
+        DSLHelper.ifThenElse(platform.equals("all"), {
             externals ++= Platforms.values
-        } else {
-            if (!Platforms.values.exists( p => p.toString == platform)) {
-                Error.raise("invalid platform: " + platform)
-            }
-            externals += Platforms.withName(platform)
-        }
+        }, {
+            externals += Platforms.withName(platform, this)
+        })
     }
 
     def local(t: Type, v: Any = null): Variable = {
@@ -79,13 +75,11 @@ class Kernel(val name: String) extends EmbeddedControls with DebugInfo {
         ASTConvertNode(expr, t.create(), this)
     }
 
-    def __ifThenElse[T](cond: Boolean, thenp: => T, elsep: => T): T = {
-        super.__ifThenElse(cond, thenp, elsep)
+    def __ifThenElse[T](cond: Boolean, thenp: => T, elsep: => T) {
+        DSLHelper.ifThenElse(cond, thenp, elsep)
     }
 
-    def __ifThenElse[A <% ASTNode, T](cond: A,
-                                      thenp: => T,
-                                      elsep: => T): ASTNode = {
+    def __ifThenElse[A <% ASTNode, T](cond: A, thenp: => T, elsep: => T) {
         scopeStack += new scalapipe.Scope(this, NodeType.IF, cond)
         thenp
         scopeStack.last.handleElse
@@ -93,7 +87,6 @@ class Kernel(val name: String) extends EmbeddedControls with DebugInfo {
         val prev = scopeStack.last
         scopeStack.trimEnd(1)
         scopeStack.last += prev.handleEnd
-        null      // FIXME: support 'if' statements as part of an expression.
     }
 
     def __whileDo[A <% ASTNode, T](cond: A, body: => T) {

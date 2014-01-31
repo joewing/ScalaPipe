@@ -118,7 +118,7 @@ object BOPM {
 					counter -= 1
 				}
 			}	
-			ret(answer)
+			return answer
 		}
 
 		val Print =  new Kernel("Print") {

@@ -101,7 +101,6 @@ object Cluster {
 
             val a = input(ValueType)
             val b = input(ValueType)
-            returns(SIGNED32)
 
             val temp = local(SIGNED32)
             val sum  = local(SIGNED32)
@@ -114,7 +113,7 @@ object Cluster {
             temp = ((a >> 0) & 0xFF) - ((b >> 0) & 0xFF)
             sum += temp * temp
 
-            ret(sum)
+            return sum
 
         }
 

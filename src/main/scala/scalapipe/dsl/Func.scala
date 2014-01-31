@@ -39,8 +39,7 @@ class Func(_name: String) extends Kernel(_name) {
     }
 
     // Return a value.
-    // FIXME: It would be nice to be able to override __return instead.
-    def ret(result: ASTNode = null) {
+    def __return[T <% ASTNode](result: T) = {
         if (outputs.isEmpty) {
             outputs += new KernelOutput(getLabel, ValueType.any)
         }

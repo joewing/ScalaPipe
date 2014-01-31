@@ -42,7 +42,7 @@ object CorrelationMatrix {
 					counter -= 1
 				}
 			}	
-			ret(answer)
+			return answer
 		}
 
 		val abs = new Func {
@@ -51,7 +51,7 @@ object CorrelationMatrix {
 			if(x < 0) {
 				x = -x
 			}
-			ret(x)
+			return x
 		}
 
 		val sin = new Func {
@@ -65,7 +65,7 @@ object CorrelationMatrix {
 			if(x < 0) {
 				answer *= -1
 			}
-			ret(answer)
+			return answer
 		}
 
 		val cos = new Func {
@@ -86,7 +86,7 @@ object CorrelationMatrix {
 				answer *= -1
 			}
 
-			ret(answer)
+			return answer
 		}
 
 

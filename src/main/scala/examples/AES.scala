@@ -81,9 +81,9 @@ object AES extends App {
         returns(UNSIGNED8)
 
         if ((x & 0x80) <> 0) {
-            ret((x << 1) ^ 0x1B)
+            return (x << 1) ^ 0x1B
         } else {
-            ret((x << 1))
+            return x << 1
         }
 
     }
