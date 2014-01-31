@@ -13,12 +13,8 @@ object LiveVariables extends DataFlowProblem {
     def gen(sb: StateBlock, in: Set[T]): Set[T] =
         sb.srcs.filter(isVariable).toSet
 
-    def kill(sb: StateBlock, in: Set[T]): Set[T] = {
-        val dests = sb.nodes.flatMap { node =>
-            node.dests.filter(isVariable)
-        }
-        dests.toSet
-    }
+    def kill(sb: StateBlock, in: Set[T]): Set[T] =
+        sb.dests.filter(isVariable).toSet
 
     def meet(a: Set[T], b: Set[T]) = a.union(b)
 

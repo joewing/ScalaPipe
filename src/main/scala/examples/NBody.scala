@@ -415,8 +415,8 @@ object NBody {
             cycle(updated(1))
 
             if (hw) {
-                map(ANY_KERNEL -> Force, CPU2FPGA());
-                map(Force -> ANY_KERNEL, FPGA2CPU());
+                map(Source -> ANY_KERNEL, CPU2FPGA());
+                map(ANY_KERNEL -> Print, FPGA2CPU());
             }
 
 

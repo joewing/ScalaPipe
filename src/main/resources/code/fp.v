@@ -103,7 +103,7 @@ endmodule
 module ap_mul_impl(clk, start_in, a_in, b_in, c_out, ready_out);
 
    parameter WIDTH = 24;
-   parameter SHIFT = 1;
+   parameter SHIFT = 18;
 
    input wire clk;
    input wire start_in;
@@ -143,7 +143,7 @@ endmodule
 module ap_mulI(clk, start_in, a_in, b_in, c_out, ready_out);
 
    parameter WIDTH = 32;
-   parameter SHIFT = 1;
+   parameter SHIFT = 18;
 
    input wire clk;
    input wire start_in;
