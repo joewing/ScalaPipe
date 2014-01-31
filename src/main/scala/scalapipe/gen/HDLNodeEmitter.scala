@@ -470,7 +470,7 @@ private[gen] abstract class HDLNodeEmitter(
                     initBuilder.enter
                     initBuilder.write(s"ram_in[$top:$bottom] " +
                                       s"<= $src[${bits - 1}:0];")
-                    val mask = (1 << (bits / 8) - 1) << i
+                    val mask = ((1 << (bits / 8)) - 1) << i
                     initBuilder.write(s"ram_mask <= $mask;")
                     initBuilder.leave
                     initBuilder.write(s"end")
