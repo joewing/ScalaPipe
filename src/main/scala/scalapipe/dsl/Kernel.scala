@@ -97,6 +97,15 @@ class Kernel(val name: String) extends DebugInfo {
         scopeStack.last += prev.handleEnd
     }
 
+    def __doWhile[A <% ASTNode, T](cond: A, body: => T) {
+        body
+        scopeStack += new scalapipe.Scope(this, NodeType.WHILE, cond)
+        body
+        val prev = scopeStack.last
+        scopeStack.trimEnd(1)
+        scopeStack.last += prev.handleEnd
+    }
+
     def __equal[A <% ASTNode, B <% ASTNode](a: A, b: B): ASTNode = {
         ASTOpNode(NodeType.eq, a, b, this)
     }
