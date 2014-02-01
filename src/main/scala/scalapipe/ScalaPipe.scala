@@ -119,6 +119,10 @@ private[scalapipe] class ScalaPipe {
         return cpuDevices.count { d => d.host == host }
     }
 
+    private[scalapipe] def getPort(stream: Stream): Int = {
+        resourceManager.getPort(stream)
+    }
+
     private def insertEdges {
 
         val anyName = ANY_KERNEL.name

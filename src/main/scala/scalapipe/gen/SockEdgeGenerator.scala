@@ -196,7 +196,7 @@ private[scalapipe] class SockEdgeGenerator(
 
         val sock = s"sock${stream.label}"
         val remoteHost = stream.destKernel.device.host
-        val port = 9000
+        val port = sp.getPort(stream)
 
         // Create the client socket and connect to the server.
         enter
@@ -225,8 +225,8 @@ private[scalapipe] class SockEdgeGenerator(
         write("perror(\"connect\");")
         write("exit(-1);")
         writeElse
-        write("close($sock);")
-        write("usleep(100);")
+        write(s"close($sock);")
+        write(s"usleep(100);")
         writeEnd
         writeElse
         write("break;")
@@ -242,7 +242,7 @@ private[scalapipe] class SockEdgeGenerator(
         val qname = s"q_${stream.label}"
         val depth = stream.depth
         val vtype = stream.valueType
-        val port = 9000
+        val port = sp.getPort(stream)
 
         // Initialize the queue.
         write(s"$qname = (APQ*)malloc(APQ_GetSize($depth, sizeof($vtype)));")
