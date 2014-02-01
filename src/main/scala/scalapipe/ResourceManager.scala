@@ -8,19 +8,20 @@ import scalapipe.gen.OpenCLResourceGenerator
 
 private[scalapipe] class ResourceManager(val sp: ScalaPipe) {
 
+    private lazy val basePort = sp.parameters.get[Int]('basePort)
     private var generators = Map[Device, ResourceGenerator]()
     private var cpuGenerators = Map[String, CPUResourceGenerator]()
 
     private def create(device: Device): ResourceGenerator = {
         val platform = device.deviceType.platform
         platform match {
-            case Platforms.HDL => createHDLResourceGenerator(device)
+            case Platforms.HDL => hdlResourceGenerator(device)
             case Platforms.OpenCL => new OpenCLResourceGenerator(sp, device)
             case _ => sys.error("unknown platform: " + platform)
         }
     }
 
-    private def createHDLResourceGenerator(device: Device): ResourceGenerator = {
+    private def hdlResourceGenerator(device: Device): ResourceGenerator = {
         val fpga = sp.parameters.get[String]('fpga)
         fpga match {
             case "SmartFusion"    =>
@@ -29,6 +30,12 @@ private[scalapipe] class ResourceManager(val sp: ScalaPipe) {
                 new SimulationResourceGenerator(sp, device)
             case _ => sys.error("unknown FPGA device: " + fpga)
         }
+    }
+
+    def getPort(hosta: String, hostb: String): Int = {
+        var port = basePort
+        // TODO
+        return port
     }
 
     def get(device: Device): ResourceGenerator = {
@@ -51,4 +58,3 @@ private[scalapipe] class ResourceManager(val sp: ScalaPipe) {
     }
 
 }
-

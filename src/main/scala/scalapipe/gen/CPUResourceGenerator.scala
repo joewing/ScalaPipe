@@ -19,7 +19,7 @@ private[scalapipe] class CPUResourceGenerator(
     private lazy val openCLEdgeGenerator = new OpenCLEdgeGenerator(sp)
     private lazy val smartFusionEdgeGenerator = new SmartFusionEdgeGenerator(sp)
     private lazy val simulationEdgeGenerator = new SimulationEdgeGenerator(sp)
-    private lazy val sockEdgeGenerator = new SockEdgeGenerator(host)
+    private lazy val sockEdgeGenerator = new SockEdgeGenerator(sp, host)
     private lazy val cEdgeGenerator = new CEdgeGenerator
 
     private def getHDLEdgeGenerator: EdgeGenerator = {

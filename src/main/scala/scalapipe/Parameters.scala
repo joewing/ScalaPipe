@@ -35,6 +35,7 @@ private[scalapipe] class Parameters {
     add('fpga, "Simulation")    // Default FPGA device to target.
     add('trace, false)          // Set to generate address traces from C code.
     add('wave, false)           // Dump waveform from simulation.
+    add('basePort, 9000)        // First port number to use.
 
     def set(name: Symbol, value: Any) {
         params.get(name) match {

@@ -2,8 +2,10 @@ package scalapipe.gen
 
 import scalapipe._
 
-private[scalapipe] class SockEdgeGenerator(val host: String)
-    extends EdgeGenerator(Platforms.C) with CGenerator {
+private[scalapipe] class SockEdgeGenerator(
+        val sp: ScalaPipe,
+        val host: String
+    ) extends EdgeGenerator(Platforms.C) with CGenerator {
 
     private def isProducer(s: Stream): Boolean = {
         s.sourceKernel.device.host == host
@@ -198,15 +200,17 @@ private[scalapipe] class SockEdgeGenerator(val host: String)
 
         // Create the client socket and connect to the server.
         enter
-        write(s"$sock = socket(PF_INET, SOCK_STREAM, 0);")
-        writeIf(s"$sock < 0")
-        write("perror(\"socket\");")
-        write("exit(-1);")
-        writeEnd
         write(s"struct hostent *host;")
         write("host = gethostbyname(\"" + remoteHost + "\");")
         writeIf("host == NULL")
         write("perror(\"gethostbyname\");")
+        write("exit(-1);")
+        writeEnd
+        write(s"for(;;)")
+        enter
+        write(s"$sock = socket(PF_INET, SOCK_STREAM, 0);")
+        writeIf(s"$sock < 0")
+        write("perror(\"socket\");")
         write("exit(-1);")
         writeEnd
         write(s"struct sockaddr_in addr;")
@@ -217,9 +221,17 @@ private[scalapipe] class SockEdgeGenerator(val host: String)
         write(s"int rc = connect($sock, (struct sockaddr*)&addr, " +
               s"sizeof(addr));")
         writeIf("rc")
+        writeIf("rc != ECONNREFUSED")
         write("perror(\"connect\");")
         write("exit(-1);")
+        writeElse
+        write("close($sock);")
+        write("usleep(100);")
         writeEnd
+        writeElse
+        write("break;")
+        writeEnd
+        leave
         leave
 
     }
