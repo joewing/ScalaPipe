@@ -102,7 +102,7 @@ private[scalapipe] class OpenCLKernelNodeEmitter(
         val name = node.symbol
         val base = if (kt.isPort(name)) {
             s"(*$name)"
-        } else if (kt.isLocal(name)) { 
+        } else if (kt.isLocal(name)) {
             s"$name"
         } else if (kt.isState(name) || kt.isConfig(name)) {
             s"block->$name"

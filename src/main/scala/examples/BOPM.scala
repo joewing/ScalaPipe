@@ -125,10 +125,10 @@ object BOPM {
 			val keeperofcount = local(UNSIGNED32, 0)
 			val x0 = input(FLOAT32)
 
-			stdio.printf("""%f\n""", x0)
+			stdio.printf("%f\n", x0)
 			keeperofcount += 1
 			if(keeperofcount == count) {
-				stdio.printf("""Bye!\n""")
+				stdio.printf("Bye!\n")
 				stdio.exit(0)
 			}
 		}
@@ -176,13 +176,13 @@ object BOPM {
 				up = exp(sigma * sqrt(deltaT))
 				p0 = (up * exp(-interest * deltaT) - exp(-dividend * deltaT)) * up / (pow(up, 2) -1)
 				p1 = exp(-interest * deltaT) - p0
-				//stdio.printf("""Stock:\t%f\nStrike:\t%f\nInterest:\t%f\nDividend:\t%f\nSigma:\t%f\nTime:\t%f\n""", stock, strike, interest, dividend, sigma, time)
+				//stdio.printf("Stock:\t%f\nStrike:\t%f\nInterest:\t%f\nDividend:\t%f\nSigma:\t%f\nTime:\t%f\n", stock, strike, interest, dividend, sigma, time)
 				state = 1
 			} else if (state == 1) {
 				
 
 				while (i <= n) {
-					//stdio.printf("""Stock:\t%f\nStrike:\t%f\nInterest:\t%f\nDividend:\t%f\nSigma:\t%f\nTime:\t%f\n""", stock, strike, interest, dividend, sigma, time)
+					//stdio.printf("Stock:\t%f\nStrike:\t%f\nInterest:\t%f\nDividend:\t%f\nSigma:\t%f\nTime:\t%f\n", stock, strike, interest, dividend, sigma, time)
 					prices(i) = strike - stock * pow(up, 2*i - n)
 					if(prices(i) < 0) {
 						prices(i) = 0
@@ -201,7 +201,7 @@ object BOPM {
 				while (j >= 0) {
 					i = 0
 					while (i <= j) {
-						//stdio.printf("""Stock:\t%f\nStrike:\t%f\nInterest:\t%f\nDividend:\t%f\nSigma:\t%f\nTime:\t%f\n""", stock, strike, interest, dividend, sigma, time)
+						//stdio.printf("Stock:\t%f\nStrike:\t%f\nInterest:\t%f\nDividend:\t%f\nSigma:\t%f\nTime:\t%f\n", stock, strike, interest, dividend, sigma, time)
 						prices(i) = p0 * prices(i) + p1 * prices(i+1)
 						exercise = strike - stock * pow(up, 2*i-j)
 						if(prices(i) < exercise) {
@@ -215,7 +215,7 @@ object BOPM {
 					
 				}
 				
-					//stdio.printf("""made it\n""")
+					//stdio.printf("made it\n")
 					state = 0
 					j = n -1
 					i = 0

@@ -151,6 +151,23 @@ object StringLiteral {
     def apply(v: String, kernel: Kernel) =
         new StringLiteral(ValueType.string, v, kernel)
 
+    private val octal = "01234567"
+
+    def sanitize(str: String): String = {
+        str.flatMap { ch =>
+            if (ch == '\\') {
+                "\\\\"
+            } else if (ch < 0x20 || ch > 0x7E || ch == '\"') {
+                val first = octal((ch >> 6) & 7)
+                val second = octal((ch >> 3) & 7)
+                val third = octal(ch & 7)
+                "\\" + first + second + third
+            } else {
+                ch.toString
+            }
+        }
+    }
+
 }
 
 class StringLiteral(
@@ -159,7 +176,7 @@ class StringLiteral(
         _kernel: Kernel
     ) extends Literal(_t, _kernel) {
 
-    override def toString = "\"" + value + "\""
+    override def toString = "\"" + StringLiteral.sanitize(value) + "\""
 
     override def equals(other: Any): Boolean = other match {
         case l: StringLiteral => value.equals(l.value)

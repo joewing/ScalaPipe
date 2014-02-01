@@ -136,7 +136,7 @@ object Mandelbrot {
             val y = local(UNSIGNED32)
 
             if (fd == 0) {
-                fd = stdio.fopen("""results.txt""", """w""")
+                fd = stdio.fopen("results.txt", "w")
                 if (fd == 0) {
                     stdio.exit(-1)
                 }
@@ -154,10 +154,10 @@ object Mandelbrot {
                 while (y < height) {
                     x = 0
                     while (x < width) {
-                        stdio.fprintf(fd, """%u """, buffer(y * width + x))
+                        stdio.fprintf(fd, "%u ", buffer(y * width + x))
                         x += 1
                     }
-                    stdio.fprintf(fd, """\n""")
+                    stdio.fprintf(fd, "\n")
                     y += 1
                 }
 

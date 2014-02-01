@@ -284,7 +284,7 @@ object Cluster {
                 y += 1
                 if (y == height) {
                     i += 1
-                    stdio.printf("""Iteration %d / %d\n""", i, iterations)
+                    stdio.printf("Iteration %d / %d\n", i, iterations)
                     y = 0
                     cluster = cluster_in
                     if (i < iterations) {

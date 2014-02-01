@@ -32,12 +32,12 @@ object StructTest {
         val t   = local(Struct2)
 
         t = x0
-        stdio.printf("""OUTPUT %d\n""", t.y)
+        stdio.printf("OUTPUT %d\n", t.y)
         if (t.x.a <> t.y + 1) {
-            stdio.printf("""OUTPUT: ERROR a\n""")
+            stdio.printf("OUTPUT: ERROR a\n")
         }
         if (t.x.b <> (t.y & 1)) {
-            stdio.printf("""OUTPUT: ERROR b\n""")
+            stdio.printf("OUTPUT: ERROR b\n")
         }
         if (t.y == 9) {
             stdio.exit(0)

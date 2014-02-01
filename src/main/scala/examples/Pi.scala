@@ -33,7 +33,7 @@ object Pi extends App {
 
     val Print = new Kernel {
         val x0 = input(FLOAT32)
-        stdio.printf("""%g\n""", x0)
+        stdio.printf("%g\n", x0)
     }
 
     val app = new Application {

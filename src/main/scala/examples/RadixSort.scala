@@ -21,7 +21,7 @@ object RadixSort {
 
     val Print = new Kernel {
         val in = input(UNSIGNED32)
-        stdio.printf("""%u\n""", in)
+        stdio.printf("%u\n", in)
     }
 
     val Sort = new Kernel {

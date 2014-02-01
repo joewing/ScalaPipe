@@ -33,7 +33,7 @@ object BMPWriter extends Kernel {
         // Open the file.
         fd = stdio.fopen(file_name, "wb")
         if (fd == 0) {
-            stdio.printf("""ERROR: could not open %s\n""", file_name)
+            stdio.printf("ERROR: could not open %s\n", file_name)
             stdio.exit(-1)
         }
 

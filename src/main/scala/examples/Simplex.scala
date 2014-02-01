@@ -27,13 +27,13 @@ object Simplex extends App {
         if (fd == 0) {
             fd = stdio.fopen(filename, "r")
             if (fd == 0) {
-                stdio.printf("""ERROR: could not open %s\n""", filename)
+                stdio.printf("ERROR: could not open %s\n", filename)
                 stdio.exit(-1)
             }
         }
 
         // Read a value from the file.
-        rc = stdio.fscanf(fd, """ %g""", addr(value))
+        rc = stdio.fscanf(fd, " %g", addr(value))
         if (rc == 1) {
             out = value
         } else {
@@ -303,14 +303,14 @@ object Simplex extends App {
         }
 
         o = t
-        stdio.printf("""%g """, o)
+        stdio.printf("%g ", o)
         x += 1
         if (x == columnCount) {
             x = 0
-            stdio.printf("""\n""")
+            stdio.printf("\n")
             y += 1
             if (y == rowCount) {
-                stdio.printf("""\n""")
+                stdio.printf("\n")
                 if (is_min) {
                     stdio.exit(0)
                 }

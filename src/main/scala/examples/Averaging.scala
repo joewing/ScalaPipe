@@ -71,7 +71,7 @@ object Averaging {
             val x0 = input(UNSIGNED32)
 
             // Read a value from the input port and print it.
-            stdio.printf("""%u\n""", x0)
+            stdio.printf("%u\n", x0)
 
         }
 

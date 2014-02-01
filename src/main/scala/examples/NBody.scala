@@ -157,13 +157,13 @@ object NBody {
             if (fd == 0) {
                 fd = stdio.fopen(filename, "r")
                 if (fd == 0) {
-                    stdio.printf("""Could not open %s\n""", filename)
+                    stdio.printf("Could not open %s\n", filename)
                     stdio.exit(-1)
                 }
             }
 
             // Read the particle.
-            rc = stdio.fscanf(fd, """ %lf %lf %lf %lf %lf %lf %lf""",
+            rc = stdio.fscanf(fd, " %lf %lf %lf %lf %lf %lf %lf",
                               addr(line(0)), addr(line(1)), addr(line(2)),
                               addr(line(3)), addr(line(4)), addr(line(5)),
                               addr(line(6)))
@@ -178,7 +178,7 @@ object NBody {
                 temp.vz     = line(6)
                 pout = temp
             } else {
-                stdio.printf("""Loaded %u particles\n""", count)
+                stdio.printf("Loaded %u particles\n", count)
                 temp.mass = -1
                 pout = temp
                 stdio.fclose(fd)
@@ -314,7 +314,7 @@ object NBody {
             p = pin
             if (p(3) < 0) {
                 currentTime = getTime()
-                stdio.printf("""Frame time: %lu us\n""",
+                stdio.printf("Frame time: %lu us\n",
                              currentTime - lastTime)
                 lastTime = currentTime
                 i = 0
@@ -358,7 +358,7 @@ object NBody {
             if (display == 0) {
                 display = xlib.XOpenDisplay(0)
                 if (display == 0) {
-                    stdio.printf("""Could not open display\n""")
+                    stdio.printf("Could not open display\n")
                     stdio.exit(-1)
                 }
                 root = xlib.XDefaultRootWindow(display)
@@ -380,7 +380,7 @@ object NBody {
             p = pin
             if (p.mass < 0) {
                 currentTime = getTime()
-                stdio.printf("""Frame time: %lu us\n""",
+                stdio.printf("Frame time: %lu us\n",
                              currentTime - lastTime)
                 lastTime = currentTime
                 i = 0

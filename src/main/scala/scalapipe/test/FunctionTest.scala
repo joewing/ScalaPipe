@@ -30,7 +30,7 @@ object FunctionTest {
     val Print = new Kernel("Print") {
         val x0 = input(SIGNED32)
         val t = local(SIGNED32, 0)
-        stdio.printf("""OUTPUT %d\n""", x0)
+        stdio.printf("OUTPUT %d\n", x0)
         t += 1
         if (t == 10) stdio.exit(0)
     }

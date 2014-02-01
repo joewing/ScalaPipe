@@ -78,11 +78,11 @@ object CholeskyTest {
 				when(0) {
 					temp = x0
 					if(i == 0) {
-						stdio.printf("""--Input Matrix---\n""")
+						stdio.printf("--Input Matrix---\n")
 					}
-					stdio.printf("""%f\t""", temp)
+					stdio.printf("%f\t", temp)
 					if((i+1) % size == 0) {
-						stdio.printf("""\n""")
+						stdio.printf("\n")
 					}
 					if(i == (size * size - 1)) {
 						i = 0
@@ -95,11 +95,11 @@ object CholeskyTest {
 				when(1) {
 					temp = x1
 					if(i == 0) {
-						stdio.printf("""--Cholesky Decomposed Matrix--\n""")
+						stdio.printf("--Cholesky Decomposed Matrix--\n")
 					}
-					stdio.printf("""%f\t""", temp)
+					stdio.printf("%f\t", temp)
 					if((i+1) % size == 0) {
-						stdio.printf("""\n""")
+						stdio.printf("\n")
 					}
 					if(i == (size * size - 1)) {
 						stop

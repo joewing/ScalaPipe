@@ -220,12 +220,12 @@ object BLSC {
 					//State 0 creates theta
 					if(i < n){
 						if(i == 0 && j == 0) {
-							//stdio.printf("""--Theta--\n""")
+							//stdio.printf("--Theta--\n")
 						} else if(j == 0) {
-							//stdio.printf("""\n""")
+							//stdio.printf("\n")
 						}
 						if(j < n) {
-							//stdio.printf("""i: %d j: %d\t""", i, j)
+							//stdio.printf("i: %d j: %d\t", i, j)
 							if(i > j) {
 								switcher = cast(x0 % 6283, FLOAT32)
 								//switcher = switcher % 6283
@@ -235,14 +235,14 @@ object BLSC {
 							} else {
 								theta(i*n+j) = 0
 							}
-							//stdio.printf("""%.3f\t""", theta(i*n+j))
+							//stdio.printf("%.3f\t", theta(i*n+j))
 							j += 1
 						} else {
 							i += 1
 							j = 0
 						}
 					} else {
-						//stdio.printf("""\n\n""")
+						//stdio.printf("\n\n")
 						state = 1
 						i = 0
 						j = 0
@@ -255,15 +255,15 @@ object BLSC {
 					i = 0
 					while(i < n) {
 						if(i == 0) {
-							//stdio.printf("""--B--\n""")
+							//stdio.printf("--B--\n")
 						} else {
-							//stdio.printf("""\n""")
+							//stdio.printf("\n")
 						}
 						j = 0
 						while(j < n){
-							//stdio.printf("""i: %d j: %d\t""", i, j)
+							//stdio.printf("i: %d j: %d\t", i, j)
 							if(j == 0){
-								//stdio.printf("""j is 0\n""")
+								//stdio.printf("j is 0\n")
 								if(i == 0){
 									B(i*n+j) = 1
 								} else {
@@ -288,12 +288,12 @@ object BLSC {
 							} else {
 								B(i*n+j) = 0
 							}
-							//stdio.printf("""%.3f\t""", B(i*n+j))
+							//stdio.printf("%.3f\t", B(i*n+j))
 							j += 1
 						}
 						i += 1
 					}
-					//stdio.printf("""\n\n""")
+					//stdio.printf("\n\n")
 					state = 2
 					i = 0
 					j = 0
@@ -306,19 +306,19 @@ object BLSC {
 					i = 0
 					while(i < n) {
 						if(i == 0){
-							//stdio.printf("""--Transpose B--\n""")
+							//stdio.printf("--Transpose B--\n")
 						} else {
-							//stdio.printf("""\n""")
+							//stdio.printf("\n")
 						}
 						j = 0
 						while(j < n) {
 							BTranspose(i*n+j) = B(j*n+i)
-							//stdio.printf("""%.3f\t""", BTranspose(i*n+j))
+							//stdio.printf("%.3f\t", BTranspose(i*n+j))
 							j += 1
 						}
 						i += 1
 					}
-					//stdio.printf("""\n\n""")
+					//stdio.printf("\n\n")
 					state = 3
 					i = 0
 					j = 0
@@ -330,9 +330,9 @@ object BLSC {
 					i = 0
 					while(i < n) {
 						if(i == 0) {
-							//stdio.printf("""--C--\n""")
+							//stdio.printf("--C--\n")
 						} else {
-							//stdio.printf("""\n""")
+							//stdio.printf("\n")
 						}
 						j = 0
 						while(j < n) {
@@ -349,12 +349,12 @@ object BLSC {
 								k += 1
 							}
 							C(i*n+j) = temp
-							//stdio.printf("""%.3f\t""", C(i*n+j))
+							//stdio.printf("%.3f\t", C(i*n+j))
 							j += 1
 						}
 						i += 1
 					}
-					//stdio.printf("""\n\n""")
+					//stdio.printf("\n\n")
 					state = 4
 					i = 0
 					j = 0
@@ -410,20 +410,20 @@ object BLSC {
 					i = 0
 					while(i < n) {
 						if(i == 0) {
-							//stdio.printf("""--Cholesky Decomposed C--\n""")
+							//stdio.printf("--Cholesky Decomposed C--\n")
 						} else {
-							//stdio.printf("""\n""")
+							//stdio.printf("\n")
 						}
 						j = 0
 						while(j < n) {
-							//stdio.printf("""%.3f\t""", Cholesky(i*n+j))
+							//stdio.printf("%.3f\t", Cholesky(i*n+j))
 							y0 = Cholesky(i*n+j)
 							j += 1
 						}
 						i += 1
 					}
 					stop
-					//stdio.printf("""\n\n""")
+					//stdio.printf("\n\n")
 					//stdio.exit(0)
 				}
 			}
@@ -451,16 +451,16 @@ object BLSC {
 					//(i.e. the Cholesky decomposed C)
 					if(j == 0) {
 						if(i == 0) {
-							//stdio.printf("""--Cholesky--""")
+							//stdio.printf("--Cholesky--")
 						}
-						//stdio.printf("""\n""")
+						//stdio.printf("\n")
 					}
 					if(i < n) {
-						//stdio.printf("""i: %d j: %d\n""", i, j)
+						//stdio.printf("i: %d j: %d\n", i, j)
 						if(j < n) {
-							//stdio.printf("""j: %d i: %d\n""", j, i)
+							//stdio.printf("j: %d i: %d\n", j, i)
 							corrMatrix(i*n+j) = x0
-							//stdio.printf("""%.3f\t""", corrMatrix(i*n+j))
+							//stdio.printf("%.3f\t", corrMatrix(i*n+j))
 							j += 1
 						} else {
 							j = 0
@@ -470,23 +470,23 @@ object BLSC {
 						state = 0
 						i = 0
 						j = 0
-						//stdio.printf("""\n\n""")
+						//stdio.printf("\n\n")
 					}
 
 				}
 
 				when(0) {
 					if(i == 0) {
-						//stdio.printf("""--Vector--\n""")
+						//stdio.printf("--Vector--\n")
 					}
 					if(i < n) {
 						vector(i) = x1
-						//stdio.printf("""%.3f\t""", vector(i))
+						//stdio.printf("%.3f\t", vector(i))
 						i += 1
 					} else {
 						i = 0
 						state = 1
-						//stdio.printf("""\n\n""")
+						//stdio.printf("\n\n")
 					}
 
 				}
@@ -495,7 +495,7 @@ object BLSC {
 					i = 0
 					j = 0
 					k = 0
-					//stdio.printf("""--Correlated Vector--\n""")
+					//stdio.printf("--Correlated Vector--\n")
 					while(i < n) {
 						k = 0
 						while(k < n) {
@@ -512,13 +512,13 @@ object BLSC {
 						if(corrVector(i) < 0) {
 							corrVector(i) *= -1
 						}
-						//stdio.printf("""%.3f\t""", corrVector(i))
+						//stdio.printf("%.3f\t", corrVector(i))
 						i += 1
 					}
 					i = 0
 					k = 0
 					state = 2
-					//stdio.printf("""\n\n""")
+					//stdio.printf("\n\n")
 					//stdio.exit(0)
 				}
 
@@ -564,13 +564,13 @@ object BLSC {
 						spot(i) = x1
 						vol(i) = x2
 						if(i == 0) {
-							//stdio.printf("""--Stocks--\n""")
+							//stdio.printf("--Stocks--\n")
 						}
-						//stdio.printf("""%.3f\t""", stocks(i))
+						//stdio.printf("%.3f\t", stocks(i))
 						i += 1
 					} else {
 						state = 1
-						//stdio.printf("""\n\n""")
+						//stdio.printf("\n\n")
 						//stdio.exit(0)
 					}
 				}
@@ -583,55 +583,55 @@ object BLSC {
 
 				when(2) {
 					i = 0
-					stdio.printf("""--Stocks--\n""")
+					stdio.printf("--Stocks--\n")
 					while(i < n) {
-						stdio.printf("""%.3f\t""", stocks(i))
+						stdio.printf("%.3f\t", stocks(i))
 						i += 1
 					}
-					stdio.printf("""\n""")
+					stdio.printf("\n")
 					i = 0
-					stdio.printf("""\n--Spot Prices--\n""")
+					stdio.printf("\n--Spot Prices--\n")
 					while(i < n) {
-						stdio.printf("""%.3f\t""", spot(i))
+						stdio.printf("%.3f\t", spot(i))
 						i += 1
 					}
-					stdio.printf("""\n""")
+					stdio.printf("\n")
 					i = 0
-					stdio.printf("""\n--Volatilities--\n""")
+					stdio.printf("\n--Volatilities--\n")
 					while(i < n) {
-						stdio.printf("""%.3f\t""", vol(i))
+						stdio.printf("%.3f\t", vol(i))
 						i += 1
 					}
-					stdio.printf("""\n""")
-					stdio.printf("""\n--Interest Rate--\n%f\n\n""", r)
-					stdio.printf("""--Time--\n%.3f\n\n""", t)
+					stdio.printf("\n")
+					stdio.printf("\n--Interest Rate--\n%f\n\n", r)
+					stdio.printf("--Time--\n%.3f\n\n", t)
 					state = 3
 					//stdio.exit(0)
 				}
 
 				when(3) {
-					//stdio.printf("""State 3\n""")
+					//stdio.printf("State 3\n")
 					i = 0
 					temp = 0
-					stdio.printf("""--Prices--\n""")
+					stdio.printf("--Prices--\n")
 					while(i < n) {
 						temp = spot(i) * exp((r - vol(i) * vol(i) / 2) * t + vol(i) * sqrt(t) * stocks(i)) - spot(i)
 						price(i) = temp
-						stdio.printf("""price(%d): %f\n""", i, price(i))
+						stdio.printf("price(%d): %f\n", i, price(i))
 						i += 1
 
 					}
 					counter += 1
-					stdio.printf("""\nCounter:\t%d\n""", counter)
+					stdio.printf("\nCounter:\t%d\n", counter)
 					i = 0
 					state = 4
 					//stdio.exit(0)
 				}
 
 				when(4) {
-					//stdio.printf("""State 4\n""")
+					//stdio.printf("State 4\n")
 					runcount -= 1
-					stdio.printf("""runcount = %d\n""", runcount)
+					stdio.printf("runcount = %d\n", runcount)
 					if(runcount == 0) {
 						stdio.exit(0)
 					}

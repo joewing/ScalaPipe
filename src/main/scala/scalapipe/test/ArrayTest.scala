@@ -38,12 +38,12 @@ object ArrayTest {
 
         temp = x0
         i = 0
-        stdio.printf("""OUTPUT %d: """, count)
+        stdio.printf("OUTPUT %d: ", count)
         while (i < 8) {
-            stdio.printf("""%d """, temp(i))
+            stdio.printf("%d ", temp(i))
             i += 1
         }
-        stdio.printf("""\n""")
+        stdio.printf("\n")
         count += 1
         if (count == 10) {
             stdio.exit(0)

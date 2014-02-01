@@ -57,7 +57,7 @@ private[scalapipe] class CFunctionNodeEmitter(
     }
 
     override def emitStop(node: ASTStopNode) {
-        Error.raise("stop not valid in a function")
+        Error.raise("stop not valid in a function", node)
     }
 
     override def emitReturn(node: ASTReturnNode) {

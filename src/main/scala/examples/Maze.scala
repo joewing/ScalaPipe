@@ -165,13 +165,13 @@ object Maze {
                         stdio.printf("1 ")
                         i += 1
                     }
-                    stdio.printf("""\n1 """)
+                    stdio.printf("\n1 ")
                     i = 1
                     while (i < width) {
                         stdio.printf("0 ")
                         i += 1
                     }
-                    stdio.printf("""1\n""")
+                    stdio.printf("1\n")
                 }
 
                 // Write the block at the beginning of each row.
@@ -189,7 +189,7 @@ object Maze {
             if (x >= width) {
 
                 // New line at the end of each row.
-                stdio.printf("""\n""")
+                stdio.printf("\n")
                 x = 0
                 y += 1
 
@@ -200,7 +200,7 @@ object Maze {
                         stdio.printf("1 ")
                         i += 1
                     }
-                    stdio.printf("""0 1\n""")
+                    stdio.printf("0 1\n")
                     stdio.exit(0)
                 }
 

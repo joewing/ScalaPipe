@@ -10,7 +10,7 @@ object TraceF64 extends Kernel {
     val msg = config(STRING, 'msg, "TraceF64")
 
     temp = in
-    stdio.printf("""%s: %lf\n""", msg, temp)
+    stdio.printf("%s: %lf\n", msg, temp)
     out = temp
 
 }

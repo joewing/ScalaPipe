@@ -33,7 +33,7 @@ object Search {
             if (fp == 0) {
                 fp = stdio.fopen(filename, "r")
                 if (fp == 0) {
-                    stdio.printf("""Could not open term file: %s\n""", filename)
+                    stdio.printf("Could not open term file: %s\n", filename)
                     stdio.exit(0)
                 }
             } else {
@@ -71,7 +71,7 @@ object Search {
             if (fp == 0) {
                 fp = stdio.fopen(filename, "r")
                 if (fp == 0) {
-                    stdio.printf("""Could not open data file: %s\n""", filename)
+                    stdio.printf("Could not open data file: %s\n", filename)
                     stdio.exit(0)
                 }
             } else {
@@ -164,7 +164,7 @@ object Search {
         val Print = new Kernel {
             val x0 = input(UNSIGNED64)
 
-            stdio.printf("""Match at offset %lu\n""", x0)
+            stdio.printf("Match at offset %lu\n", x0)
         }
 
         val Search = new Application {

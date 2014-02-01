@@ -185,14 +185,14 @@ object Paper {
             if (fd == 0) {
                 fd = stdio.fopen(filename, "w")
                 if (fd == 0) {
-                    stdio.printf("""Could not open %s\n""", filename)
+                    stdio.printf("Could not open %s\n", filename)
                 }
             }
 
-            stdio.fprintf(fd, """%u """, x0)
+            stdio.fprintf(fd, "%u ", x0)
             x += 1
             if (x == width) {
-                stdio.fprintf(fd, """\n""")
+                stdio.fprintf(fd, "\n")
                 stdio.fflush(fd)
                 x = 0
                 y += 1

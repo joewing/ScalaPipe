@@ -119,12 +119,12 @@ object CorrelationMatrix {
 
 					if(i < n){
 						if(i == 0 && j == 0) {
-							stdio.printf("""--Theta--\n""")
+							stdio.printf("--Theta--\n")
 						} else if(j == 0) {
-							stdio.printf("""\n""")
+							stdio.printf("\n")
 						}
 						if(j < n) {
-							//stdio.printf("""i: %d j: %d\t""", i, j)
+							//stdio.printf("i: %d j: %d\t", i, j)
 							if(i > j) {
 								switcher = cast(x0 % 6283, FLOAT32) 
 								//switcher = switcher % 6283
@@ -134,14 +134,14 @@ object CorrelationMatrix {
 							} else {
 								theta(i*n+j) = 0
 							}
-							stdio.printf("""%.3f\t""", theta(i*n+j))
+							stdio.printf("%.3f\t", theta(i*n+j))
 							j += 1
 						} else {
 							i += 1
 							j = 0
 						}
 					} else {
-						stdio.printf("""\n\n""")
+						stdio.printf("\n\n")
 						state = 1
 						i = 0
 						j = 0
@@ -153,15 +153,15 @@ object CorrelationMatrix {
 					i = 0
 					while(i < n) {
 						if(i == 0) {
-							//stdio.printf("""--B--\n""")
+							//stdio.printf("--B--\n")
 						} else {
-							//stdio.printf("""\n""")
+							//stdio.printf("\n")
 						}
 						j = 0
 						while(j < n){
-							//stdio.printf("""i: %d j: %d\t""", i, j)
+							//stdio.printf("i: %d j: %d\t", i, j)
 							if(j == 0){
-								//stdio.printf("""j is 0\n""")
+								//stdio.printf("j is 0\n")
 								if(i == 0){
 									B(i*n+j) = 1
 								} else {
@@ -186,12 +186,12 @@ object CorrelationMatrix {
 							} else {
 								B(i*n+j) = 0
 							}
-							//stdio.printf("""%.3f\t""", B(i*n+j))
+							//stdio.printf("%.3f\t", B(i*n+j))
 							j += 1
 						}
 						i += 1
 					}
-					//stdio.printf("""\n\n""")
+					//stdio.printf("\n\n")
 					state = 2
 					i = 0
 					j = 0
@@ -203,19 +203,19 @@ object CorrelationMatrix {
 					i = 0
 					while(i < n) {
 						if(i == 0){
-							//stdio.printf("""--Transpose B--\n""")
+							//stdio.printf("--Transpose B--\n")
 						} else {
-							//stdio.printf("""\n""")
+							//stdio.printf("\n")
 						}
 						j = 0
 						while(j < n) {
 							BTranspose(i*n+j) = B(j*n+i)
-							//stdio.printf("""%.3f\t""", BTranspose(i*n+j))
+							//stdio.printf("%.3f\t", BTranspose(i*n+j))
 							j += 1
 						}
 						i += 1
 					}
-					//stdio.printf("""\n\n""")
+					//stdio.printf("\n\n")
 					state = 3
 					i = 0
 					j = 0
@@ -226,9 +226,9 @@ object CorrelationMatrix {
 					i = 0
 					while(i < n) {
 						if(i == 0) {
-							//stdio.printf("""--C--\n""")
+							//stdio.printf("--C--\n")
 						} else {
-							//stdio.printf("""\n""")
+							//stdio.printf("\n")
 						}
 						j = 0
 						while(j < n) {
@@ -245,12 +245,12 @@ object CorrelationMatrix {
 								k += 1
 							}
 							C(i*n+j) = temp
-							//stdio.printf("""%.3f\t""", C(i*n+j))
+							//stdio.printf("%.3f\t", C(i*n+j))
 							j += 1
 						}
 						i += 1
 					}
-					//stdio.printf("""\n\n""")
+					//stdio.printf("\n\n")
 					state = 4
 					i = 0
 					j = 0
@@ -303,18 +303,18 @@ object CorrelationMatrix {
 					i = 0
 					while(i < n) {
 						if(i == 0) {
-							stdio.printf("""--Cholesky Decomposed C--\n""")
+							stdio.printf("--Cholesky Decomposed C--\n")
 						} else {
-							stdio.printf("""\n""")
+							stdio.printf("\n")
 						}
 						j = 0
 						while(j < n) {
-							stdio.printf("""%.3f\t""", Cholesky(i*n+j))
+							stdio.printf("%.3f\t", Cholesky(i*n+j))
 							j += 1
 						}
 						i += 1
 					}
-					stdio.printf("""\n\n""")
+					stdio.printf("\n\n")
 					stdio.exit(0)
 				}
 			}
@@ -328,7 +328,7 @@ object CorrelationMatrix {
 			val i = local(SIGNED32)
 			i = n
 			while(i > 0) {
-				//stdio.printf("""iterations: %d\n""", iterations)
+				//stdio.printf("iterations: %d\n", iterations)
 				iterations += (i - 1)
 				i -= 1
 			}

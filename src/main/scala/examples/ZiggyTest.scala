@@ -23,7 +23,7 @@ object ZiggyTest {
 
 			while(iterations > 0) {
 				temp = stdio.rand() % 100
-				//stdio.printf("""Input:\t%d\n""", temp)
+				//stdio.printf("Input:\t%d\n", temp)
 				y0 = temp
 				iterations -= 1
 			}
@@ -136,16 +136,16 @@ object ZiggyTest {
 			val x0 = input(SIGNED32)
 			val temp = local(SIGNED32, 0)
             val kingofcount = local(UNSIGNED32, count)
-            stdio.printf("""[""")
+            stdio.printf("[")
             while(kingofcount > 50){
 			    temp = x0
-                stdio.printf("""%d""", temp)
+                stdio.printf("%d", temp)
                 if(kingofcount > 51){
-                    stdio.printf(""", """)
+                    stdio.printf(", ")
                 }
                 kingofcount -= 1
             }
-            stdio.printf("""]""")
+            stdio.printf("]")
             stdio.exit(0)
 		}
 

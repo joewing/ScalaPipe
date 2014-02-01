@@ -320,9 +320,9 @@ object AES extends App {
 
         state = in
         for (i <- 0 until 16) {
-            stdio.printf("""%02x """, state(i))
+            stdio.printf("%02x ", state(i))
         }
-        stdio.printf("""\n""")
+        stdio.printf("\n")
         while (x < 1024 * 1024 - 1) {
             state = in
             x += 1

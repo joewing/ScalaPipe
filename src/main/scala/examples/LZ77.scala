@@ -30,7 +30,7 @@ object LZ77 extends App {
         if (fd == 0) {
             fd = stdio.fopen(fn, "rb")
             if (fd == 0) {
-                stdio.printf("""ERROR: could not open %s\n""", fn)
+                stdio.printf("ERROR: could not open %s\n", fn)
                 stdio.exit(-1)
             }
         }
@@ -55,7 +55,7 @@ object LZ77 extends App {
         if (fd == 0) {
             fd = stdio.fopen(fn, "rb")
             if (fd == 0) {
-                stdio.printf("""ERROR: could not open %s\n""", fn)
+                stdio.printf("ERROR: could not open %s\n", fn)
                 stdio.exit(-1)
             }
         }
@@ -83,7 +83,7 @@ object LZ77 extends App {
         if (fd == 0) {
             fd = stdio.fopen(fn, "wb")
             if (fd == 0) {
-                stdio.printf("""ERROR: could not open %s\n""", fn)
+                stdio.printf("ERROR: could not open %s\n", fn)
                 stdio.exit(-1)
             }
         }
@@ -109,7 +109,7 @@ object LZ77 extends App {
         if (fd == 0) {
             fd = stdio.fopen(fn, "wb")
             if (fd == 0) {
-                stdio.printf("""ERROR: could not open %s\n""", fn)
+                stdio.printf("ERROR: could not open %s\n", fn)
                 stdio.exit(-1)
             }
         }
