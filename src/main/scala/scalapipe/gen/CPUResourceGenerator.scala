@@ -75,7 +75,8 @@ private[scalapipe] class CPUResourceGenerator(
         write(s"static struct {")
         enter
         write(s"SPC clock;")
-        write(s"volatile int active_inputs;")
+        write(s"jmp_buf env;")
+        write(s"volatile uint32_t active_inputs;")
         write(s"SPKernelData data;")
         write(s"struct sp_${kernel.kernelType.name}_data priv;")
         leave
@@ -85,25 +86,11 @@ private[scalapipe] class CPUResourceGenerator(
 
     private def emitKernelInit(kernel: KernelInstance) {
 
-        val name = kernel.name
-        val kernelType = kernel.kernelType
         val instance = kernel.label
-        val inPortCount = kernel.getInputs.size
-        val outPortCount = kernel.getOutputs.size
-
-        // AP_block_data
-        write(s"$instance.active_inputs = $inPortCount;")
-        write(s"$instance.data.in_port_count = $inPortCount;")
-        write(s"$instance.data.out_port_count = $outPortCount;")
-        write(s"$instance.data.get_free = ${instance}_get_free;")
-        write(s"$instance.data.allocate = ${instance}_allocate;")
-        write(s"$instance.data.send = ${instance}_send;")
-        write(s"$instance.data.get_available = ${instance}_get_available;")
-        write(s"$instance.data.read_value = ${instance}_read_value;")
-        write(s"$instance.data.release = ${instance}_release;")
-        write(s"$instance.data.instance = ${kernel.index};")
 
         // Default config options.
+        // These are initialized here to allow overrides from
+        // the command line.
         for (c <- kernel.kernelType.configs) {
             val name = c.name
             val t = c.valueType.baseType
@@ -115,9 +102,12 @@ private[scalapipe] class CPUResourceGenerator(
             }
         }
 
-        // Call the init function.
-        write(s"spc_init(&${instance}.clock);")
-        write(s"sp_${name}_init(&$instance.priv);")
+        // Active inputs is set here since it must be
+        // initialized before any producer threads start.
+        val inPortCount = kernel.getInputs.size
+        write(s"$instance.active_inputs = $inPortCount;")
+
+        // The rest is initialized in the thread.
 
     }
 
@@ -288,6 +278,11 @@ private[scalapipe] class CPUResourceGenerator(
         write(s"return ptr;")
         leave
         write(s"}")
+        write(s"if(SPUNLIKELY($instance.active_inputs == 0)) {")
+        enter
+        write(s"longjmp($instance.env, 1);")
+        leave
+        write(s"}")
         write(s"sched_yield();")
         leave
         write(s"}")
@@ -329,29 +324,46 @@ private[scalapipe] class CPUResourceGenerator(
         write(s"}")
 
     }
-
-    private def emitKernelDestroy(kernel: KernelInstance) {
-        val name = kernel.kernelType.name
-        val instance = kernel.label
-        write(s"sp_${name}_destroy(&$instance.priv);")
-    }
-
     private def emitThread(kernel: KernelInstance) {
 
         val id = threadIds(kernel)
-        val name = kernel.kernelType.name
+        val name = kernel.name
         val instance = kernel.label
+        val kernelType = kernel.kernelType
+        val inPortCount = kernel.getInputs.size
+        val outPortCount = kernel.getOutputs.size
 
         write(s"static void *run_thread$id(void *arg)")
         write(s"{")
         enter
+
+        // AP_block_data
+        write(s"$instance.data.in_port_count = $inPortCount;")
+        write(s"$instance.data.out_port_count = $outPortCount;")
+        write(s"$instance.data.get_free = ${instance}_get_free;")
+        write(s"$instance.data.allocate = ${instance}_allocate;")
+        write(s"$instance.data.send = ${instance}_send;")
+        write(s"$instance.data.get_available = ${instance}_get_available;")
+        write(s"$instance.data.read_value = ${instance}_read_value;")
+        write(s"$instance.data.release = ${instance}_release;")
+        write(s"$instance.data.instance = ${kernel.index};")
+
+        // Clock.
+        write(s"spc_init(&${instance}.clock);")
+
         write(s"spc_start(&$instance.clock);")
+        write(s"sp_${name}_init(&$instance.priv);")
+        write(s"if(setjmp($instance.env) == 0) {")
+        enter
         write(s"sp_${name}_run(&$instance.priv);")
+        leave
+        write(s"}")
+        write(s"sp_${name}_destroy(&$instance.priv);")
         write(s"spc_stop(&$instance.clock);")
         kernel.getOutputs.filter {
             _.destKernel.device == kernel.device
         }.map(_.destKernel.label).foreach { dest =>
-            write(s"$dest.active_inputs -= 1;")
+            write(s"sp_decrement(&$dest.active_inputs);")
         }
         write(s"return NULL;")
         leave
@@ -496,14 +508,14 @@ private[scalapipe] class CPUResourceGenerator(
 
         // Include kernel headers.
         write("extern \"C\" {")
-        cpuInstances.foreach { emitKernelHeader(_) }
+        cpuInstances.foreach(emitKernelHeader)
         write("}")
 
         // Write the top edge code.
         write(edgeTop)
 
         // Create kernel structures.
-        cpuInstances.foreach { emitKernelStruct(_) }
+        cpuInstances.foreach(emitKernelStruct)
 
         write("static unsigned long long start_ticks;")
         write("static struct timeval start_time;")
@@ -573,7 +585,7 @@ private[scalapipe] class CPUResourceGenerator(
         write(edgeInit)
 
         // Call the kernel init functions.
-        cpuInstances.foreach { emitKernelInit(_) }
+        cpuInstances.foreach(emitKernelInit)
 
         write("atexit(showStats);")
 
@@ -584,9 +596,6 @@ private[scalapipe] class CPUResourceGenerator(
         for (t <- threadIds.values) {
             write(s"pthread_join(thread$t, NULL);")
         }
-
-        // Call the kernel destroy functions.
-        cpuInstances.foreach { emitKernelDestroy(_) }
 
         // Destroy the edges.
         write(edgeDestroy)

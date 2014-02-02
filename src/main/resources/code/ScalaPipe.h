@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <setjmp.h>
 #include <string.h>
 #include <sched.h>
 #include <math.h>
@@ -25,6 +26,12 @@ extern "C" {
 #   define SPLIKELY(x) (x)
 #   define SPUNLIKELY(x) (x)
 #endif
+
+/** Atomic decrement. */
+static inline void sp_decrement(volatile uint32_t *v)
+{
+    asm volatile("lock decl %0" : "=m" (*v) : "m" (*v));
+}
 
 /** Structure to represent the per-instance fields for a kernel.
  * This should align to 8 bytes.
