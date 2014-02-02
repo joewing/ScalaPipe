@@ -1,6 +1,8 @@
 #ifndef SCALAPIPE_H_
 #define SCALAPIPE_H_
 
+#include <stdio.h>
+#include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
 #include <sched.h>
