@@ -288,6 +288,15 @@ object NBody {
 
         }
 
+        val GetTime = new Func {
+            val tv = local(stdio.TIMEVAL)
+            val result = local(UNSIGNED64)
+            stdio.gettimeofday(addr(tv), 0)
+            result = cast(tv.tv_sec, UNSIGNED64) * 1000000
+            result += cast(tv.tv_usec, UNSIGNED64)
+            return result
+        }
+
         val PrintText = new Kernel("Print") {
 
             val pin = input(PARTICLE)
@@ -298,22 +307,13 @@ object NBody {
             val lastTime = local(UNSIGNED64, 0)
             val currentTime = local(UNSIGNED64)
 
-            def getTime() = {
-                val tv = local(stdio.TIMEVAL)
-                val result = local(UNSIGNED64)
-                stdio.gettimeofday(addr(tv), 0)
-                result = cast(tv.tv_sec, UNSIGNED64) * 1000000
-                result += cast(tv.tv_usec, UNSIGNED64)
-                result
-            }
-
             if (lastTime == 0) {
-                lastTime = getTime()
+                lastTime = GetTime()
             }
 
             p = pin
-            if (p(3) < 0) {
-                currentTime = getTime()
+            if (p.mass < 0) {
+                currentTime = GetTime()
                 stdio.printf("Frame time: %lu us\n",
                              currentTime - lastTime)
                 lastTime = currentTime
@@ -346,15 +346,6 @@ object NBody {
             val event = local(xlib.XEVENT)
             val mapped = local(BOOL, false)
 
-            def getTime() = {
-                val tv = local(stdio.TIMEVAL)
-                val result = local(UNSIGNED64)
-                stdio.gettimeofday(addr(tv), 0)
-                result = cast(tv.tv_sec, UNSIGNED64) * 1000000
-                result += cast(tv.tv_usec, UNSIGNED64)
-                result
-            }
-
             if (display == 0) {
                 display = xlib.XOpenDisplay(0)
                 if (display == 0) {
@@ -374,12 +365,12 @@ object NBody {
                 }
                 gc = xlib.XCreateGC(display, w, 0, 0)
                 xlib.XSetForeground(display, gc, 0xFFFFFF)
-                lastTime = getTime()
+                lastTime = GetTime()
             }
 
             p = pin
             if (p.mass < 0) {
-                currentTime = getTime()
+                currentTime = GetTime()
                 stdio.printf("Frame time: %lu us\n",
                              currentTime - lastTime)
                 lastTime = currentTime
