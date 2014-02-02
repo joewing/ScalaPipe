@@ -1,5 +1,6 @@
 package scalapipe
 
+import scala.reflect.runtime.universe.{runtimeMirror, typeOf}
 import scalapipe.dsl.Type
 import scalapipe.dsl.Vector
 import scalapipe.dsl.Struct
@@ -136,13 +137,28 @@ private[scalapipe] class ArrayValueType(v: Vector)
 
 }
 
+private object RecordValueType {
+
+    def fields(obj: Type): Seq[(String, ValueType)] = {
+        val typeMirror = runtimeMirror(obj.getClass.getClassLoader)
+        val instanceMirror = typeMirror.reflect(obj)
+        val members = instanceMirror.symbol.typeSignature.members
+        val fields = members.filter(_.typeSignature <:< typeOf[Type])
+        fields.map { f =>
+            val value = instanceMirror.reflectField(f.asTerm).get
+            (f.name.toString, value.asInstanceOf[Type].create)
+        }.toSeq
+    }
+
+}
+
 /** Base value type for types with fields (structs and unions). */
 private[scalapipe] abstract class RecordValueType(
-        _name: String,
+        val t: Type,
         _bits: Int
-    ) extends ValueType(_name, _bits) {
+    ) extends ValueType(t.name, _bits) {
 
-    protected val fields: Seq[(String, ValueType)]
+    protected val fields = RecordValueType.fields(t)
 
     def fieldNames: Seq[String] = fields.map(_._1)
 
@@ -193,7 +209,7 @@ private object StructValueType {
 
     // Get the total size of the structure, including padding.
     def bits(struct: Struct): Int = {
-        val fields = struct.fields.map(_._2.create)
+        val fields = RecordValueType.fields(struct).map(_._2)
         val bytes = fields.foldLeft(0) { (total, field) =>
             pad(total, field) + field.bytes
         }
@@ -204,12 +220,7 @@ private object StructValueType {
 
 private[scalapipe] class StructValueType(
         struct: Struct
-    ) extends RecordValueType(struct.name, StructValueType.bits(struct)) {
-
-    protected val fields: Seq[(String, ValueType)] =
-        struct.fields.map { case (k, v) =>
-            (k.name, v.create())
-        }
+    ) extends RecordValueType(struct, StructValueType.bits(struct)) {
 
     def offset(node: ASTNode): Int = fieldName(node) match {
         case Some(name) =>
@@ -233,18 +244,15 @@ private[scalapipe] class NativeValueType(
 
 private object UnionValueType {
 
-    def bits(union: Union) = union.fields.map(_._2.create.bits).max
+    def bits(union: Union) = {
+        RecordValueType.fields(union).map(_._2.bits).max
+    }
 
 }
 
 private[scalapipe] class UnionValueType(
         union: Union
-    ) extends RecordValueType(union.name, UnionValueType.bits(union)) {
-
-    protected val fields: Seq[(String, ValueType)] =
-        union.fields.map { case (k, v) =>
-            (k.name, v.create())
-        }
+    ) extends RecordValueType(union, UnionValueType.bits(union)) {
 
     def offset(node: ASTNode): Int = 0
 

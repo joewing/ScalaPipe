@@ -6,13 +6,13 @@ import scalapipe.dsl._
 object StructTest {
 
     val Struct1 = new Struct {
-        field('a, SIGNED32)     // 0 .. 3
-        field('b, BOOL)         // 4 .. 4
+        val a = SIGNED32    // 0 .. 3
+        val b = BOOL        // 4 .. 4
     }
 
     val Struct2 = new Struct {
-        field('x, Struct1)      // 0 .. 7
-        field('y, UNSIGNED32)   // 8 .. 11
+        val x = Struct1     // 0 .. 7
+        val y = UNSIGNED32  // 8 .. 11
     }
 
     val Gen = new Func("Gen") {

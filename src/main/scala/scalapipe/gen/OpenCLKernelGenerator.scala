@@ -28,18 +28,18 @@ private[scalapipe] class OpenCLKernelGenerator(
         t.baseType match {
             case ValueType.unsigned8    => "uchar"
             case ValueType.signed8      => "char"
-            case ValueType.unsigned16  => "ushort"
+            case ValueType.unsigned16   => "ushort"
             case ValueType.signed16     => "short"
-            case ValueType.unsigned32  => "uint"
+            case ValueType.unsigned32   => "uint"
             case ValueType.signed32     => "int"
-            case ValueType.unsigned64  => "ulong"
+            case ValueType.unsigned64   => "ulong"
             case ValueType.signed64     => "long"
             case ValueType.float32      => "float"
             case ValueType.float64      => "double"
             case a: ArrayValueType      =>
-                getOpenCLType(a.itemType) + "[" + a.length + "]"
-            case _                            =>
-                Error.raise("Type " + t + " not supported for OpenCL blocks")
+                getOpenCLType(a.itemType) + s"[${a.length}]"
+            case _ =>
+                Error.raise(s"Type $t not supported in OpenCL kernels")
         }
     }
 
@@ -197,7 +197,7 @@ private[scalapipe] class OpenCLKernelGenerator(
         // Write the source.
         val file = new File(parent, kt.name + ".cl")
         val ps = new PrintStream(new FileOutputStream(file))
-        ps.print(emitSource)        
+        ps.print(emitSource)
         ps.close
 
     }

@@ -16,19 +16,19 @@ object NBody {
 
         val VTYPE = FLOAT32
         val PARTICLE = new Struct {
-            field('x, VTYPE)
-            field('y, VTYPE)
-            field('z, VTYPE)
-            field('mass, VTYPE)
-            field('vx, VTYPE)
-            field('vy, VTYPE)
-            field('vz, VTYPE)
+            val x = VTYPE
+            val y = VTYPE
+            val z = VTYPE
+            val mass = VTYPE
+            val vx = VTYPE
+            val vy = VTYPE
+            val vz = VTYPE
         }
         val POINT = new Struct {
-            field('x, VTYPE)
-            field('y, VTYPE)
-            field('z, VTYPE)
-            field('mass, VTYPE)
+            val x = VTYPE
+            val y = VTYPE
+            val z = VTYPE
+            val mass = VTYPE
         }
 
         val gravity = 0.0000000000667428
@@ -61,7 +61,7 @@ object NBody {
                 out = other
                 forces.mass = 0
             } else {
-                if (other.x != p.x || other.y != p.y || other.z != p.z) {
+                if (other.x <> p.x || other.y <> p.y || other.z <> p.z) {
                     dx = other.x - p.x
                     dy = other.y - p.y
                     dz = other.z - p.z
