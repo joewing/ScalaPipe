@@ -21,6 +21,7 @@ private[scalapipe] class SockEdgeGenerator(
         write("#include <netdb.h>")
         write("#include <fcntl.h>")
         write("#include <errno.h>")
+        write("#include <unistd.h>")
     }
 
     override def emitGlobals(streams: Traversable[Stream]) {
@@ -67,7 +68,7 @@ private[scalapipe] class SockEdgeGenerator(
         write(s"static bool ${stream.label}_get_free()")
         enter
         write(s"static int size = 0;")
-        writeIf(s"XUNLIKELY(size == 0)")
+        writeIf(s"SPUNLIKELY(size == 0)")
         write(s"socklen_t olen = sizeof(size);")
         write(s"getsockopt($sock, SOL_SOCKET, SO_SNDBUF, &size, &olen);")
         writeEnd
@@ -77,11 +78,11 @@ private[scalapipe] class SockEdgeGenerator(
         leave
 
         // "allocate"
-        write(s"static void *${stream.label}_allocate(int count)")
+        write(s"static void *${stream.label}_allocate()")
         enter
         write(s"static size_t size = 0;")
-        write(s"const size_t temp = count * sizeof($vtype);")
-        writeIf(s"XUNLIKELY(temp > size)")
+        write(s"const size_t temp = sizeof($vtype);")
+        writeIf(s"SPUNLIKELY(temp > size)")
         write(s"size = temp;")
         write(s"$bufname = (char*)realloc($bufname, size);")
         writeEnd
@@ -89,11 +90,11 @@ private[scalapipe] class SockEdgeGenerator(
         leave
 
         // "send"
-        write(s"static void ${stream.label}_send(int count)")
+        write(s"static void ${stream.label}_send()")
         enter
-        write(s"const size_t size = count * sizeof($vtype);")
+        write(s"const size_t size = sizeof($vtype);")
         write(s"const int c = send($sock, $bufname, size, 0);")
-        writeIf(s"XUNLIKELY(c < 0)")
+        writeIf(s"SPUNLIKELY(c < 0)")
         write("perror(\"send failed\");")
         write("exit(-1);")
         writeEnd
@@ -115,39 +116,37 @@ private[scalapipe] class SockEdgeGenerator(
         // Globals.
         write(s"static int $sock = 0;")
         write(s"static int $lsock = 0;")
-        write(s"static APQ *$qname = NULL;")
+        write(s"static SPQ *$qname = NULL;")
 
-        // "process"
-        write(s"static bool ${stream.label}_process()")
+        // Read from the socket.
+        write(s"static void ${stream.label}_process()")
         enter
         write(s"static ssize_t leftovers = 0;")
         write(s"static char *ptr = NULL;")
-        writeIf(s"XUNLIKELY($sock == 0)")
+
+        write(s"while(SPUNLIKELY($sock == 0))")
+        enter
         write(s"struct sockaddr_in caddr;")
         write(s"socklen_t caddrlen = sizeof(caddr);")
         write(s"$sock = accept($lsock, (struct sockaddr*)&caddr, &caddrlen);")
-        writeIf(s"$sock < 0")
-        writeIf(s"errno == EAGAIN")
-        write(s"$sock = 0;")
-        writeReturn("0")
-        writeEnd
+        writeIf(s"$sock < 0 && errno != EAGAIN")
         write("perror(\"accept\");")
         write("exit(-1);")
         writeEnd
+        leave
         write(s"fcntl($sock, F_SETFL, O_NONBLOCK);")
-        writeEnd
         write(s"size_t max_size;")
         writeIf(s"leftovers > 0")
         write(s"max_size = sizeof($vtype) - leftovers;")
         writeElse
         write(s"const size_t max_count = ${qname}->depth >> 3;")
         write(s"max_size = sizeof($vtype) * max_count;")
-        write(s"ptr = (char*)APQ_StartWrite($qname, max_count);")
+        write(s"ptr = (char*)spq_start_write($qname, max_count);")
         writeEnd
         writeIf(s"ptr != NULL")
         write(s"ssize_t rc = recv($sock, ptr, max_size, 0);")
         writeIf(s"rc < 0")
-        writeIf(s"XUNLIKELY(errno != EAGAIN)")
+        writeIf(s"SPUNLIKELY(errno != EAGAIN)")
         write("perror(\"recv\");")
         write("exit(-1);")
         writeEnd
@@ -156,38 +155,34 @@ private[scalapipe] class SockEdgeGenerator(
         write(s"const size_t count = total / sizeof($vtype);")
         write(s"leftovers = total % sizeof($vtype);")
         write(s"ptr += rc;")
-        write(s"APQ_FinishWrite($qname, count);")
+        write(s"spq_finish_write($qname, count);")
         writeEnd
         writeEnd
-        writeIf(s"$destLabel.inputs[$destIndex].data == NULL")
-        write(s"char *buf;")
-        write(s"uint32_t c = APQ_StartRead($qname, &buf);")
-        writeIf(s"c > 0")
-        write(s"$destLabel.inputs[$destIndex].data = ($vtype*)buf;")
-        write(s"$destLabel.inputs[$destIndex].count = c;")
-        writeEnd
-        writeEnd
-        writeIf(s"$destLabel.inputs[$destIndex].data")
-        write(s"$destLabel.clock.count += 1;")
-        write(s"ap_${destName}_push(&$destLabel.priv, $destIndex, " +
-              s"$destLabel.inputs[$destIndex].data, " +
-              s"$destLabel.inputs[$destIndex].count);")
-        writeReturn("true")
+        leave
+
+        // "get_available"
+        write(s"static int ${stream.label}_get_available()")
+        enter
+        write(s"${stream.label}_process();")
+        writeReturn(s"spq_get_used($qname);")
+        leave
+
+        // "read_value"
+        write(s"static void *${stream.label}_read_value()")
+        enter
+        write(s"char *buffer;")
+        write(s"${stream.label}_process();")
+        writeIf(s"spq_start_read($qname, &buffer) > 0")
+        writeReturn(s"buffer")
         writeElse
-        writeReturn("false")
+        writeReturn(s"NULL")
         writeEnd
         leave
 
         // "release"
-        write(s"static void ${stream.label}_release(int count)")
+        write(s"static void ${stream.label}_release()")
         enter
-        write(s"APQ_FinishRead($qname, count);")
-        leave
-
-        // "is_empty"
-        write(s"static int ${stream.label}_is_empty()")
-        enter
-        writeReturn(s"APQ_IsEmpty($qname)")
+        write(s"spq_finish_read($qname, 1);")
         leave
 
     }
@@ -221,7 +216,7 @@ private[scalapipe] class SockEdgeGenerator(
         write(s"int rc = connect($sock, (struct sockaddr*)&addr, " +
               s"sizeof(addr));")
         writeIf("rc")
-        writeIf("rc != ECONNREFUSED")
+        writeIf("errno != ECONNREFUSED")
         write("perror(\"connect\");")
         write("exit(-1);")
         writeElse
@@ -245,8 +240,8 @@ private[scalapipe] class SockEdgeGenerator(
         val port = sp.getPort(stream)
 
         // Initialize the queue.
-        write(s"$qname = (APQ*)malloc(APQ_GetSize($depth, sizeof($vtype)));")
-        write(s"APQ_Initialize($qname, $depth, sizeof($vtype));")
+        write(s"$qname = (SPQ*)malloc(spq_get_size($depth, sizeof($vtype)));")
+        write(s"spq_init($qname, $depth, sizeof($vtype));")
 
         // Create the server socket.
         enter
