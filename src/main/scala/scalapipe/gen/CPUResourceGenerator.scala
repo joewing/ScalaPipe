@@ -274,6 +274,7 @@ private[scalapipe] class CPUResourceGenerator(
         }
         write(s"if(SPLIKELY(ptr != NULL)) {")
         enter
+        write(s"$instance.clock.count += 1;");
         write(s"spc_start(&$instance.clock);")
         write(s"return ptr;")
         leave
@@ -376,11 +377,11 @@ private[scalapipe] class CPUResourceGenerator(
 
         def writeKernelStats(k: KernelInstance) {
             write(s"ticks = ${k.label}.clock.total_ticks;");
-            write(s"pushes = ${k.label}.clock.count;")
+            write(s"reads = ${k.label}.clock.count;")
             write(s"us = (ticks * total_us) / total_ticks;")
             write(s"""fprintf(stderr, \"     ${k.kernelType.name}(""" +
-                  s"""${k.label}): %llu ticks, %llu pushes, %llu us\\n\", """ +
-                  s"""ticks, pushes, us);""")
+                  s"""${k.label}): %llu ticks, %llu reads, %llu us\\n\", """ +
+                  s"""ticks, reads, us);""")
             if (k.kernelType.parameters.get('profile)) {
                 write(s"""fprintf(stderr, \"        HDL Clocks: %lu\\n\", """ +
                       s"""${k.label}.priv.sp_clocks);""")
@@ -405,7 +406,7 @@ private[scalapipe] class CPUResourceGenerator(
         write("unsigned long long q_usage;")
         write("unsigned long long q_size;")
         write("unsigned long long ticks;")
-        write("unsigned long long pushes;")
+        write("unsigned long long reads;")
         write("unsigned long long us;")
         write("unsigned long long total_ticks;")
         write("unsigned long long total_us;")
