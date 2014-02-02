@@ -16,12 +16,13 @@ private[scalapipe] class SimulationEdgeGenerator(
         write("#include <signal.h>")
     }
 
-    override def emitGlobals(streams: Traversable[Stream]) {
-
+    private def emitWriteFunction {
+        write("static pthread_mutex_t sim_mutex = PTHREAD_MUTEX_INITIALIZER;")
         write("static void sim_write(int fd, const char *data, " +
-                "size_t size, uint32_t count)")
+              "size_t size, uint32_t count)")
         write("{")
         enter
+        write("pthread_mutex_lock(&sim_mutex);")
         write("const size_t total = size * count + 4;")
         write("char *buffer = (char*)alloca(total);")
         write("*(uint32_t*)&buffer[0] = count;")
@@ -36,24 +37,72 @@ private[scalapipe] class SimulationEdgeGenerator(
         write("offset += write(fd, &buffer[offset], total - offset);")
         leave
         write("}")
+        write("pthread_mutex_unlock(&sim_mutex);")
+        leave
+        write("}")
+    }
+
+    private def emitReadFunction {
+        write("static uint32_t sim_read(int fd, char *data, " +
+              "ssize_t size, uint32_t max_count)")
+        write("{")
+        enter
+
+        write("uint32_t count = 0;")
+        write("ssize_t offset = 0;")
+        write("for(;;) {")
+        enter
+
+        write("ssize_t rc = read(fd, &data[offset], size - offset);")
+        write("if(rc > 0) {")
+        enter
+        write("offset += rc;")
+        write("if(offset == size) {")
+        enter
+        write("count += 1;")
+        write("data += size;")
+        write("offset = 0;")
+        leave
+        write("}")
         leave
         write("}")
 
+        write("if(offset == 0) {")
+        enter
+        write("int temp = 0;")
+        write("write(fd, &temp, sizeof(temp));")
+        write("return count;")
+        leave
+        write("}")
+
+        leave
+        write("}")
+        leave
+        write("}")
+    }
+
+
+    override def emitGlobals(streams: Traversable[Stream]) {
+
         val devices = getDevices(streams)
-        for (d <- devices) {
+        val senderStreams = devices.flatMap(d => getSenderStreams(d, streams))
+        val receiverStreams = devices.flatMap { d =>
+            getReceiverStreams(d, streams)
+        }
 
-            // Write the send functions.
-            val senderStreams = getSenderStreams(d, streams)
-            for (s <- senderStreams) {
-                writeSendFunctions(d, s)
-            }
+        if (!senderStreams.isEmpty) {
+            emitWriteFunction
+        }
+        if(!receiverStreams.isEmpty) {
+            emitReadFunction
+        }
 
-            // Write the receive functions.
-            val receiverStreams = getReceiverStreams(d, streams)
-            for (s <- receiverStreams) {
-                writeReceiveFunctions(d, s, senderStreams)
-            }
+        for (s <- senderStreams) {
+            writeSendFunctions(s)
+        }
 
+        for (s <- receiverStreams) {
+            writeReceiveFunctions(s, senderStreams)
         }
 
         write("static pid_t sim_pid = 0;")
@@ -108,9 +157,9 @@ private[scalapipe] class SimulationEdgeGenerator(
             write(s"}")
 
             // Create the buffer.
-            write(s"$queue = (APQ*)malloc(APQ_GetSize($depth, " +
+            write(s"$queue = (SPQ*)malloc(spq_get_size($depth, " +
                   s"sizeof($vtype)));")
-            write(s"APQ_Initialize($queue, $depth, sizeof($vtype));")
+            write(s"spq_init($queue, $depth, sizeof($vtype));")
 
         }
 
@@ -138,7 +187,7 @@ private[scalapipe] class SimulationEdgeGenerator(
 
     }
 
-    private def writeSendFunctions(device: Device, stream: Stream) {
+    private def writeSendFunctions(stream: Stream) {
 
         val label = stream.label
         val queue = "q_" + stream.label
@@ -147,68 +196,49 @@ private[scalapipe] class SimulationEdgeGenerator(
 
         val itemCount = stream.valueType match {
             case avt: ArrayValueType    => avt.length
-            case _                            => 1
+            case _                      => 1
         }
 
         val itemSize = stream.valueType match {
             case avt: ArrayValueType    => avt.itemType.bits / 8
-            case _                            => stream.valueType.bits / 8
+            case _                      => stream.valueType.bits / 8
         }
 
         // Globals.
         write(s"static int stream$label = -1;")
-        write(s"static APQ *$queue = NULL;")
+        write(s"static SPQ *$queue = NULL;")
 
         // "get_free"
         write(s"static int ${label}_get_free()")
         write(s"{")
         enter
-        write(s"return APQ_GetFree($queue);")
-        leave
-        write(s"}")
-
-        // "is_empty"
-        write(s"static int ${label}_is_empty()")
-        write(s"{")
-        enter
-        write(s"return APQ_IsEmpty($queue);")
+        write(s"return spq_get_free($queue);")
         leave
         write(s"}")
 
         // "allocate"
-        write(s"static pthread_mutex_t ${label}_mutex = " +
-              s"PTHREAD_MUTEX_INITIALIZER;")
-        write(s"static void *${label}_allocate(int count)")
+        write(s"static void *${label}_allocate()")
         write(s"{")
         enter
-        write(s"pthread_mutex_lock(&${label}_mutex);")
-        write(s"void *ptr =  APQ_StartWrite($queue, count);")
-        write(s"if(XUNLIKELY(!ptr)) {")
-        enter
-        write(s"pthread_mutex_unlock(&${label}_mutex);")
-        leave
-        write(s"}")
-        write(s"return ptr;")
+        write(s"return spq_start_write($queue, 1);")
         leave
         write(s"}")
 
         // "send"
-        write(s"static void ${label}_send(int count)")
+        write(s"static void ${label}_send()")
         write(s"{")
         enter
-        write(s"APQ_FinishWrite($queue, count);")
+        write(s"spq_finish_write($queue, 1);")
         write(s"char *data;")
-        write(s"const uint32_t c = APQ_StartRead($queue, &data);")
+        write(s"const uint32_t c = spq_start_read($queue, &data);")
         write(s"sim_write($fd, data, sizeof($vtype), c);")
-        write(s"APQ_FinishRead($queue, c);")
-        write(s"pthread_mutex_unlock(&${label}_mutex);")
+        write(s"spq_finish_read($queue, c);")
         leave
         write(s"}")
 
     }
 
-    private def writeReceiveFunctions(device: Device,
-                                      stream: Stream,
+    private def writeReceiveFunctions(stream: Stream,
                                       senders: Traversable[Stream]) {
 
         val label = stream.label
@@ -221,93 +251,48 @@ private[scalapipe] class SimulationEdgeGenerator(
 
         // Globals.
         write(s"static int stream$label = -1;")
-        write(s"static APQ *$queue = NULL;")
+        write(s"static SPQ *$queue = NULL;")
 
-        // "process"
-        write(s"static bool ${label}_process()")
+        // "get_available"
+        write(s"static int ${label}_get_available()")
         write(s"{")
         enter
-        write(s"char *data;")
-        write(s"bool got_read;")
-        write(s"bool updated = false;")
-        write(s"do {")
-        enter
-        write(s"got_read = false;")
-        write(s"data = APQ_StartWrite($queue, 1);")
-        write(s"if(data != NULL) {")
-        enter
-        write(s"ssize_t offset = 0;")
-        write(s"do {")
-        enter
-        write(s"ssize_t rc = read($fd, &data[offset], " +
-              s"sizeof($vtype) - offset);")
-        write(s"if(rc > 0) {")
-        enter
-        write(s"got_read = true;")
-        write(s"updated = true;")
-        write(s"offset += rc;")
-        write(s"if(offset == sizeof($vtype)) {")
-        enter
-        write(s"APQ_FinishWrite($queue, 1);")
-        write(s"break;")
-        leave
-        write(s"}")  // offset == sizeof($vtype)
-        leave
-        write(s"}")  // rc > 0
-        leave
-        write(s"} while(got_read);")  // do
-        leave
-        write(s"}")  // data != NULL
-        leave
-        write(s"} while(got_read);")    // do
-        write
-
-        write(s"if($destLabel.inputs[$destIndex].data == NULL) {")
-        enter
-        write(s"char *buf;")
-        write(s"uint32_t c = APQ_StartRead($queue, &buf);")
-        write(s"if(c > 0) {")
-        enter
-        write(s"$destLabel.inputs[$destIndex].data = ($vtype*)buf;")
-        write(s"$destLabel.inputs[$destIndex].count = c;")
-        leave
-        write(s"}")
+        write(s"uint32_t c = spq_get_free($queue);")
+        write(s"char *ptr = spq_start_blocking_write($queue, c);")
+        write(s"c = sim_read($fd, ptr, sizeof($vtype), c);")
+        write(s"spq_finish_write($queue, c);")
+        write(s"return spq_get_used($queue);")
         leave
         write(s"}")
 
-        write(s"if($destLabel.inputs[$destIndex].data != NULL) {")
+        // "read_value"
+        write(s"static void *${label}_read_value()")
+        write(s"{")
         enter
-        write(s"$destLabel.clock.count += 1;")
-        write(s"ap_${destName}_push(&${destLabel}.priv, $destIndex, " +
-              s"$destLabel.inputs[$destIndex].data, " +
-              s"$destLabel.inputs[$destIndex].count);")
-        write(s"return true;")
-        leave
-        write(s"} else {")
-        enter
-        write(s"if(!updated) {")
-        enter
-        for (sender <- senders) {
-            write(s"${sender.label}_allocate(0);")
-            write(s"${sender.label}_send(0);")
+        for (s <- senders) {
+            val sfd = s"stream${s.label}"
+            write(s"sim_write($sfd, NULL, 0, 0);")
         }
+        write(s"uint32_t c = spq_get_free($queue);")
+        write(s"char *ptr = spq_start_blocking_write($queue, c);")
+        write(s"c = sim_read($fd, ptr, sizeof($vtype), c);")
+        write(s"spq_finish_write($queue, c);")
+        write(s"if(spq_start_read($queue, &ptr) > 0) {")
+        enter
+        write(s"return ptr;")
         leave
         write(s"}")
-        write(s"return false;")
-        leave
-        write(s"}")
-
+        write(s"return NULL;")
         leave
         write(s"}")
 
         // "release"
-        write(s"static void ${label}_release(int count)")
+        write(s"static void ${label}_release()")
         write(s"{")
         enter
-        write(s"APQ_FinishRead(${queue}, count);")
+        write(s"spq_finish_read($queue, 1);")
         leave
         write(s"}")
-
     }
 
 }

@@ -177,7 +177,8 @@ private[scalapipe] class OpenCLKernelNodeEmitter(
         }
     }
 
-    override def checkInputs(node: ASTNode): Int = {
+/*
+    override def acquireInputs(node: ASTNode): Int = {
         beginScope
         val portsToCheck = blockingInputs(node).filter { !isCheckedPort(_) }
         if (!portsToCheck.isEmpty)  {
@@ -190,7 +191,9 @@ private[scalapipe] class OpenCLKernelNodeEmitter(
         }
         gen.currentState
     }
+*/
 
+/*
     override def releaseInputs(node: ASTNode, state: Int) {
         val portsToRelease = getCheckedPorts
         endScope
@@ -221,5 +224,6 @@ private[scalapipe] class OpenCLKernelNodeEmitter(
             write("}")
         }
     }
+*/
 
 }

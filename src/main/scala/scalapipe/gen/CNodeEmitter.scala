@@ -12,8 +12,6 @@ private[scalapipe] abstract class CNodeEmitter(
     def emitAvailable(node: ASTAvailableNode): String
     def emitSymbol(node: ASTSymbolNode): String
     def emitAssign(node: ASTAssignNode): Unit
-    def checkInputs(node: ASTNode): Int
-    def releaseInputs(node: ASTNode, state: Int): Unit
     def emitStop(node: ASTStopNode)
     def emitReturn(node: ASTReturnNode)
     def updateClocks(count: Int)
@@ -54,17 +52,17 @@ private[scalapipe] abstract class CNodeEmitter(
     private def emitFunctionOp(name: String, node: ASTOpNode) = {
         val expr = emitExpr(node.a)
         node.valueType match {
-            case ValueType.unsigned8    => "ap_" + name + "8(" + expr + ")"
-            case ValueType.signed8      => "ap_" + name + "8(" + expr + ")"
-            case ValueType.unsigned16   => "ap_" + name + "16(" + expr + ")"
-            case ValueType.signed16     => "ap_" + name + "16(" + expr + ")"
-            case ValueType.unsigned32   => "ap_" + name + "32(" + expr + ")"
-            case ValueType.signed32     => "ap_" + name + "32(" + expr + ")"
-            case ValueType.unsigned64   => "ap_" + name + "64(" + expr + ")"
-            case ValueType.signed64     => "ap_" + name + "64(" + expr + ")"
-            case ValueType.float32      => name + "f(" + expr + ")"
-            case ValueType.float64      => name + "(" + expr + ")"
-            case ValueType.float96      => name + "l(" + expr + ")"
+            case ValueType.unsigned8    => s"sp_${name}8($expr)"
+            case ValueType.signed8      => s"sp_${name}8($expr)"
+            case ValueType.unsigned16   => s"sp_${name}16($expr)"
+            case ValueType.signed16     => s"sp_${name}16($expr)"
+            case ValueType.unsigned32   => s"sp_${name}32($expr)"
+            case ValueType.signed32     => s"sp_${name}32($expr)"
+            case ValueType.unsigned64   => s"sp_${name}64($expr)"
+            case ValueType.signed64     => s"sp_${name}64($expr)"
+            case ValueType.float32      => s"${name}f($expr)"
+            case ValueType.float64      => s"${name}($expr)"
+            case ValueType.float96      => s"${name}l($expr)"
             case _                      =>
                 Error.raise("invalid op type", node)
         }
@@ -96,7 +94,7 @@ private[scalapipe] abstract class CNodeEmitter(
         case NodeType.le        => emitBinaryOp("<=", node)
         case NodeType.abs       =>
             val expr = emitExpr(node.a)
-            "(" + expr + ") < 0 ? -(" + expr + ") : (" + expr + ")"
+            s"($expr) < 0 ? -($expr) : ($expr)"     // FIXME
         case NodeType.exp       => emitFunctionOp("exp", node)
         case NodeType.log       => emitFunctionOp("log", node)
         case NodeType.sqrt      => emitFunctionOp("sqrt", node)
@@ -108,15 +106,15 @@ private[scalapipe] abstract class CNodeEmitter(
     }
 
     private def emitArrayOp(node: ASTOpNode): String = node.op match {
-        case NodeType.addr    => emitUnaryOp("&", node)
-        case NodeType.sizeof => emitUnaryOp("sizeof", node)
+        case NodeType.addr      => emitUnaryOp("&", node)
+        case NodeType.sizeof    => emitUnaryOp("sizeof", node)
         case _ =>
-            Error.raise("invalid operation: " + node, node)
+            Error.raise(s"invalid operation: $node", node)
     }
 
     private def emitPointerOp(node: ASTOpNode): String = node.op match {
-        case NodeType.addr    => emitUnaryOp("&", node)
-        case NodeType.sizeof => emitUnaryOp("sizeof", node)
+        case NodeType.addr      => emitUnaryOp("&", node)
+        case NodeType.sizeof    => emitUnaryOp("sizeof", node)
         case _ =>
             Error.raise(s"invalid operation: $node", node)
     }
@@ -291,7 +289,6 @@ private[scalapipe] abstract class CNodeEmitter(
     }
 
     def emit(node: ASTNode) {
-        val state = checkInputs(node)
         node match {
             case anode: ASTAssignNode   => emitAssign(anode)
             case cond:  ASTIfNode       => emitIf(cond)
@@ -301,11 +298,10 @@ private[scalapipe] abstract class CNodeEmitter(
             case stop:  ASTStopNode     => emitStop(stop)
             case block: ASTBlockNode    => emitBlock(block)
             case ret:   ASTReturnNode   => emitReturn(ret)
-            case null                   => null
+            case null                   => ()
             case _                      =>
                 Error.raise("invalid start statement: " + node, node)
         }
-        releaseInputs(node, state)
     }
 
 }

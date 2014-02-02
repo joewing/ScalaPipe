@@ -87,7 +87,7 @@ object stdio {
         returns(SIGNED32)
     }
 
-    val exit = new stdioFunc("exit") {
+    val exit = new stdlibFunc("exit") {
         returns(VOID)
     }
 

@@ -50,8 +50,15 @@ private[scalapipe] class CFunctionGenerator(
         val fname = ft.name
         write(s"$rtype $fname($argString)")
         enter
-        for ((name, vtype) <- ft.states.map(l => (l.name, l.valueType))) {
-            write(s"$vtype $name;")
+        for (s <- ft.states) {
+            val vtype = s.valueType
+            val name = s.name
+            val value = s.value
+            if (value != null) {
+                write(s"$vtype $name = $value;")
+            } else {
+                write(s"$vtype $name;")
+            }
         }
         val nodeEmitter = new CFunctionNodeEmitter(ft, timing)
         nodeEmitter.emit(ft.expression)

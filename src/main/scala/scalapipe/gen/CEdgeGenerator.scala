@@ -30,8 +30,8 @@ private[scalapipe] class CEdgeGenerator
         val vtype = stream.valueType
 
         // Initialize the queue.
-        write(s"$qname = (APQ*)malloc(APQ_GetSize($depth, sizeof($vtype)));")
-        write(s"APQ_Initialize($qname, $depth, sizeof($vtype));")
+        write(s"$qname = (SPQ*)malloc(spq_get_size($depth, sizeof($vtype)));")
+        write(s"spq_init($qname, $depth, sizeof($vtype));")
 
     }
 
@@ -52,59 +52,47 @@ private[scalapipe] class CEdgeGenerator
         val vtype = stream.valueType
 
         // Define the queue data structure.
-        write(s"static APQ *$qname;")
+        write(s"static SPQ *$qname;")
 
-        // "process" - Run on the consumer thread (dest).
-        write(s"static bool ${label}_process()")
-        enter
-        writeIf(s"$destLabel.inputs[$destIndex].data == NULL")
-        write(s"char *buf;")
-        write(s"uint32_t c = APQ_StartRead($qname, &buf);")
-        writeIf(s"c > 0")
-        write(s"$destLabel.inputs[$destIndex].data = ($vtype*)buf;")
-        write(s"$destLabel.inputs[$destIndex].count = c;")
-        writeEnd
-        writeEnd
-
-        writeIf(s"$destLabel.inputs[$destIndex].data")
-        write(s"$destLabel.clock.count += 1;")
-        write(s"ap_${destName}_push(&$destLabel.priv, $destIndex, " +
-              s"$destLabel.inputs[$destIndex].data, " +
-              s"$destLabel.inputs[$destIndex].count);")
-        writeReturn("true")
-        writeElse
-        writeReturn("false")
-        writeEnd
-        leave
-
-        // "release" - Run on the consumer thread (dest).
-        write(s"static void ${label}_release(int count)")
-        enter
-        write(s"APQ_FinishRead($qname, count);")
-        leave
-
-        // "get_free" - Run on the producer thread (source).
+        // "get_free"
         write(s"static int ${label}_get_free()")
         enter
-        writeReturn(s"APQ_GetFree($qname)")
+        writeReturn(s"spq_get_free($qname);")
         leave
 
-        // "is_empty" - Run on the consumer thread (dest).
-        write(s"static int ${label}_is_empty()")
+        // "allocate"
+        write(s"static void *${label}_allocate()")
         enter
-        writeReturn(s"APQ_IsEmpty($qname)")
+        writeReturn(s"spq_start_write($qname, 1);")
         leave
 
-        // "allocate" - Run on the producer thread (source).
-        write(s"static void *${label}_allocate(int count)")
+        // "send"
+        write(s"static void ${label}_send()")
         enter
-        writeReturn(s"APQ_StartWrite($qname, count)")
+        write(s"spq_finish_write($qname, 1);")
         leave
 
-        // "send" - Run on the producer thread (source).
-        write(s"static void ${label}_send(int count)")
+        // "get_available"
+        write(s"static int ${label}_get_available()")
         enter
-        write(s"APQ_FinishWrite($qname, count);")
+        writeReturn(s"spq_get_used($qname);")
+        leave
+
+        // "read_value"
+        write(s"static void *${label}_read_value()")
+        enter
+        write(s"char *buffer = NULL;")
+        writeIf(s"spq_start_read($qname, &buffer) > 0")
+        writeReturn(s"buffer")
+        writeElse
+        writeReturn(s"NULL")
+        writeEnd
+        leave
+
+        // "release"
+        write(s"static void ${label}_release()")
+        enter
+        write(s"spq_finish_read($qname, 1);")
         leave
 
     }

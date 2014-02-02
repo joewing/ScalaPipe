@@ -71,9 +71,4 @@ private[scalapipe] class CFunctionNodeEmitter(
         }
     }
 
-    override def checkInputs(node: ASTNode): Int = 0
-
-    override def releaseInputs(node: ASTNode, state: Int) {
-    }
-
 }

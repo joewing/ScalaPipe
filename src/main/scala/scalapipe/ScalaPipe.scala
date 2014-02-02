@@ -469,8 +469,7 @@ private[scalapipe] class ScalaPipe {
         val dir = new File(dirname)
         dir.mkdir
 
-        RawFileGenerator.emitFile(dir, "apq.h")
-        RawFileGenerator.emitFile(dir, "X.h")
+        RawFileGenerator.emitFile(dir, "ScalaPipe.h")
         RawFileGenerator.emitFile(dir, "fp.v")
 
         val fpga = parameters.get[String]('fpga)
