@@ -22,6 +22,7 @@ private[scalapipe] class SockEdgeGenerator(
         write("#include <fcntl.h>")
         write("#include <errno.h>")
         write("#include <unistd.h>")
+        write("#include <poll.h>")
     }
 
     override def emitGlobals(streams: Traversable[Stream]) {
@@ -102,39 +103,46 @@ private[scalapipe] class SockEdgeGenerator(
 
     }
 
-    private def writeConsumerGlobals(stream: Stream) {
+    private def writeProcess(stream: Stream) {
 
         val sock = s"sock${stream.label}"
         val lsock = s"server${stream.label}"
         val qname = s"q_${stream.label}"
         val vtype = stream.valueType
-        val destIndex = stream.destIndex
-        val destKernel = stream.destKernel
-        val destLabel = destKernel.label
-        val destName = destKernel.name
+        val destLabel = stream.destKernel.label
 
-        // Globals.
-        write(s"static int $sock = 0;")
-        write(s"static int $lsock = 0;")
-        write(s"static SPQ *$qname = NULL;")
-
-        // Read from the socket.
         write(s"static void ${stream.label}_process()")
         enter
         write(s"static ssize_t leftovers = 0;")
         write(s"static char *ptr = NULL;")
 
+        // Check if this socket has already been closed.
+        writeIf(s"SPUNLIKELY($sock < 0)")
+        writeReturn()
+        writeEnd
+
+        // Attempt to connect if the connection has yet to be established.
         write(s"while(SPUNLIKELY($sock == 0))")
         enter
         write(s"struct sockaddr_in caddr;")
         write(s"socklen_t caddrlen = sizeof(caddr);")
         write(s"$sock = accept($lsock, (struct sockaddr*)&caddr, &caddrlen);")
-        writeIf(s"$sock < 0 && errno != EAGAIN")
+        writeIf(s"$sock < 0")
         write("perror(\"accept\");")
         write("exit(-1);")
         writeEnd
         leave
-        write(s"fcntl($sock, F_SETFL, O_NONBLOCK);")
+
+        // Check for activity.
+        write(s"struct pollfd fds;")
+        write(s"fds.fd = $sock;")
+        write(s"fds.events = POLLIN;")
+        writeIf(s"poll(&fds, 1, 0) == 0")
+        writeReturn()
+        writeEnd
+
+        // Check for available data.
+        writeIf(s"SPLIKELY(fds.revents & POLLIN)")
         write(s"size_t max_size;")
         writeIf(s"leftovers > 0")
         write(s"max_size = sizeof($vtype) - leftovers;")
@@ -145,20 +153,44 @@ private[scalapipe] class SockEdgeGenerator(
         writeEnd
         writeIf(s"ptr != NULL")
         write(s"ssize_t rc = recv($sock, ptr, max_size, 0);")
-        writeIf(s"rc < 0")
-        writeIf(s"SPUNLIKELY(errno != EAGAIN)")
+        writeIf(s"SPUNLIKELY(rc == 0)")
+        write(s"sp_decrement(&$destLabel.active_inputs);")
+        write(s"close($sock);")
+        write(s"$sock = -1;")
+        writeElseIf(s"SPUNLIKELY(rc < 0)")
         write("perror(\"recv\");")
         write("exit(-1);")
         writeEnd
-        writeElse
         write(s"const size_t total = rc + leftovers;")
         write(s"const size_t count = total / sizeof($vtype);")
         write(s"leftovers = total % sizeof($vtype);")
         write(s"ptr += rc;")
         write(s"spq_finish_write($qname, count);")
         writeEnd
-        writeEnd
+        writeReturn()
+        writeEnd    // Data available.
+
+        // Error if we got here.
+        write("perror(\"poll\");")
+        write("exit(-1);")
+
         leave
+
+    }
+
+    private def writeConsumerGlobals(stream: Stream) {
+
+        val sock = s"sock${stream.label}"
+        val lsock = s"server${stream.label}"
+        val qname = s"q_${stream.label}"
+
+        // Globals.
+        write(s"static int $sock = 0;")
+        write(s"static int $lsock = 0;")
+        write(s"static SPQ *$qname = NULL;")
+
+        // Read from the socket.
+        writeProcess(stream)
 
         // "get_available"
         write(s"static int ${stream.label}_get_available()")

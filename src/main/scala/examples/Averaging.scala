@@ -91,7 +91,7 @@ object Averaging {
             map(Random -> ANY_KERNEL, CPU2FPGA())
             map(ANY_KERNEL -> Print, FPGA2CPU())
 */
-//            map(Add -> Half, CPU2CPU(host="127.0.0.1"))
+            map(Add -> Half, CPU2CPU(host="127.0.0.1"))
 
         }
 
