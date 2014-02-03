@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <setjmp.h>
+#include <sys/time.h>
 #include <string.h>
 #include <sched.h>
 #include <math.h>
