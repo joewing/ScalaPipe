@@ -106,7 +106,7 @@ clean:
         write("TARGETS=" + targets.mkString(" "))
         write("C_BLOCKS=" + localC.mkString(" "))
         write("FPGA_BLOCKS=" + localHDL.mkString(" "))
-        write("TTOBJ=" + (if (needTimeTrial) "tta.o" else ""))
+        write("TTOBJ=" + (if (needTimeTrial) "TimeTrial.o" else ""))
 
         val ipaths_str = ipaths.foldLeft("") { (a, p) => a + " -I" + p }
         write("EXTRA_CFLAGS=" + ipaths_str)

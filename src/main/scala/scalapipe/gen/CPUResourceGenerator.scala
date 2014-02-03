@@ -136,7 +136,6 @@ private[scalapipe] class CPUResourceGenerator(
     private def emitKernelAllocate(kernel: KernelInstance) {
 
         val instance = kernel.label
-        val rid = threadIds(kernel)
 
         write(s"static void *${instance}_allocate(int out_port)")
         write(s"{")
@@ -159,7 +158,7 @@ private[scalapipe] class CPUResourceGenerator(
                 write(s"if(first && ptr == NULL) {")
                 enter
                 write(s"first = false;")
-                write(s"tta.LogEvent($rid, ${stream.index}, XTTA_TYPE_FULL);")
+                write(s"tta->LogEvent(${stream.index}, TTA_TYPE_FULL);")
                 leave
                 write(s"}")
             }
@@ -187,7 +186,6 @@ private[scalapipe] class CPUResourceGenerator(
         val minDepth = kernel.getOutputs.foldLeft(Int.MaxValue) {
             (a, s) => scala.math.min(a, s.depth)
         }
-        val rid = threadIds(kernel)
 
         write(s"static void ${instance}_send(int out_port)")
         write(s"{")
@@ -201,13 +199,8 @@ private[scalapipe] class CPUResourceGenerator(
                 write(s"case $index:")
                 enter
                 if (stream.usePush) {
-                    write(s"for(int i = 0; i < count; i++) {")
-                    enter
-                    write(s"tta.LogEvent($rid, ${stream.index}, " +
-                          s"XTTA_TYPE_PUSH, " +
+                    write(s"tta->LogEvent(${stream.index}, TTA_TYPE_PUSH, " +
                           s"${stream.label}_get_free() == 0);")
-                    leave
-                    write(s"}")
                 }
                 write(s"${stream.label}_send();")
                 write(s"break;")
@@ -307,13 +300,8 @@ private[scalapipe] class CPUResourceGenerator(
             write(s"case $index:")
             enter
             if (stream.usePop) {
-                val rid = threadIds(kernel)
-                write(s"for(int i = 0; i < count; i++) {")
-                enter
-                write(s"tta.LogEvent($rid, ${stream.index}, " +
-                      s"XTTA_TYPE_POP, ${stream.label}_get_free() == 0);")
-                leave
-                write(s"}")
+                write(s"tta->LogEvent(${stream.index}, TTA_TYPE_POP, " +
+                      s"${stream.label}_get_free() == 0);")
             }
             write(s"${stream.label}_release();")
             write(s"break;")
@@ -450,12 +438,7 @@ private[scalapipe] class CPUResourceGenerator(
         // Write include files that we need.
         write("#include \"ScalaPipe.h\"")
         write("#include <pthread.h>")
-        write("#include <stdio.h>")
-        write("#include <stdlib.h>")
         write("#include <signal.h>")
-        write("#include <sys/time.h>")
-
-        write("#define MAX_POLL_COUNT 32")
 
         // Get streams on this host.
         val localStreams = sp.streams.filter { s =>
@@ -473,11 +456,8 @@ private[scalapipe] class CPUResourceGenerator(
         }.exists { s => !s.measures.isEmpty }
 
         if (needTimeTrial) {
-            val threadCount = sp.threadCount(host)
-            val bufferSize = sp.parameters.get[Int]('timeTrialBufferSize)
-            write("#include \"tta.h\"")
-            write(s"static XTTASharedMemory tta($threadCount, $bufferSize);")
-            write(s"static XTTAThread *tta_thread = NULL;")
+            write("#include \"TimeTrial.hh\"")
+            write("static TimeTrialAgent *tta = NULL;;")
         }
 
         write("static bool show_extra_stats = false;")
@@ -559,25 +539,25 @@ private[scalapipe] class CPUResourceGenerator(
         if (needTimeTrial) {
 
             val ttOutput = sp.parameters.get[String]('timeTrialOutput)
-            val ttFile = if (ttOutput == null) "NULL" else ttOutput
+            val ttFile = if (ttOutput == null) {
+                    "NULL"
+                } else {
+                    "\"" + ttOutput + "\""
+                }
+            val ttSize = sp.parameters.get[Int]('timeTrialBufferSize)
             val ttAffinity = sp.parameters.get[Int]('timeTrialAffinity)
-            write("tta_thread = new XTTAThread(&tta, " + ttFile + ", " +
-                   ttAffinity + ");")
+            write(s"tta = new TimeTrialAgent($ttSize, $ttAffinity, $ttFile);")
 
             val sl = localStreams.filter { s =>
                 shouldEmit(s.sourceKernel.device) &&
                 shouldEmit(s.destKernel.device)
-            }
-            for (measure <- sl.flatMap { s => s.measures }) {
-
-                // Note that we can use resource 0 here since
-                // no threads have been started yet.
-                write("tta.SendStart(0, " + measure.stream.index + ", " +
-                        measure.getTTAStat + ", " +
-                        measure.getTTAMetric + ", " +
-                        measure.stream.depth + ", " +
-                        "\"" + measure.getName + "\");")
-
+            }.flatMap(_.measures).foreach { measure =>
+                val id = measure.stream.index
+                val stat = measure.getTTAStat
+                val metric = measure.getTTAMetric
+                val depth = measure.stream.depth
+                val name = "\"" + measure.getName + "\""
+                write(s"tta->SendStart($id, $stat, $metric, $depth, $name);")
             }
 
         }
@@ -603,7 +583,7 @@ private[scalapipe] class CPUResourceGenerator(
 
         // Shutdown TimeTrial.
         if (needTimeTrial) {
-            write("delete tta_thread;")
+            write("delete tta;")
         }
 
         write("return 0;")
@@ -615,4 +595,3 @@ private[scalapipe] class CPUResourceGenerator(
     }
 
 }
-

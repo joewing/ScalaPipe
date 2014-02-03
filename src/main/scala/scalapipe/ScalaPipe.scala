@@ -447,8 +447,8 @@ private[scalapipe] class ScalaPipe {
         val hasTimeTrial = !streams.filter { !_.measures.isEmpty }.isEmpty
 
         if (hasTimeTrial) {
-            RawFileGenerator.emitFile(dir, "tta.h")
-            RawFileGenerator.emitFile(dir, "tta.cpp")
+            RawFileGenerator.emitFile(dir, "TimeTrial.hh")
+            RawFileGenerator.emitFile(dir, "TimeTrial.cpp")
             RawFileGenerator.emitFile(dir, "Measure.hh")
             RawFileGenerator.emitFile(dir, "Stat.hh")
         }

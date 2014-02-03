@@ -31,65 +31,65 @@ private[scalapipe] class Measure(
     }
 
     private[scalapipe] def emit(stream: Stream): String =
-        "measure " + stat.name + " " + metric.name + " at " + stream.label + ";\n"
+        s"measure ${stat.name} ${metric.name} at ${stream.label};\n"
 
     private[scalapipe] def usePush: Boolean = metric match {
-        case 'occupancy        => true
-        case 'rate              => true
-        case 'backpressure    => true
-        case 'latency          => true
-        case 'interpush        => true
-        case _                    => false
+        case 'occupancy     => true
+        case 'rate          => true
+        case 'backpressure  => true
+        case 'latency       => true
+        case 'interpush     => true
+        case _              => false
     }
 
     private[scalapipe] def usePop: Boolean = metric match {
-        case 'occupancy        => true
-        case 'latency          => true
-        case 'interpop         => true
-        case _                    => false
+        case 'occupancy     => true
+        case 'latency       => true
+        case 'interpop      => true
+        case _              => false
     }
 
     private[scalapipe] def useFull: Boolean = metric match {
-        case 'backpressure    => true
-        case _                    => false
+        case 'backpressure  => true
+        case _              => false
     }
 
     private[scalapipe] def useQueueMonitor: Boolean = metric match {
-        case 'occupancy        => true
-        case _                    => false
+        case 'occupancy     => true
+        case _              => false
     }
 
     private[scalapipe] def useInputActivity: Boolean = metric match {
-        case 'rate              => true
-        case 'util              => true
-        case _                    => false
+        case 'rate          => true
+        case 'util          => true
+        case _              => false
     }
 
     private[scalapipe] def useOutputActivity: Boolean = metric match {
-        case _                    => false
+        case _              => false
     }
 
     private[scalapipe] def useFullActivity: Boolean = metric match {
-        case 'backpressure    => true
-        case _                    => false
+        case 'backpressure  => true
+        case _              => false
     }
 
     private[scalapipe] def useInterPush: Boolean = metric match {
-        case 'interpush        => true
-        case _                    => false
+        case 'interpush => true
+        case _          => false
     }
 
     private[scalapipe] def useInterPop: Boolean = metric match {
-        case 'interpop         => true
-        case _                    => false
+        case 'interpop  => true
+        case _          => false
     }
 
     private[scalapipe] def getTTAStat: String =
-        "XTTA_STAT_" + stat.name.toUpperCase
+        "TTA_STAT_" + stat.name.toUpperCase
 
     private[scalapipe] def getTTAMetric: String =
-        "XTTA_MEASURE_" + metric.name.toUpperCase
+        "TTA_MEASURE_" + metric.name.toUpperCase
 
-    private[scalapipe] def getName: String = stat.name + " " + metric.name
+    private[scalapipe] def getName: String = s"${stat.name} ${metric.name}"
 
 }
