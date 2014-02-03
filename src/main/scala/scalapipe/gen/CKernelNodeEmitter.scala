@@ -45,20 +45,24 @@ private[scalapipe] class CKernelNodeEmitter(
         return ((str, nvt))
     }
 
-    override def emitSymbol(node: ASTSymbolNode): String = {
+    private def emitSymbolBase(node: ASTSymbolNode): String = {
         val name = node.symbol
-        val base = if (kt.isLocal(name)) {
-            s"$name"
+        if (kt.isLocal(name)) {
+            return s"$name"
         } else if (kt.isInput(name)) {
             val index = kt.inputIndex(name)
-            s"sp_read_input$index(kernel)"
+            return s"sp_read_input$index(kernel)"
         } else if (kt.isOutput(name)) {
-            s"*$name"
+            return s"*$name"
         } else if (kt.isState(name) || kt.isConfig(name)) {
-            s"kernel->$name"
+            return s"kernel->$name"
         } else {
             Error.raise(s"symbol not declared: $name", node)
         }
+    }
+
+    override def emitSymbol(node: ASTSymbolNode): String = {
+        val base = emitSymbolBase(node)
         val valueType = kt.getType(node)
         val start = ((base, valueType))
         val result = node.indexes.foldLeft(start) { (a, index) =>
@@ -66,6 +70,13 @@ private[scalapipe] class CKernelNodeEmitter(
             emitComponent(base, vt, index)
         }
         result._1
+    }
+
+    private def getOffset(node: ASTSymbolNode): String = {
+        val location = "(char*)&" + emitSymbol(node)
+        val base = "(char*)&" + emitSymbolBase(node)
+        val baseOffset = kt.getBaseOffset(node.symbol)
+        return s"((unsigned)($location - $base) + $baseOffset)"
     }
 
     override def emitAssign(node: ASTAssignNode) {
@@ -76,15 +87,22 @@ private[scalapipe] class CKernelNodeEmitter(
             write(s"$o = ($vtype*)sp_allocate(kernel, $oindex);")
         }
 
+        // TODO: output trace data for reads.
+
         val dest = emitExpr(node.dest)
         val src = emitExpr(node.src)
         write(s"$dest = $src;")
         updateClocks(getTiming(node))
 
-        // TODO: output trace data
+        if (kt.parameters.get[Boolean]('trace) && !node.dest.valueType.flat) {
+            val offsetStr = getOffset(node.dest)
+            val size = node.src.valueType.bytes.toHexString
+            write("fprintf(kernel->trace_fd, \"W%x:" + size +
+                  "\\n\", " + offsetStr + ");")
+        }
 
         for (oindex <- outputs.map(kt.outputIndex(_))) {
-            if (kt.parameters.get('trace)) {
+            if (kt.parameters.get[Boolean]('trace)) {
                 write("fprintf(kernel->trace_fd, \"P" + oindex + "\\n\");")
             }
             write(s"sp_send(kernel, $oindex);")

@@ -10,13 +10,13 @@ class Variable private[scalapipe] (
 
     private[scalapipe] def create() = ASTSymbolNode(name, kernel)
 
-    def update(index: ASTNode, value: ASTNode): ASTNode = {
+    def update(index: ASTNode, value: ASTNode): ASTAssignNode = {
         val symbol = create()
         symbol.apply(index)
         ASTAssignNode(symbol, value, kernel)
     }
 
-    def update(index: Symbol, value: ASTNode): ASTNode = {
+    def update(index: Symbol, value: ASTNode): ASTAssignNode = {
         val symbol = create()
         symbol.apply(index)
         ASTAssignNode(symbol, value, kernel)
@@ -28,12 +28,12 @@ class Variable private[scalapipe] (
         symbol.apply(SymbolLiteral("x", kernel))
     }
 
-    def selectDynamic(name: String): ASTNode = {
+    def selectDynamic(name: String): ASTSymbolNode = {
         val symbol = create()
         symbol.apply(SymbolLiteral(name, kernel))
     }
 
-    def updateDynamic(name: String)(value: ASTNode): ASTNode = {
+    def updateDynamic(name: String)(value: ASTNode): ASTAssignNode = {
         val symbol = create()
         symbol.apply(SymbolLiteral(name, kernel))
         ASTAssignNode(symbol, value, kernel)

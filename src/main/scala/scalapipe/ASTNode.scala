@@ -76,8 +76,10 @@ abstract class ASTNode(
 
     final def tan = ASTOpNode(NodeType.sin, this, null, kernel)
 
-    private def assignOp(op: NodeType.Value, other: ASTNode) =
-        ASTAssignNode(this, ASTOpNode(op, this, other, kernel), kernel)
+    protected def assignOp(op: NodeType.Value, other: ASTNode) = {
+        Error.raise("invalid assignment", kernel)
+        this
+    }
 
     final def &&=[T <% ASTNode](o: T) = assignOp(NodeType.land, o)
 
@@ -129,15 +131,15 @@ private[scalapipe] case class ASTOpNode(
 }
 
 private[scalapipe] case class ASTAssignNode(
-        val dest: ASTNode,
+        val dest: ASTSymbolNode,
         val src: ASTNode,
         _kernel: Kernel = null
     ) extends ASTNode(NodeType.assign, _kernel) with ASTStartNode {
 
-    override private[scalapipe] def children = Seq(dest, src)
-
     dest.parent = this
     src.parent = this
+
+    private[scalapipe] override def children = Seq(dest, src)
 
 }
 
@@ -150,7 +152,6 @@ private[scalapipe] case class ASTIfNode(
 
     override private[scalapipe] def children =
         Seq(cond, iTrue, iFalse).filter(_ != null)
-
 
     cond.parent = this
     if (iTrue != null) {
@@ -231,6 +232,9 @@ private[scalapipe] case class ASTSymbolNode(
     private[scalapipe] override def pure =
         valueType.pure && indexes.forall(_.pure)
 
+    protected override def assignOp(op: NodeType.Value, other: ASTNode) =
+        ASTAssignNode(this, ASTOpNode(op, this, other, kernel), kernel)
+
     def apply(l: ASTNode): ASTSymbolNode = {
         indexes = indexes :+ l
         l.parent = this
@@ -257,14 +261,14 @@ private[scalapipe] case class ASTSymbolNode(
         ASTAssignNode(this, r, kernel)
     }
 
-    def selectDynamic(name: String): ASTNode = {
+    def selectDynamic(name: String): ASTSymbolNode = {
         val index = SymbolLiteral(name, kernel)
         index.parent = this
         indexes = indexes :+ index
         this
     }
 
-    def updateDynamic(name: String)(value: ASTNode): ASTNode = {
+    def updateDynamic(name: String)(value: ASTNode): ASTAssignNode = {
         val index = SymbolLiteral(name, kernel)
         index.parent = this
         indexes = indexes :+ index

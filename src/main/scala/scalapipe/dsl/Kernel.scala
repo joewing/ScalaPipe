@@ -115,7 +115,7 @@ class Kernel(val name: String) extends DebugInfo {
     }
 
 
-    def __assign[A <% ASTNode, B <% ASTNode](a: A, b: B): ASTNode = {
+    def __assign[A <% ASTSymbolNode, B <% ASTNode](a: A, b: B): ASTNode = {
         ASTAssignNode(a, b, this)
     }
 

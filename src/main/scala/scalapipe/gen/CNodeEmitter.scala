@@ -293,6 +293,8 @@ private[scalapipe] abstract class CNodeEmitter(
     }
 
     def emit(node: ASTNode) {
+
+
         node match {
             case anode: ASTAssignNode   => emitAssign(anode)
             case cond:  ASTIfNode       => emitIf(cond)

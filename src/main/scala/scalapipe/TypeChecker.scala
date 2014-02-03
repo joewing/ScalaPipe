@@ -169,7 +169,7 @@ private[scalapipe] class TypeChecker(kt: KernelType) {
 
     private def checkAssign(node: ASTAssignNode, lhs: Boolean): ASTNode = {
 
-        val dest = check(node.dest, true)
+        val dest = checkSymbol(node.dest, true)
         val destType = getType(dest)
         val src = check(node.src, false)
 
@@ -235,7 +235,8 @@ private[scalapipe] class TypeChecker(kt: KernelType) {
         ASTBlockNode(node.children.map(check(_, false)))
     }
 
-    private def checkSymbol(node: ASTSymbolNode, lhs: Boolean): ASTNode = {
+    private def checkSymbol(node: ASTSymbolNode,
+                            lhs: Boolean): ASTSymbolNode = {
         if (!lhs && kt.isOutput(node)) {
             Error.raise("reading from output port not allowed", node)
         }
@@ -252,7 +253,7 @@ private[scalapipe] class TypeChecker(kt: KernelType) {
         result
     }
 
-    private def checkCall(node: ASTCallNode, lhs: Boolean): ASTNode = {
+    private def checkCall(node: ASTCallNode, lhs: Boolean): ASTCallNode = {
         val result = ASTCallNode(node.func)
         val children = node.children.map(check(_, false))
         result.apply(children: _*)

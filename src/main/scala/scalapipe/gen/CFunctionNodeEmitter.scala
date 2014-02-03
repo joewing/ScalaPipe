@@ -46,7 +46,7 @@ private[scalapipe] class CFunctionNodeEmitter(
 
     override def emitAssign(node: ASTAssignNode) {
         val src = emitExpr(node.src)
-        if (kt.isOutput(node.dest.asInstanceOf[ASTSymbolNode])) {
+        if (kt.isOutput(node.dest)) {
             updateClocks(getTiming(node))
             writeReturn(src)
         } else {

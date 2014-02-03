@@ -98,7 +98,7 @@ private[scalapipe] class ConstantFolder(kt: KernelType) {
     }
 
     private def foldAssign(node: ASTAssignNode): ASTNode =
-        ASTAssignNode(fold(node.dest), fold(node.src))
+        ASTAssignNode(foldSymbol(node.dest), fold(node.src))
 
     private def foldIf(node: ASTIfNode): ASTNode =
         ASTIfNode(fold(node.cond), fold(node.iTrue), fold(node.iFalse))
@@ -134,14 +134,14 @@ private[scalapipe] class ConstantFolder(kt: KernelType) {
         }
     }
 
-    private def foldSymbol(node: ASTSymbolNode): ASTNode = {
+    private def foldSymbol(node: ASTSymbolNode): ASTSymbolNode = {
         val result = ASTSymbolNode(node.symbol)
         result.indexes = node.indexes.map(fold(_))
         result.valueType = node.valueType
         result
     }
 
-    private def foldReturn(node: ASTReturnNode): ASTNode = {
+    private def foldReturn(node: ASTReturnNode): ASTReturnNode = {
         ASTReturnNode(fold(node.a))
     }
 
