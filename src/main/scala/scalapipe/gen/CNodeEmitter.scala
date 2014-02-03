@@ -131,11 +131,15 @@ private[scalapipe] abstract class CNodeEmitter(
     }
 
     private def emitCall(node: ASTCallNode): String = {
-        val argString = node.args.map(emitExpr(_)).mkString(", ")
+        val argString = node.args.map(emitExpr).mkString(", ")
         if (kt.isInternal(node.func) && kt.parameters.get('profile)) {
-            node.symbol + s"(&block->ap_clocks, $argString)"
+            if (argString.isEmpty) {
+                s"${node.symbol}(&kernel->sp_clocks)"
+            } else {
+                s"${node.symbol}(&kernel->sp_clocks, $argString)"
+            }
         } else {
-            node.symbol + s"($argString)"
+            s"${node.symbol}($argString)"
         }
     }
 

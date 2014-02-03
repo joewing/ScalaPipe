@@ -326,7 +326,7 @@ private[scalapipe] class CPUResourceGenerator(
         write(s"{")
         enter
 
-        // AP_block_data
+        // SP_kernel_data
         write(s"$instance.data.in_port_count = $inPortCount;")
         write(s"$instance.data.out_port_count = $outPortCount;")
         write(s"$instance.data.get_free = ${instance}_get_free;")
@@ -337,7 +337,7 @@ private[scalapipe] class CPUResourceGenerator(
         write(s"$instance.data.release = ${instance}_release;")
         write(s"$instance.data.instance = ${kernel.index};")
 
-        // Clock.
+        // Clock
         write(s"spc_init(&${instance}.clock);")
 
         write(s"spc_start(&$instance.clock);")
