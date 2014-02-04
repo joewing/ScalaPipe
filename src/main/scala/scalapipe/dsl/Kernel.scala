@@ -103,7 +103,7 @@ class Kernel(val name: String) extends LowPriorityImplicits with DebugInfo {
         scopeStack.last += prev.handleEnd
     }
 
-    def __doWhile[A <% ASTNode, T](cond: A, body: => T) {
+    def __doWhile[A <% ASTNode, T](body: => T, cond: A) {
         body
         scopeStack += new scalapipe.Scope(this, NodeType.WHILE, cond)
         body

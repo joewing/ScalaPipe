@@ -160,6 +160,29 @@ object ControlTest {
 
     }
 
+    // Test do-while
+    val TestDoWhile = new Kernel {
+        val x0 = input(SIGNED32)
+        val y0 = output(SIGNED32)
+        val t = local(SIGNED32)
+        val i = local(SIGNED32)
+
+        do {
+            t = x0
+        } while(0)
+
+        i = 0
+        do {
+            i += 1
+        } while (i < 10)
+        if (i <> 10) {
+            stop
+        }
+
+        y0 = t
+
+    }
+
     val Print = new Kernel {
         val x0 = input(SIGNED32)
         stdio.printf("OUTPUT %d\n", x0)
@@ -168,7 +191,7 @@ object ControlTest {
 
     def main(args: Array[String]) {
 
-        val tests = Seq(TestIf, TestSwitch, TestWhile, TestFor)
+        val tests = Seq(TestIf, TestSwitch, TestWhile, TestFor, TestDoWhile)
         val mapping = if (args.length > 0) args(0).toInt else 0
         val app = new Application {
             val gen = Gen()
