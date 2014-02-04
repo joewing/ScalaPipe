@@ -244,7 +244,9 @@ private[scalapipe] abstract class CNodeEmitter(
                 }
             case None => ()
         }
-        writeEnd
+        if (!first) {
+            writeEnd
+        }
     }
 
     private def emitWhile(node: ASTWhileNode) {

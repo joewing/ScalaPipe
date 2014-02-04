@@ -23,6 +23,11 @@ function run_test {
 # Run unit tests.
 sbt test
 
+# Test control structures.
+echo "OUTPUT 5" > test.expected
+run_test ControlTest 0
+run_test ControlTest 1
+
 # Test arrays.
 echo "OUTPUT 0: 0 1 2 3 4 5 6 7 "           >  test.expected
 echo "OUTPUT 1: 8 9 10 11 12 13 14 15 "     >> test.expected
