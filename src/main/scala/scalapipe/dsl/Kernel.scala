@@ -5,7 +5,7 @@ import scala.collection.mutable.ListBuffer
 import scala.collection.mutable.HashSet
 import scalapipe._
 
-class Kernel(val name: String) extends DebugInfo {
+class Kernel(val name: String) extends LowPriorityImplicits with DebugInfo {
 
     collectDebugInfo
     SymbolValidator.validate(name, this)
@@ -181,5 +181,38 @@ class Kernel(val name: String) extends DebugInfo {
     implicit def string(s: String) = StringLiteral(s, this)
 
     implicit def builder(b: Variable) = b.create
+
+    private[scalapipe] class ASTRange(
+            val start: ASTNode,
+            val stop: ASTNode,
+            val step: ASTNode,
+            val inclusive: Boolean) {
+
+        def by(s: ASTNode): ASTRange =
+            new ASTRange(start, stop, s, inclusive)
+
+        def foreach(body: ASTNode => Unit) {
+            val sym = local(SIGNED32)
+            sym = start
+            if (step > 0) {
+                val cond = DSLHelper.ifThenElse(inclusive,
+                                                sym <= stop,
+                                                sym < stop)
+                while (cond) {
+                    body(sym)
+                    sym += step
+                }
+            } else {
+                val cond = DSLHelper.ifThenElse(inclusive,
+                                                sym >= stop,
+                                                sym > stop)
+                while (cond) {
+                    body(sym)
+                    sym += step
+                }
+            }
+        }
+
+    }
 
 }

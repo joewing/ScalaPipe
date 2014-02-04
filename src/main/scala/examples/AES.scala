@@ -28,8 +28,8 @@ object AES extends App {
         }
     }
 
-    val powers = Array.tabulate(256) { i => power(i) }
-    val logs = HashMap(powers.zipWithIndex: _*) + ((0, 0))
+    val powers = Array.tabulate(256)(power(_))
+    val logs = HashMap(powers.zipWithIndex: _*) + (0 -> 0)
 
     def sbox(i: Int): Int = {
         if (i == 0x00) {
@@ -37,7 +37,7 @@ object AES extends App {
         } else {
             var x = powers(255 - logs(i))
             var y = x
-                      y = ((y << 1) | (y >> 7)) & 0xFF
+                    y = ((y << 1) | (y >> 7)) & 0xFF
             x ^= y; y = ((y << 1) | (y >> 7)) & 0xFF
             x ^= y; y = ((y << 1) | (y >> 7)) & 0xFF
             x ^= y; y = ((y << 1) | (y >> 7)) & 0xFF
@@ -46,8 +46,8 @@ object AES extends App {
         }
     }
 
-    val rcon = Array(0x00, 0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40,
-                          0x80, 0x1B, 0x36, 0x6C, 0xD8, 0xAB)
+    val rcon = Array(0x00, 0x01, 0x02, 0x04, 0x08, 0x10, 0x20,
+                     0x40, 0x80, 0x1B, 0x36, 0x6C, 0xD8, 0xAB)
 
     def getSchedule(key: Seq[Int]): Seq[Int] = {
         val result = Array.fill[Int](16 * 11)(0)
@@ -89,12 +89,12 @@ object AES extends App {
     }
 
     val SetKey = new Kernel {
-        val key = 0 to 15
+        val key = Range(0, 16)
         val outs = Array.tabulate(11)(i => output(STATE))
         val state = local(STATE)
         val schedule = getSchedule(key)
-        for (k <- 0 until 11) {
-            for (i <- 0 until 16) {
+        for (k <- Range(0, 11)) {
+            for (i <- Range(0, 16)) {
                 state(i) = schedule(k * 16 + i)
             }
             val out = outs(k)
@@ -138,7 +138,7 @@ object AES extends App {
         state = in
         while (i < 16) {
             switch (state(i)) {
-                for (x <- 0 until 256) {
+                for (x <- Range(0, 256)) {
                     when (x) {
                         temp = sbox(x)
                     }
@@ -164,7 +164,7 @@ object AES extends App {
         state = in
         while (i < 16) {
             switch (state(i)) {
-                for (x <- 0 until 256) {
+                for (x <- Range(0, 256)) {
                     when (x) {
                         temp = isbox(x)
                     }

@@ -105,6 +105,14 @@ abstract class ASTNode(
 
     final def %=[T <% ASTNode](o: T) = assignOp(NodeType.mod, o)
 
+    final def to[T <% ASTNode](o: T) = {
+        new kernel.ASTRange(this, o, Literal.get(1, kernel), true)
+    }
+
+    final def until[T <% ASTNode](o: T) = {
+        new kernel.ASTRange(this, o, Literal.get(1, kernel), false)
+    }
+
 }
 
 private trait ASTStartNode extends ASTNode {

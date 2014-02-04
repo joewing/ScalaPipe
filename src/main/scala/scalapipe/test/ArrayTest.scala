@@ -13,15 +13,12 @@ object ArrayTest {
         val y0      = output(SmallArray)
         val count   = local(UNSIGNED32, 0)
         val big     = local(LargeArray)
-        val i       = local(UNSIGNED32)
 
         if (count == 0) {
-            i = 0
-            while (i < 1024) {
+            for (i <- 0 until 1024) {
                 for (k <- 0 until 8) {
                     big(i)(k) = i * 8 + k
                 }
-                i += 1
             }
         }
 
@@ -33,15 +30,12 @@ object ArrayTest {
     val Print = new Kernel("Print") {
         val x0      = input(SmallArray)
         val temp    = local(SmallArray)
-        val i       = local(UNSIGNED32)
         val count   = local(UNSIGNED32, 0)
 
         temp = x0
-        i = 0
         stdio.printf("OUTPUT %d: ", count)
-        while (i < 8) {
+        for (i <- 0 until 8) {
             stdio.printf("%d ", temp(i))
-            i += 1
         }
         stdio.printf("\n")
         count += 1

@@ -95,7 +95,6 @@ object Maze {
 
             val next = local(ROWTYPE)
             val x = local(UNSIGNED32, 0)
-            val i = local(UNSIGNED32)
             val run = local(UNSIGNED32)
             val north = local(UNSIGNED32)
 
@@ -112,8 +111,7 @@ object Maze {
             // Cut out the passage.
             // We output the nortward passages and buffer up the
             // eastward passages since they go underneath.
-            i = 0
-            while (i < run) {
+            for (i <- 0 until run) {
 
                 // Northward passage.
                 maze = i <> north
@@ -125,8 +123,6 @@ object Maze {
                 next(x) = i + 1 >= run
                 x += 1
 
-                i += 1
-
             }
 
             // If we're at the end of the row, output the eastward
@@ -134,10 +130,8 @@ object Maze {
             if (x >= width) {
 
                 // Output the eastward passages.
-                i = 0
-                while (i < width) {
+                for (i <- 0 until width) {
                     maze = next(i)
-                    i += 1
                 }
 
                 // Prepare for the next row.
@@ -153,23 +147,18 @@ object Maze {
 
             val x = local(UNSIGNED32, 0)
             val y = local(UNSIGNED32, 0)
-            val i = local(UNSIGNED32, 0)
 
             if (x == 0) {
 
                 // Write the top two rows.
                 if (y == 0) {
                     stdio.printf("1 0 ")
-                    i = 1
-                    while (i < width) {
+                    for (i <- 1 until width) {
                         stdio.printf("1 ")
-                        i += 1
                     }
                     stdio.printf("\n1 ")
-                    i = 1
-                    while (i < width) {
+                    for (i <- 1 until width) {
                         stdio.printf("0 ")
-                        i += 1
                     }
                     stdio.printf("1\n")
                 }
@@ -195,10 +184,8 @@ object Maze {
 
                 if (y >= height) {
                     // Output the bottom row and exit.
-                    i = 1
-                    while (i < width) {
+                    for (i <- 1 until width) {
                         stdio.printf("1 ")
-                        i += 1
                     }
                     stdio.printf("0 1\n")
                     stdio.exit(0)

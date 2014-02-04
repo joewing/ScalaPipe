@@ -8,7 +8,7 @@ class DuplicateBlock(t: Type, n: Int = 2) extends Kernel {
     val temp = local(t)
 
     temp = x0
-    for (i <- 0 until n) {
+    for (i <- Range(0, n)) {
         val o = output(t)
         o = temp
     }
