@@ -71,6 +71,12 @@ class Kernel(val name: String) extends LowPriorityImplicits with DebugInfo {
         new Variable(label, this)
     }
 
+    private[scalapipe] def local(vt: ValueType): Variable = {
+        val label = getLabel
+        states += new KernelLocal(label, vt)
+        new Variable(label, this)
+    }
+
     def cast(expr: ASTNode, t: Type): ASTNode = {
         ASTConvertNode(expr, t.create(), this)
     }
@@ -192,7 +198,8 @@ class Kernel(val name: String) extends LowPriorityImplicits with DebugInfo {
             new ASTRange(start, stop, s, inclusive)
 
         def foreach(body: ASTNode => Unit) {
-            val sym = local(SIGNED32)
+            val k = implicitly[Kernel]
+            val sym = local(DSLHelper.getType(k, start))
             sym = start
             if (step > 0) {
                 val cond = DSLHelper.ifThenElse(inclusive,
