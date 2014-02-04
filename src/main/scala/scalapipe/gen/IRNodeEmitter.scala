@@ -366,7 +366,10 @@ private[scalapipe] case class IRNodeEmitter(
 
         // Emit the test(s).
         val test = emitExpr(node.cond)
-        val cases = node.cases.map { case (t, _) =>
+
+        val hasDefault = node.cases.exists { case (t, _) => t == null }
+        val cases = if (hasDefault) node.cases else node.cases :+ (null, null)
+        val exprs = cases.map { case (t, _) =>
             if (t != null) emitExpr(t) else null
         }
 
@@ -375,7 +378,7 @@ private[scalapipe] case class IRNodeEmitter(
         instructions += null
 
         // Emit the bodies.
-        val pointers = node.cases.map { case (_, b) =>
+        val pointers = cases.map { case (_, b) =>
 
             // Emit the code and keep a pointer to it.
             val codePointer = instructions.size
@@ -397,7 +400,7 @@ private[scalapipe] case class IRNodeEmitter(
         }
 
         // Create the switch.
-        val targets = cases.zip(pointers.map(_._1)).toList
+        val targets = exprs.zip(pointers.map(_._1)).toSeq
         set(switchIndex, IRSwitch(test, targets), node)
 
     }
