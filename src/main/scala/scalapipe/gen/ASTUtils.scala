@@ -13,69 +13,34 @@ private[gen] trait ASTUtils {
         case _ => false
     }
 
-    private def localPorts(node: ASTNode,
-                           p: String => Boolean): Set[String] = node match {
-        case sn: ASTSymbolNode =>
-            val indexPorts = sn.indexes.flatMap(localPorts(_, p)).toSet
-            if (p(sn.symbol)) {
-                indexPorts + sn.symbol
-            } else {
-                indexPorts
-            }
-        case cn: ASTCallNode    => cn.args.flatMap(localPorts(_, p)).toSet
-        case on: ASTOpNode      => localPorts(on.a, p) ++ localPorts(on.b, p)
-        case cn: ASTConvertNode => localPorts(cn.a, p)
-        case an: ASTAssignNode  =>
-            localPorts(an.dest, p) ++ localPorts(an.src, p)
-        case in: ASTIfNode      => localPorts(in.cond, p)
-        case wn: ASTWhileNode   => localPorts(wn.cond, p)
-        case sn: ASTSwitchNode  => localPorts(sn.cond, p)
-        case bn: ASTBlockNode   => bn.children.flatMap(localPorts(_, p)).toSet
-        case rn: ASTAvailableNode if p(rn.symbol) => Set(rn.symbol)
-        case rt: ASTReturnNode =>
-            if (!kt.outputs.isEmpty && p(kt.outputs.head.name)) {
-                localPorts(rt.a, p) + kt.outputs.head.name
-            } else {
-                localPorts(rt.a, p)
-            }
-        case _ => Set()
+    /** Return destination symbols for a node. */
+    protected def localDests(node: ASTNode): Seq[ASTSymbolNode] = node match {
+        case an: ASTAssignNode      => Seq(an.dest)
+        case an: ASTAvailableNode   => Seq()
+        case bn: ASTBlockNode       => Seq()
+        case _ => node.children.flatMap(localDests)
     }
 
-    private def blockingPorts(node: ASTNode,
-                              p: String => Boolean): Set[String] = node match {
-
-        case sn: ASTSymbolNode =>
-            val indexPorts = sn.indexes.flatMap(blockingPorts(_, p)).toSet
-            if (p(sn.symbol)) {
-                indexPorts + sn.symbol
-            } else {
-                indexPorts
-            }
-        case cn: ASTCallNode =>
-            cn.args.flatMap(blockingPorts(_, p)).toSet
-        case on: ASTOpNode =>
-            blockingPorts(on.a, p) ++ blockingPorts(on.b, p)
-        case cn: ASTConvertNode => blockingPorts(cn.a, p)
-        case an: ASTAssignNode =>
-            blockingPorts(an.dest, p) ++ blockingPorts(an.src, p)
-        case in: ASTIfNode => blockingPorts(in.cond, p)
-        case wn: ASTWhileNode => blockingPorts(wn.cond, p)
-        case sn: ASTSwitchNode => blockingPorts(sn.cond, p)
-        case rt: ASTReturnNode =>
-            if (!kt.outputs.isEmpty && p(kt.outputs.head.name)) {
-                blockingPorts(rt.a, p) + kt.outputs.head.name
-            } else {
-                blockingPorts(rt.a, p)
-            }
-        case _ => Set()
-
+    /** Return source symbols for a node. */
+    protected def localSources(node: ASTNode): Seq[ASTSymbolNode] = node match {
+        case sn: ASTSymbolNode      => Seq(sn)
+        case an: ASTAssignNode      => localSources(an.src)
+        case an: ASTAvailableNode   => Seq()
+        case bn: ASTBlockNode       => Seq()
+        case _ => node.children.flatMap(localSources)
     }
 
-    protected def blockingInputs(node: ASTNode) =
-        blockingPorts(node, kt.isInput)
+    /** Return all symbols names for a node. */
+    protected def localSymbols(node: ASTNode): Seq[String] = node match {
+        case sn: ASTSymbolNode  => Seq(sn.symbol)
+        case bn: ASTBlockNode   => Seq()
+        case _ => node.children.flatMap(localSymbols)
+    }
 
-    protected def localInputs(node: ASTNode) = localPorts(node, kt.isInput)
+    protected def localInputs(node: ASTNode): Seq[String]  =
+        localSymbols(node).filter(kt.isInput)
 
-    protected def localOutputs(node: ASTNode) = localPorts(node, kt.isOutput)
+    protected def localOutputs(node: ASTNode): Seq[String] =
+        localSymbols(node).filter(kt.isOutput)
 
 }

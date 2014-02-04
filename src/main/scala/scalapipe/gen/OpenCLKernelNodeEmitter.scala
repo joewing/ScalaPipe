@@ -98,9 +98,9 @@ private[scalapipe] class OpenCLKernelNodeEmitter(
         return ((str, nvt))
     }
 
-    override def emitSymbol(node: ASTSymbolNode): String = {
+    override def emitSymbolBase(node: ASTSymbolNode): String = {
         val name = node.symbol
-        val base = if (kt.isPort(name)) {
+        if (kt.isPort(name)) {
             s"(*$name)"
         } else if (kt.isLocal(name)) {
             s"$name"
@@ -108,7 +108,12 @@ private[scalapipe] class OpenCLKernelNodeEmitter(
             s"block->$name"
         } else {
             Error.raise(s"symbol not declared: $name", node)
+            name
         }
+    }
+
+    override def emitSymbol(node: ASTSymbolNode): String = {
+        val base = emitSymbolBase(node)
         val valueType = kt.getType(node)
         val start = ((base, valueType))
         val result = node.indexes.foldLeft(start) { (a, index) =>

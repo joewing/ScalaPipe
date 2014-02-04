@@ -34,9 +34,14 @@ private[scalapipe] class CFunctionNodeEmitter(
         return ((str, nvt))
     }
 
+    override def emitSymbolBase(node: ASTSymbolNode): String = {
+        node.symbol
+    }
+
     override def emitSymbol(node: ASTSymbolNode): String = {
+        val base = emitSymbolBase(node)
         val valueType = kt.getType(node)
-        val start = ((node.symbol, valueType))
+        val start = ((base, valueType))
         val result = node.indexes.foldLeft(start) { (a, index) =>
             val (base, vt) = a
             emitComponent(base, vt, index)

@@ -11,6 +11,8 @@ private[scalapipe] abstract class CNodeEmitter(
 
     def emitAvailable(node: ASTAvailableNode): String
     def emitSymbol(node: ASTSymbolNode): String
+    def emitSymbolBase(node: ASTSymbolNode): String
+
     def emitAssign(node: ASTAssignNode): Unit
     def emitStop(node: ASTStopNode)
     def emitReturn(node: ASTReturnNode)
@@ -293,8 +295,6 @@ private[scalapipe] abstract class CNodeEmitter(
     }
 
     def emit(node: ASTNode) {
-
-
         node match {
             case anode: ASTAssignNode   => emitAssign(anode)
             case cond:  ASTIfNode       => emitIf(cond)

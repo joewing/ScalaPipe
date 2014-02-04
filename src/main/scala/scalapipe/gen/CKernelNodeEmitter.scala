@@ -5,7 +5,7 @@ import scalapipe._
 private[scalapipe] class CKernelNodeEmitter(
         _kt: InternalKernelType,
         _timing: Map[ASTNode, Int]
-    ) extends CNodeEmitter(_kt, _timing) with ASTUtils {
+    ) extends CNodeEmitter(_kt, _timing) with ASTUtils with CTrace {
 
     override def emitAvailable(node: ASTAvailableNode): String = {
         val name = node.symbol
@@ -45,7 +45,7 @@ private[scalapipe] class CKernelNodeEmitter(
         return ((str, nvt))
     }
 
-    private def emitSymbolBase(node: ASTSymbolNode): String = {
+    override def emitSymbolBase(node: ASTSymbolNode): String = {
         val name = node.symbol
         if (kt.isLocal(name)) {
             return s"$name"
@@ -72,13 +72,6 @@ private[scalapipe] class CKernelNodeEmitter(
         result._1
     }
 
-    private def getOffset(node: ASTSymbolNode): String = {
-        val location = "(char*)&" + emitSymbol(node)
-        val base = "(char*)&" + emitSymbolBase(node)
-        val baseOffset = kt.getBaseOffset(node.symbol)
-        return s"((unsigned)($location - $base) + $baseOffset)"
-    }
-
     override def emitAssign(node: ASTAssignNode) {
         val outputs = localOutputs(node)
         for (o <- outputs) {
@@ -86,25 +79,11 @@ private[scalapipe] class CKernelNodeEmitter(
             val vtype = kt.outputs(oindex).valueType.name
             write(s"$o = ($vtype*)sp_allocate(kernel, $oindex);")
         }
-
-        // TODO: output trace data for reads.
-
         val dest = emitExpr(node.dest)
         val src = emitExpr(node.src)
         write(s"$dest = $src;")
         updateClocks(getTiming(node))
-
-        if (kt.parameters.get[Boolean]('trace) && !node.dest.valueType.flat) {
-            val offsetStr = getOffset(node.dest)
-            val size = node.src.valueType.bytes.toHexString
-            write("fprintf(kernel->trace_fd, \"W%x:" + size +
-                  "\\n\", " + offsetStr + ");")
-        }
-
-        for (oindex <- outputs.map(kt.outputIndex(_))) {
-            if (kt.parameters.get[Boolean]('trace)) {
-                write("fprintf(kernel->trace_fd, \"P" + oindex + "\\n\");")
-            }
+        for (oindex <- outputs.map(kt.outputIndex)) {
             write(s"sp_send(kernel, $oindex);")
         }
     }
