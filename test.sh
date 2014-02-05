@@ -61,6 +61,11 @@ run_test ArrayTest2 1 1
 run_test ArrayTest2 1 2
 run_test ArrayTest2 1 3
 
+# Test unions.
+echo "OUTPUT 5 4" > test.expected
+run_test UnionTest 0
+run_test UnionTest 1
+
 # Test structures.
 echo "OUTPUT 0"     >  test.expected
 echo "OUTPUT 1"     >> test.expected

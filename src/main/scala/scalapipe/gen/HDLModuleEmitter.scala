@@ -169,6 +169,7 @@ private[gen] class HDLModuleEmitter(
         val width = component.width
         val instanceName = component.instanceName
 
+        write
         write("always @(*) begin")
         enter
 
@@ -192,7 +193,7 @@ private[gen] class HDLModuleEmitter(
     }
 
     private def emitParts {
-        components.values.foreach { c => emitComponent(c) }
+        components.values.foreach(emitComponent)
     }
 
     private def emitSimpleComponents {
@@ -238,9 +239,15 @@ private[gen] class HDLModuleEmitter(
         }
 
         if (!assignments.isEmpty) {
+
+            // We place a dummy register in the always to work around
+            // an issue where iverilog fails to trigger if there are
+            // only constants on the right-hand side.
+            write("reg dummy;")
             write("always @(*) begin")
             enter
-            assignments.foreach { s => write(s) }
+            write("dummy <= rst;")
+            assignments.foreach(write)
             leave
             write("end")
         }
@@ -257,10 +264,11 @@ private[gen] class HDLModuleEmitter(
             val dest = emitSymbol(phi.dest)
             phi.inputs.tail.foreach { case (block, symbol) =>
                 val state = getNextState(graph, block)
-                write(state + ": " + dest + " <= " + emitSymbol(symbol) + ";")
+                val sym = emitSymbol(symbol)
+                write(s"$state: $dest <= $sym;")
             }
-            write("default: " + dest + " <= " +
-                    emitSymbol(phi.inputs.values.head) + ";")
+            write(s"default: $dest <= " +
+                  emitSymbol(phi.inputs.values.head) + ";")
             leave
             write("endcase")
             leave
