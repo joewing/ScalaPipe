@@ -246,7 +246,7 @@ private[gen] class HDLModuleEmitter(
             write("reg dummy;")
             write("always @(*) begin")
             enter
-            write("dummy <= rst;")
+            write("dummy <= clk;")
             assignments.foreach(write)
             leave
             write("end")
