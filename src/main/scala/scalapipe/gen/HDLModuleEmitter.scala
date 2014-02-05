@@ -138,22 +138,22 @@ private[gen] class HDLModuleEmitter(
         val name = component.name
         val instanceName = component.instanceName
 
-        write("reg " + instanceName + "_start;")
+        write(s"reg ${instanceName}_start;")
         for (i <- 0 until component.argCount) {
-            write("reg [" + (width - 1) + ":0] " + instanceName + "_" + i + ";")
+            write(s"reg [${width - 1}:0] ${instanceName}_${i};")
         }
-        write("wire [" + (width - 1) + ":0] " + instanceName + "_result;")
-        write("wire " + instanceName + "_ready;")
+        write(s"wire [${width - 1}:0] ${instanceName}_result;")
+        write(s"wire ${instanceName}_ready;")
 
-        write(name + " #(.WIDTH(" + width + "))")
+        write(s"$name  #(.WIDTH($width))")
         enter
-        write(instanceName + "(clk,")
+        write(s"$instanceName(clk,")
         enter
-        write(instanceName + "_start,")
+        write(s"${instanceName}_start,")
         for (i <- 0 until component.argCount) {
-            write(instanceName + "_" + i + ", ")
+            write(s"${instanceName}_${i},")
         }
-        write(instanceName + "_result, " + instanceName + "_ready);")
+        write(s"${instanceName}_result, ${instanceName}_ready);")
         leave
         leave
         write

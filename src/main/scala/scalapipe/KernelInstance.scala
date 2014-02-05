@@ -80,32 +80,41 @@ private[scalapipe] class KernelInstance(
         }
     }
 
-    private def getPort(pn: PortName, lst: Seq[KernelPort]): KernelPort = {
+    private def getPort(pn: PortName,
+                        lst: Seq[KernelPort]): Option[KernelPort] = {
         pn match {
-        case ip: IntPortName => lst(ip.name)
-        case _ =>
-            lst.find(i => i.name == pn) match {
-                case Some(p)    => p
-                case None       => null
-            }
+            case ip: IntPortName if ip.name < lst.size => Some(lst(ip.name))
+            case _ => lst.find(_.name == pn)
         }
     }
 
-    private def getInput(pn: PortName): KernelPort = getPort(pn, kernel.inputs)
+    private def getInput(pn: PortName) = getPort(pn, kernel.inputs)
 
     private def getOutput(pn: PortName) = getPort(pn, kernel.outputs)
 
-    private[scalapipe] def inputName(pn: PortName) = getInput(pn).name
+    private[scalapipe] def inputName(pn: PortName) = getInput(pn) match {
+        case Some(i)    => i.name
+        case _          => null
+    }
 
-    private[scalapipe] def inputType(pn: PortName) = getInput(pn).valueType
+    private[scalapipe] def inputType(pn: PortName) = getInput(pn) match {
+        case Some(i)    => i.valueType
+        case _          => ValueType.void
+    }
 
-    private[scalapipe] def outputName(pn: PortName) = getOutput(pn).name
+    private[scalapipe] def outputName(pn: PortName) = getOutput(pn) match {
+        case Some(o)    => o.name
+        case _          => null
+    }
 
-    private[scalapipe] def outputType(pn: PortName) = getOutput(pn).valueType
+    private[scalapipe] def outputType(pn: PortName) = getOutput(pn) match {
+        case Some(o)    => o.valueType
+        case _          => ValueType.void
+    }
 
     private[scalapipe] def inputIndex(pn: PortName): Int = pn match {
         case in: IntPortName => in.name
-        case _ => kernel.inputs.indexWhere(i => i.name == pn)
+        case _ => kernel.inputs.indexWhere(_.name == pn)
     }
 
     private[scalapipe] def inputIndex(s: Stream): Int = {
@@ -115,7 +124,7 @@ private[scalapipe] class KernelInstance(
 
     private[scalapipe] def outputIndex(pn: PortName): Int = pn match {
         case in: IntPortName => in.name
-        case _ => kernel.outputs.indexWhere(o => o.name == pn)
+        case _ => kernel.outputs.indexWhere(_.name == pn)
     }
 
     private[scalapipe] def getInputs: List[Stream] = inputs.toList.map(_._2)

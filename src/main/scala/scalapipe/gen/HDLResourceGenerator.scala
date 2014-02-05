@@ -194,7 +194,7 @@ private[scalapipe] abstract class HDLResourceGenerator(
             val addrWidth = stream.getDepthBits
 
             // Hook up the FIFO.
-            write(s"ap_fifo #(.WIDTH($width), .ADDR_WIDTH($addrWidth))")
+            write(s"sp_fifo #(.WIDTH($width), .ADDR_WIDTH($addrWidth))")
             enter
             write(s"fifo_${stream.label}(")
             enter
@@ -259,7 +259,7 @@ private[scalapipe] abstract class HDLResourceGenerator(
             val srcIndex = stream.index
 
             // Hook up the FIFO.
-            write(s"ap_fifo #(.WIDTH($width), .ADDR_WIDTH($addrWidth))")
+            write(s"sp_fifo #(.WIDTH($width), .ADDR_WIDTH($addrWidth))")
             enter
             write(s"fifo_${stream.label}(")
             enter
@@ -328,7 +328,7 @@ private[scalapipe] abstract class HDLResourceGenerator(
             val destIndex = stream.index
 
             // Hook up the FIFO.
-            write("ap_fifo #(.WIDTH(" + width + "), " +
+            write("sp_fifo #(.WIDTH(" + width + "), " +
                     ".ADDR_WIDTH(" + addrWidth + "))")
             enter
             write("fifo_" + stream.label + "(")
@@ -344,8 +344,8 @@ private[scalapipe] abstract class HDLResourceGenerator(
             write(");")
             leave
             write("assign " + stream.label + "_din = " +
-                    stream.label + "_output;")
-            write("assign O" + destIndex + "avail = !" + stream.label + "_empty;")
+                  stream.label + "_output;")
+            write(s"assign O${destIndex}avail = !${stream.label}_empty;")
             write
 
             // Add edge instrumentation.

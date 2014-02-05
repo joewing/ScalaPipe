@@ -79,7 +79,7 @@ private[gen] abstract class HDLNodeEmitter(
                     s"{{$repeat{1'b0}},$srca}"
                 }
             case fvt: FloatValueType =>
-                moduleEmitter.create("ap_ftoi" + srcWidth, srcWidth,
+                moduleEmitter.create("sp_ftoi" + srcWidth, srcWidth,
                                      block.label, Seq(srca))
             case _ => sys.error("internal: " + node.srca.valueType)
         }
@@ -107,21 +107,21 @@ private[gen] abstract class HDLNodeEmitter(
             case NodeType.shl if vt.signed  => s"$srca <<< $srcb"
             case NodeType.shl if !vt.signed => s"$srca << $srcb"
             case NodeType.add   =>
-                moduleEmitter.createSimple("ap_addI", width, Seq(srca, srcb))
+                moduleEmitter.createSimple("sp_addI", width, Seq(srca, srcb))
             case NodeType.sub   =>
-                moduleEmitter.createSimple("ap_subI", width, Seq(srca, srcb))
+                moduleEmitter.createSimple("sp_subI", width, Seq(srca, srcb))
             case NodeType.mul if node.srca.isInstanceOf[ImmediateSymbol] =>
                 s"$srca * $srcb"
             case NodeType.mul if !node.srca.isInstanceOf[ImmediateSymbol] =>
-                moduleEmitter.create("ap_mulI", width, state, Seq(srca, srcb))
+                moduleEmitter.create("sp_mulI", width, state, Seq(srca, srcb))
             case NodeType.div if vt.signed =>
-                moduleEmitter.create("ap_divS", width, state, Seq(srca, srcb))
+                moduleEmitter.create("sp_divS", width, state, Seq(srca, srcb))
             case NodeType.div if !vt.signed =>
-                moduleEmitter.create("ap_divU", width, state, Seq(srca, srcb))
+                moduleEmitter.create("sp_divU", width, state, Seq(srca, srcb))
             case NodeType.mod if vt.signed =>
-                moduleEmitter.create("ap_modS", width, state, Seq(srca, srcb))
+                moduleEmitter.create("sp_modS", width, state, Seq(srca, srcb))
             case NodeType.mod if !vt.signed =>
-                moduleEmitter.create("ap_modU", width, state, Seq(srca, srcb))
+                moduleEmitter.create("sp_modU", width, state, Seq(srca, srcb))
             case NodeType.eq        => s"$srca == $srcb"
             case NodeType.ne        => s"$srca != $srcb"
             case NodeType.gt        => s"$srca > $srcb"
@@ -131,17 +131,17 @@ private[gen] abstract class HDLNodeEmitter(
             case NodeType.convert   => emitIntConvert(block, vt, node)
             case NodeType.abs       => s"$srca < 0 ? -$srca : $srca"
             case NodeType.exp       =>
-                moduleEmitter.create("ap_expI", width, state, List(srca))
+                moduleEmitter.create("sp_expI", width, state, List(srca))
             case NodeType.log       =>
-                moduleEmitter.create("ap_logI", width, state, List(srca))
+                moduleEmitter.create("sp_logI", width, state, List(srca))
             case NodeType.sqrt      =>
-                moduleEmitter.create("ap_sqrtI", width, state, List(srca))
+                moduleEmitter.create("sp_sqrtI", width, state, List(srca))
             case NodeType.sin       =>
-                moduleEmitter.create("ap_sinI", width, state, List(srca))
+                moduleEmitter.create("sp_sinI", width, state, List(srca))
             case NodeType.cos       =>
-                moduleEmitter.create("ap_cosI", width, state, List(srca))
+                moduleEmitter.create("sp_cosI", width, state, List(srca))
             case NodeType.tan       =>
-                moduleEmitter.create("ap_tanI", width, state, List(srca))
+                moduleEmitter.create("sp_tanI", width, state, List(srca))
             case _ =>
                 Error.raise("unsupported integer operation: " + node.op)
         }
@@ -174,21 +174,21 @@ private[gen] abstract class HDLNodeEmitter(
             case NodeType.shr   => srca + " >>> " + srcb
             case NodeType.shl   => srca + " <<< " + srcb
             case NodeType.add   =>
-                moduleEmitter.createSimple("ap_addI", width, List(srca, srcb))
+                moduleEmitter.createSimple("sp_addI", width, List(srca, srcb))
             case NodeType.sub   =>
-                moduleEmitter.createSimple("ap_subI", width, List(srca, srcb))
-            case NodeType.mul if node.srca.isInstanceOf[ImmediateSymbol] => 
+                moduleEmitter.createSimple("sp_subI", width, List(srca, srcb))
+            case NodeType.mul if node.srca.isInstanceOf[ImmediateSymbol] =>
                 val ina = shiftRight(node.srca, f1)
                 val inb = shiftRight(node.srcb, f2)
                 s"$ina * $inb"
             case NodeType.mul if !node.srca.isInstanceOf[ImmediateSymbol] =>
                 val ina = shiftRight(node.srca, f1)
                 val inb = shiftRight(node.srcb, f2)
-                moduleEmitter.create("ap_mulI", width, state, List(ina, inb))
+                moduleEmitter.create("sp_mulI", width, state, List(ina, inb))
             case NodeType.div =>
                 val ina = srca
                 val inb = shiftRight(node.srcb, f1)
-                val out = moduleEmitter.create("ap_divS", width, state,
+                val out = moduleEmitter.create("sp_divS", width, state,
                                                          List(ina, inb))
                 out + " <<< " + f2
             case NodeType.eq      => srca + " == " + srcb
@@ -199,18 +199,18 @@ private[gen] abstract class HDLNodeEmitter(
             case NodeType.le      => srca + " <= " + srcb
             case NodeType.abs     => srca + " < 0 ? -" + srca + " : " + srca
             case NodeType.exp     =>
-                moduleEmitter.create("ap_expI", width, state, List(srca))
+                moduleEmitter.create("sp_expI", width, state, List(srca))
             case NodeType.log     =>
-                moduleEmitter.create("ap_logI", width, state, List(srca))
+                moduleEmitter.create("sp_logI", width, state, List(srca))
             case NodeType.sqrt    =>
-                moduleEmitter.create("ap_sqrtI", width, state, List(srca))
+                moduleEmitter.create("sp_sqrtI", width, state, List(srca))
             case NodeType.sin     =>
-                moduleEmitter.create("ap_sinI", width, state, List(srca))
+                moduleEmitter.create("sp_sinI", width, state, List(srca))
             case NodeType.cos     =>
-                moduleEmitter.create("ap_cosI", width, state, List(srca))
+                moduleEmitter.create("sp_cosI", width, state, List(srca))
             case NodeType.tan     =>
-                moduleEmitter.create("ap_tanI", width, state, List(srca))
-            case _                    =>
+                moduleEmitter.create("sp_tanI", width, state, List(srca))
+            case _ =>
                 Error.raise("unsupported fixed point operation: " + node.op)
         }
         if (block.continuous) {
@@ -228,44 +228,41 @@ private[gen] abstract class HDLNodeEmitter(
         val state = block.label
         val width = vt.bits
         val expression = node.op match {
-            case NodeType.abs => "{1'b0, " + srca + "[" + (width - 2) + ":0]}"
+            case NodeType.abs => s"{1'b0, $srca[${width - 2}:0]}"
             case NodeType.neg =>
-                "{~" + srca + "[" + (width - 1) + "], " +
-                         srca + "[" + (width - 2) + ":0]}"
+                s"{~$srca[${width - 1}], $srca[${width - 2}:0]}"
             case NodeType.add =>
-                moduleEmitter.create("ap_addF" + width, width,
-                                            state, List(srca, srcb))
+                moduleEmitter.create("sp_addF" + width, width,
+                                     state, List(srca, srcb))
             case NodeType.sub =>
-                val negb = "{~" + srcb + "[" + (width - 1)  + "], " +
-                              srcb + "[" + (width - 2) + ":0]}"
-                moduleEmitter.create("ap_addF" + width, width,
-                                            state, List(srca, negb))
+                moduleEmitter.create("sp_subF" + width, width,
+                                     state, List(srca, srcb))
             case NodeType.mul =>
-                moduleEmitter.create("ap_mulF" + width, width,
-                                            state, List(srca, srcb))
+                moduleEmitter.create("sp_mulF" + width, width,
+                                     state, List(srca, srcb))
             case NodeType.div =>
-                moduleEmitter.create("ap_divF" + width, width,
-                                            state, List(srca, srcb))
+                moduleEmitter.create("sp_divF" + width, width,
+                                     state, List(srca, srcb))
             case NodeType.exp     =>
-                moduleEmitter.create("ap_expF", width,
-                                            state, List(srca))
+                moduleEmitter.create("sp_expF", width,
+                                     state, List(srca))
             case NodeType.log     =>
-                moduleEmitter.create("ap_logF", width,
-                                            state, List(srca))
+                moduleEmitter.create("sp_logF", width,
+                                     state, List(srca))
             case NodeType.sqrt =>
-                moduleEmitter.create("ap_sqrtF" + width, width,
-                                            state, List(srca))
+                moduleEmitter.create("sp_sqrtF" + width, width,
+                                     state, List(srca))
             case NodeType.sin =>
-                moduleEmitter.create("ap_sinF" + width, width, state,
+                moduleEmitter.create("sp_sinF" + width, width, state,
                                      List(srca))
             case NodeType.cos =>
-                moduleEmitter.create("ap_cosF" + width, width, state,
+                moduleEmitter.create("sp_cosF" + width, width, state,
                                      List(srca))
             case NodeType.tan =>
-                moduleEmitter.create("ap_tanF" + width, width, state,
+                moduleEmitter.create("sp_tanF" + width, width, state,
                                      List(srca))
             case NodeType.convert =>
-                moduleEmitter.create("ap_itof" + width, width,
+                moduleEmitter.create("sp_itof" + width, width,
                                      state, List(srca))
             case _ =>
                 Error.raise("unsupported float operation: " + node.op)
@@ -474,7 +471,11 @@ private[gen] abstract class HDLNodeEmitter(
                 // First word of a multi-word store.
                 // Note that this store will be aligned.
                 val top = ramWidth - 1
-                initBuilder.write(s"ram_in <= $src[$top:0];")
+                if(node.src.isInstanceOf[ImmediateSymbol]) {
+                    initBuilder.write(s"ram_in <= $src;")
+                } else {
+                    initBuilder.write(s"ram_in <= $src[$top:0];")
+                }
                 initBuilder.write(s"ram_mask <= {$wordBytes{1'b1}};")
             } else if (bits == ramWidth) {
                 // Single-word store.
@@ -490,8 +491,12 @@ private[gen] abstract class HDLNodeEmitter(
                     val top = bottom + bits - 1
                     initBuilder.write(s"$i: begin")
                     initBuilder.enter
-                    initBuilder.write(s"ram_in[$top:$bottom] " +
-                                      s"<= $src[${bits - 1}:0];")
+                    if (node.src.isInstanceOf[ImmediateSymbol]) {
+                        initBuilder.write(s"ram_in[$top:$bottom] <= $src;")
+                    } else {
+                        initBuilder.write(s"ram_in[$top:$bottom] " +
+                                          s"<= $src[${bits - 1}:0];")
+                    }
                     val mask = ((1 << (bits / 8)) - 1) << i
                     initBuilder.write(s"ram_mask <= $mask;")
                     initBuilder.leave
@@ -522,8 +527,13 @@ private[gen] abstract class HDLNodeEmitter(
                     val top = bottom + width - 1
                     updateBuilder.write(s"$word: begin")
                     updateBuilder.enter
-                    updateBuilder.write(s"ram_in[${width - 1}:0] <= " +
-                                        s"$src[$top:$bottom];")
+                    if (node.src.isInstanceOf[ImmediateSymbol]) {
+                        updateBuilder.write(s"ram_in[${width - 1}:0] <= " +
+                                            s"$src >> $top;")
+                    } else {
+                        updateBuilder.write(s"ram_in[${width - 1}:0] <= " +
+                                            s"$src[$top:$bottom];")
+                    }
                     val mask = (1 << (width / 8)) - 1
                     updateBuilder.write(s"ram_mask <= $mask;")
                     updateBuilder.leave

@@ -247,6 +247,23 @@ private[opt] object StrengthReduction extends Pass {
         }
     }
 
+    private def reduceIntNeg(node: IRInstruction): IRInstruction = {
+        node.srca match {
+            case im: ImmediateSymbol =>
+                val lit = IntLiteral(im.valueType, -im.value.long, null)
+                val sym = new ImmediateSymbol(lit)
+                new IRInstruction(NodeType.assign, node.dest, sym)
+            case _ => null
+        }
+    }
+
+    private def reduceNeg(node: IRInstruction): IRInstruction = {
+        node.dest.valueType match {
+            case it: IntegerValueType => reduceIntNeg(node)
+            case _ => null
+        }
+    }
+
     // Get the improved version of an instruction, if one exists.
     private def reduce(node: IRInstruction): IRInstruction = node.op match {
         case NodeType.add => reduceAdd(node)
@@ -254,6 +271,7 @@ private[opt] object StrengthReduction extends Pass {
         case NodeType.mul => reduceMul(node)
         case NodeType.div => reduceDiv(node)
         case NodeType.mod => reduceMod(node)
+        case NodeType.neg => reduceNeg(node)
         case _ => null
     }
 

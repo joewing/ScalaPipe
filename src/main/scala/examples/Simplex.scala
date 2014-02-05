@@ -93,7 +93,7 @@ object Simplex extends App {
         // Give the current input to the correct row processor.
         value = array_in
         switch (y) {
-            for (i <- 0 until rowCount) {
+            for (i <- Range(0, rowCount)) {
                 val out = output(VALUE_TYPE)
                 when (i) {
                     out = value
@@ -266,7 +266,7 @@ object Simplex extends App {
         val y = local(SIGNED32, 0)
 
         switch (y) {
-            for (i <- 0 until rowCount) {
+            for (i <- Range(0, rowCount)) {
                 val in = input(VALUE_TYPE)
                 when (i) {
                     array_out = in

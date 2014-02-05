@@ -63,7 +63,7 @@ private[scalapipe] class SimulationResourceGenerator(
         }
 
         // Write the FIFO module (in this case, just a register).
-        write(s"module ap_fifo(clk, rst, din, dout, " +
+        write(s"module sp_fifo(clk, rst, din, dout, " +
               "re, we, avail, empty, full);")
         enter
         write
