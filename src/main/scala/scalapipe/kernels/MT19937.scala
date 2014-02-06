@@ -10,7 +10,6 @@ object MT19937 extends Kernel {
     val mt = local(new Vector(UNSIGNED32, 624))
     val index = local(UNSIGNED32, 0)
     val configured = local(UNSIGNED8, 0)
-    val i = local(UNSIGNED32)
     val j = local(UNSIGNED32)
     val y = local(UNSIGNED32)
 
@@ -29,7 +28,7 @@ object MT19937 extends Kernel {
 
         // Generate the array of untempered numbers.
         if (configured) {
-            for (i <- 0 until 627) {
+            for (i <- 0 until 624) {
                 j = i + 1
                 if (j == 624) {
                     j = 0
