@@ -192,7 +192,7 @@ object ControlTest {
     def main(args: Array[String]) {
 
         val tests = Seq(TestIf, TestSwitch, TestWhile, TestFor, TestDoWhile)
-        val mapping = if (args.length > 0) args(0).toInt else 0
+        val mapping = args.headOption.getOrElse("0").toInt
         val app = new Application {
             val gen = Gen()
             val result = tests.foldLeft(gen) { (a, t) =>

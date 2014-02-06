@@ -7,8 +7,8 @@ object ArrayTest2 {
 
     def main(args: Array[String]) {
 
-        val mapping = if (args.length > 0) args(0).toInt else 0
-        val vtype = (if (args.length > 1) args(1).toInt else 0) match {
+        val mapping = args.headOption.getOrElse("0").toInt
+        val vtype = args.lastOption.getOrElse("0").toInt match {
             case 0 => UNSIGNED8
             case 1 => UNSIGNED16
             case 2 => UNSIGNED32

@@ -33,7 +33,7 @@ object UnionTest {
     }
 
     def main(args: Array[String]) {
-        val mapping = if (args.length > 0) args(0).toInt else 0
+        val mapping = args.headOption.getOrElse("0").toInt
         val app = new Application {
             Print(Gen())
             mapping match {
