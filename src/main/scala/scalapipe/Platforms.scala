@@ -2,6 +2,7 @@ package scalapipe
 
 private[scalapipe] object Platforms extends Enumeration {
 
+    val ANY     = Value("ANY")
     val C       = Value("C")
     val OpenCL  = Value("OpenCL")
     val HDL     = Value("HDL")

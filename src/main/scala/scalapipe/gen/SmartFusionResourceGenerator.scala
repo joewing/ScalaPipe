@@ -37,65 +37,6 @@ private[scalapipe] class SmartFusionResourceGenerator(
             s.sourceKernel.device == device && s.destKernel.device != device
         }
 
-        // Write the FIFO module (in this case, just a register).
-        write(s"module ap_fifo(clk, rst, din, dout, " +
-              "re, we, avail, empty, full);")
-        enter
-        write
-        write(s"parameter WIDTH = 8;")
-        write(s"parameter ADDR_WIDTH = 1;")
-        write
-        write(s"input wire clk;")
-        write(s"input wire rst;")
-        write(s"input wire [WIDTH-1:0] din;")
-        write(s"output wire [WIDTH-1:0] dout;")
-        write(s"input wire re;")
-        write(s"input wire we;")
-        write(s"output wire avail;")
-        write(s"output wire empty;")
-        write(s"output wire full;")
-        write
-        write(s"reg [WIDTH-1:0] mem;")
-        write(s"reg has_data;")
-        write(s"wire do_read;")
-        write(s"wire do_write;")
-        write
-        write(s"assign full = has_data;")
-        write(s"assign avail = has_data;")
-        write(s"assign empty = !has_data;")
-        write(s"assign do_read = full & re;")
-        write(s"assign do_write = empty & we;")
-        write
-        write(s"always @(posedge clk) begin")
-        enter
-        write(s"if (rst) begin")
-        enter
-        write(s"has_data <= 0;")
-        leave
-        write(s"end else begin")
-        enter
-        write(s"if (do_write) begin")
-        enter
-        write(s"mem <= din;")
-        write(s"has_data <= 1;")
-        leave
-        write(s"end")
-        write(s"if (do_read) begin")
-        enter
-        write(s"has_data <= 0;")
-        leave
-        write(s"end")
-        leave
-        write(s"end")
-        leave
-        write(s"end")
-        write
-        write(s"assign dout = mem;")
-        write
-        leave
-        write(s"endmodule")
-        write
-
         // Wrapper around the ScalaPipe kernels.
         write(s"module XModule(")
         enter

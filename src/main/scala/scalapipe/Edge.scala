@@ -7,8 +7,6 @@ private[scalapipe] abstract class Edge(
 
     private[scalapipe] val label = LabelMaker.getDeviceLabel
 
-    private[scalapipe] var queueSize = 0
-
     private[scalapipe] def defaultSource: DeviceSpec =
         new DeviceSpec(source, null, Int.MaxValue)
 
@@ -18,14 +16,10 @@ private[scalapipe] class EdgeObject[T <: Edge](
         val platform: Platforms.Value
     )(implicit m: Manifest[T]) {
 
-    def apply(host: String = null,
-              id: Int = Int.MaxValue,
-              queueSize: Int = 0): T = {
+    def apply(host: String = null, id: Int = Int.MaxValue): T = {
         val c = m.runtimeClass.getConstructor(classOf[DeviceSpec])
         val o = c.newInstance(new DeviceSpec(platform, host, id))
-        val t = o.asInstanceOf[T]
-        t.queueSize = queueSize
-        t
+        o.asInstanceOf[T]
     }
 
 }

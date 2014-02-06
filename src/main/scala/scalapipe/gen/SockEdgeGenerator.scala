@@ -268,7 +268,7 @@ private[scalapipe] class SockEdgeGenerator(
 
         val lsock = s"server${stream.label}"
         val qname = s"q_${stream.label}"
-        val depth = stream.depth
+        val depth = sp.parameters.get[Int]('queueDepth)
         val vtype = stream.valueType
         val port = sp.getPort(stream)
 

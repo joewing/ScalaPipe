@@ -9,7 +9,7 @@ private[scalapipe] class KernelInstance(
 
     private[scalapipe] val name = kernel.name
     private[scalapipe] val index = LabelMaker.getInstanceIndex
-    private[scalapipe] val label = "instance" + index
+    private[scalapipe] val label = s"instance$index"
     private[scalapipe] var device: Device = null
     private var outputs = Map[PortName, Stream]()
     private var inputs = Map[PortName, Stream]()
@@ -130,10 +130,6 @@ private[scalapipe] class KernelInstance(
     private[scalapipe] def getInputs: List[Stream] = inputs.toList.map(_._2)
 
     private[scalapipe] def getOutputs: List[Stream] = outputs.toList.map(_._2)
-
-/*
-    private[scalapipe] def getConfigs: List[(String, Literal)] = configs.toList
-*/
 
     override def toString = name
 

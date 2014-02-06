@@ -50,8 +50,9 @@ class ScalaPipeSpec extends UnitSpec {
     "getDevice" should "return the correct device type" in {
         val sp = createScalaPipe()
         val kernels = createApplication(sp, CPU2FPGA(), CPU2FPGA())
+        val devKernels = kernels.drop(1)
         val getDevice = PrivateMethod[Device]('getDevice)
-        val device = sp invokePrivate getDevice(kernels)
+        val device = sp invokePrivate getDevice(devKernels)
         assert(device.deviceType.platform == Platforms.HDL)
     }
 

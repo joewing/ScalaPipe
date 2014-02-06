@@ -1,10 +1,9 @@
 package scalapipe.dsl
 
-import scala.collection.mutable.HashSet
 import scalapipe._
 
 class Stream(
-        sp: ScalaPipe,
+        private[scalapipe] val sp: ScalaPipe,
         private[scalapipe] val sourceKernel: KernelInstance,
         private[scalapipe] val sourcePort: PortName
     ) {
@@ -13,9 +12,8 @@ class Stream(
     private[scalapipe] val label = s"edge$index"
     private[scalapipe] var destKernel: KernelInstance = null
     private[scalapipe] var destPort: PortName = null
-    private[scalapipe] val measures = new HashSet[Measure]
+    private[scalapipe] var measures = Set[Measure]()
     private[scalapipe] var edge: Edge = null
-    private[scalapipe] var depth = sp.parameters.get[Int]('queueDepth)
 
     /** Take this stream and apply it to the input of a split kernel. */
     def iteratedMap(iterations: Int, splitter: Kernel): Seq[Stream] = {
@@ -39,14 +37,6 @@ class Stream(
 
     private[scalapipe] def setEdge(e: Edge) {
         edge = e
-        if (edge.queueSize > 0) {
-            depth = edge.queueSize
-        }
-    }
-
-    private[scalapipe] def getDepthBits: Int = {
-        val log2 = math.log(depth) / math.log(2.0)
-        math.ceil(log2).toInt
     }
 
     private[scalapipe] def valueType = sourceKernel.outputType(sourcePort)
@@ -55,7 +45,7 @@ class Stream(
         val st = sourceKernel.outputType(sourcePort)
         val dt = destKernel.inputType(destPort)
         if (st != dt) {
-            Error.raise("stream type mismatch: " + st + " vs " + dt)
+            Error.raise(s"stream type mismatch: $st vs $dt")
         }
     }
 
@@ -95,4 +85,3 @@ class Stream(
     private[scalapipe] def useInterPop = measures.exists(_.useInterPop)
 
 }
-

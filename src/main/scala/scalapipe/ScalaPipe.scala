@@ -324,6 +324,7 @@ private[scalapipe] class ScalaPipe {
         }
 
         // Look for an incoming edge.
+        var spec: DeviceSpec = AnyDeviceSpec
         val inputs = kl.flatMap(_.getInputs)
         val inEdges = inputs.filter(_.edge != null).map(_.edge)
         if (!inEdges.isEmpty) {
@@ -331,7 +332,6 @@ private[scalapipe] class ScalaPipe {
             // We have one or more incoming edges.
             // Get the device from the edge and make sure all
             // of the devices match.
-            var spec: DeviceSpec = null
             for (e <- inEdges) {
                 if (spec != null && !spec.canCombine(e.dest)) {
                     Error.raise("device assignment error: " +
@@ -340,8 +340,6 @@ private[scalapipe] class ScalaPipe {
                 }
                 spec = e.dest.combine(spec)
             }
-
-            return deviceManager.create(spec)
 
         }
 
@@ -352,7 +350,6 @@ private[scalapipe] class ScalaPipe {
         if (!outEdges.isEmpty) {
 
             // Get the default device and make sure they all match.
-            var spec: DeviceSpec = null
             for (e <- outEdges) {
                 val source = e.defaultSource
                 if (spec != null && !spec.canCombine(source)) {
@@ -363,12 +360,10 @@ private[scalapipe] class ScalaPipe {
                 spec = source.combine(spec)
             }
 
-            return deviceManager.create(spec)
 
         }
 
-        // No edges in either direction; assume the default.
-        return deviceManager.getDefault(Platforms.C)
+        return deviceManager.create(spec)
 
     }
 
@@ -377,8 +372,7 @@ private[scalapipe] class ScalaPipe {
         // Loop over each kernel to assign devices.
         for (k <- instances) {
 
-            // Get a list of kernels that are strongly connected to
-            // this kernel.
+            // Get a list of kernels that are connected to this kernel.
             val connected = getConnectedKernels(k)
 
             // Determine the device to use for the kernels.
@@ -470,15 +464,15 @@ private[scalapipe] class ScalaPipe {
         dir.mkdir
 
         RawFileGenerator.emitFile(dir, "ScalaPipe.h")
-        RawFileGenerator.emitFile(dir, "fp.v")
+        RawFileGenerator.emitFile(dir, "scalapipe.v")
 
         val fpga = parameters.get[String]('fpga)
         fpga match {
             case "SmartFusion" =>
-                RawFileGenerator.emitFile(dir, "smartfusion.v")
+                RawFileGenerator.emitFile(dir, "smartfusion.v", "platform.v")
             case "Simulation" =>
-                RawFileGenerator.emitFile(dir, "int.v")
-            case _ => Error.raise("Unknown FPGA type: " + fpga)
+                RawFileGenerator.emitFile(dir, "simulation.v", "platform.v")
+            case _ => Error.raise(s"Unknown FPGA type: $fpga")
         }
 
         emitTimeTrial(dir)

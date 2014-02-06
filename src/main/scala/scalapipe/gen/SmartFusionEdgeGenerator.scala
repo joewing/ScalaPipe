@@ -78,7 +78,7 @@ private[scalapipe] class SmartFusionEdgeGenerator(
 
         // Create buffers.
         for (stream <- senderStreams ++ receiverStreams) {
-            val depth = stream.depth
+            val depth = sp.parameters.get[Int]('queueDepth)
             val valueType = stream.valueType
             val queueName = s"q_${stream.label}"
             write(s"$queueName = (APQ*)malloc(APQ_GetSize($depth" +

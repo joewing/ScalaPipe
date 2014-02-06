@@ -1,4 +1,103 @@
 
+module sp_register(clk, rst, din, dout, re, we, avail, empty, full);
+
+    parameter WIDTH = 8;
+    parameter ADDR_WIDTH = 0;
+
+    input wire clk;
+    input wire rst;
+    input wire [WIDTH-1:0] din;
+    output wire [WIDTH-1:0] dout;
+    input wire re;
+    input wire we;
+    output wire avail;
+    output wire empty;
+    output wire full;
+
+    reg [WIDTH-1:0] mem;
+    reg has_data;
+    wire do_read;
+    wire do_write;
+
+    assign full = has_data;
+    assign avail = has_data;
+    assign empty = !has_data;
+    assign do_read = full & re;
+    assign do_write = empty & we;
+
+    always @(posedge clk) begin
+        if (rst) begin
+            has_data <= 0;
+        end else begin
+            if (do_write) begin
+                mem <= din;
+                has_data <= 1;
+            end
+            if (do_read) begin
+                has_data <= 0;
+            end
+        end
+    end
+
+    assign dout = mem;
+
+endmodule
+
+module sp_fifo(clk, rst, din, dout, re, we, avail, empty, full);
+
+    parameter WIDTH = 8;
+    parameter ADDR_WIDTH = 1;
+
+    input wire clk;
+    input wire rst;
+    input wire [WIDTH-1:0] din;
+    output reg [WIDTH-1:0] dout;
+    input wire re;
+    input wire we;
+    output wire avail;
+    output wire empty;
+    output wire full;
+
+    reg [WIDTH-1:0] mem [0:(1 << ADDR_WIDTH) - 1];
+    reg [WIDTH-1:0] next_dout;
+    reg [ADDR_WIDTH-1:0] read_ptr;
+    reg [ADDR_WIDTH-1:0] write_ptr;
+    reg [ADDR_WIDTH:0] count;
+
+    assign full = count[ADDR_WIDTH - 1];
+    assign avail = count != 0;
+    assign empty = count == 0;
+    wire do_read = re & !empty;
+    wire do_write = we & !full;
+    wire write_empty = we & empty;
+
+    always @(posedge clk) begin
+        if (rst) begin
+            read_ptr <= 0;
+            write_ptr <= 0;
+            count <= 0;
+        end else begin
+            if (do_write) begin
+                mem[write_ptr] <= din;
+                write_ptr <= write_ptr + 1;
+            end
+            if (do_read) begin
+                read_ptr <= read_ptr + 1;
+                next_dout <= mem[read_ptr];
+                dout <= count == 1 ? din : next_dout;
+            end else if (write_empty) begin
+                dout <= din;
+            end
+            case ({do_read, do_write})
+                2'b10:      count <= count - 1;
+                2'b01:      count <= count + 1;
+                default:    count <= count;
+            endcase
+        end
+    end
+
+endmodule
+
 module sp_divU(clk, start, a_in, b_in, c_out, ready_out);
 
     parameter WIDTH = 24;
@@ -787,4 +886,3 @@ module sp_sqrtF64(clk, start, a_in, b_out, ready_out);
     sp_sqrtF #(.WIDTH(WIDTH), .EXPONENT(11), .FRACTION(52))
         sqrt(clk, start, a_in, b_out, ready_out);
 endmodule
-

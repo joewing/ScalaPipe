@@ -127,7 +127,7 @@ private[scalapipe] class SimulationEdgeGenerator(
         // Create and open the FIFOs.
         for (s <- streams) {
             val label = s.label
-            val depth = s.depth
+            val depth = sp.parameters.get[Int]('queueDepth)
             val vtype = s.valueType
             val queue = s"q_$label"
 

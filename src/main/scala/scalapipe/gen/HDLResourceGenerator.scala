@@ -58,6 +58,11 @@ private[scalapipe] abstract class HDLResourceGenerator(
         emitInternal(dir)
     }
 
+    private def getDepthBits: Int = {
+        val depth = sp.parameters.get[Int]('fpgaQueueDepth)
+        math.ceil(math.log(depth) / math.log(2.0)).toInt
+    }
+
     private def emitInternal(dir: File) {
 
         val streams = sp.streams.filter { s =>
@@ -192,10 +197,11 @@ private[scalapipe] abstract class HDLResourceGenerator(
         // Connect internal streams.
         for (stream <- internalStreams) {
             val width = stream.valueType.bits
-            val addrWidth = stream.getDepthBits
+            val addrWidth = getDepthBits
 
             // Hook up the FIFO.
-            write(s"sp_fifo #(.WIDTH($width), .ADDR_WIDTH($addrWidth))")
+            val fifo = if (addrWidth == 0) "sp_register" else "sp_fifo"
+            write(s"$fifo #(.WIDTH($width), .ADDR_WIDTH($addrWidth))")
             enter
             write(s"fifo_${stream.label}(")
             enter
@@ -256,11 +262,12 @@ private[scalapipe] abstract class HDLResourceGenerator(
         // Connect input streams.
         for (stream <- inStreams) {
             val width = stream.valueType.bits
-            val addrWidth = stream.getDepthBits
+            val addrWidth = getDepthBits
             val srcIndex = stream.index
 
             // Hook up the FIFO.
-            write(s"sp_fifo #(.WIDTH($width), .ADDR_WIDTH($addrWidth))")
+            val fifo = if (addrWidth == 0) "sp_register" else "sp_fifo"
+            write(s"$fifo #(.WIDTH($width), .ADDR_WIDTH($addrWidth))")
             enter
             write(s"fifo_${stream.label}(")
             enter
@@ -294,27 +301,23 @@ private[scalapipe] abstract class HDLResourceGenerator(
                     amIndex += 1
                 }
                 if (m.useOutputActivity) {
-                    write("assign amTap[" + amIndex + "] = " +
-                            stream.label + "_read " +
-                            "&& !" + stream.label + "_empty;")
+                    write(s"assign amTap[$amIndex] = " +
+                          s"{stream.label}_read && !${stream.label}_empty;")
                     amIndex += 1
                 }
                 if (m.useFullActivity) {
-                    write("assign amTap[" + amIndex + "] = I" + srcIndex + "full;")
+                    write(s"assign amTap[$amIndex] = I${srcIndex}full;")
                     amIndex += 1
                 }
                 if (m.useInterPush) {
-                    write("assign imAvail[" + imIndex + "] = 1;")
-                    write("assign imRead[" + imIndex + "] = I" +
-                            srcIndex + "write;")
+                    write(s"assign imAvail[$imIndex] = 1;")
+                    write(s"assign imRead[$imIndex] = I${srcIndex}write;")
                     imIndex += 1
                 }
                 if (m.useInterPop) {
-                    write("assign imAvail[" + imIndex + "] = !" +
-                            stream.label + "_empty;")
-                    write("assign imRead[" + imIndex + "] = " +
-                            stream.label + "_read " +
-                            "&& !" + stream.label + "_empty;")
+                    write(s"assign imAvail[$imIndex] = !${stream.label}_empty;")
+                    write(s"assign imRead[$imIndex] = " +
+                          s"${stream.label}_read && !${stream.label}_empty;")
                     imIndex += 1
                 }
             }
@@ -325,27 +328,26 @@ private[scalapipe] abstract class HDLResourceGenerator(
         for (stream <- outStreams) {
 
             val width = stream.valueType.bits
-            val addrWidth = stream.getDepthBits
+            val addrWidth = getDepthBits
             val destIndex = stream.index
 
             // Hook up the FIFO.
-            write("sp_fifo #(.WIDTH(" + width + "), " +
-                    ".ADDR_WIDTH(" + addrWidth + "))")
+            val fifo = if (addrWidth == 0) "sp_register" else "sp_fifo"
+            write(s"$fifo #(.WIDTH($width), .ADDR_WIDTH($addrWidth))")
             enter
-            write("fifo_" + stream.label + "(")
+            write(s"fifo_${stream.label}(")
             enter
-            write(".clk(clk), .rst(rst),")
-            write(".din("    + stream.label + "_din),")
-            write(".dout(O"  + destIndex + "output),")
-            write(".re(O"     + destIndex + "read),")
-            write(".we("     + stream.label + "_write),")
-            write(".empty(" + stream.label + "_empty),")
-            write(".full("  + stream.label + "_full)")
+            write(s".clk(clk), .rst(rst),")
+            write(s".din(${stream.label}_din),")
+            write(s".dout(O${destIndex}output),")
+            write(s".re(O${destIndex}read),")
+            write(s".we(${stream.label}_write),")
+            write(s".empty(${stream.label}_empty),")
+            write(s".full(${stream.label}_full)")
             leave
-            write(");")
+            write(s");")
             leave
-            write("assign " + stream.label + "_din = " +
-                  stream.label + "_output;")
+            write(s"assign ${stream.label}_din = ${stream.label}_output;")
             write(s"assign O${destIndex}avail = !${stream.label}_empty;")
             write
 
@@ -355,41 +357,34 @@ private[scalapipe] abstract class HDLResourceGenerator(
                 var amIndex = m.sourceActivityOffset
                 var imIndex = m.sourceInterOffset
                 if (m.useQueueMonitor) {
-                    write("assign qRst[" + qmIndex + "] = rst;")
-                    write("assign qWr[" + qmIndex + "] = " +
-                            stream.label + "_write;")
-                    write("assign qRd[" + qmIndex + "] = O" + destIndex + "read " +
-                            "&& !" + stream.label + "_empty;")
+                    write(s"assign qRst[$qmIndex] = rst;")
+                    write(s"assign qWr[$qmIndex] = ${stream.label}_write;")
+                    write(s"assign qRd[$qmIndex] = O${destIndex}read" +
+                          s" && !${stream.label}_empty;")
                     qmIndex += 1
                 }
                 if (m.useInputActivity) {
-                    write("assign amTap[" + amIndex + "] = " +
-                            stream.label + "_write;")
+                    write(s"assign amTap[$amIndex] = ${stream.label}_write;")
                     amIndex += 1
                 }
                 if (m.useOutputActivity) {
-                    write("assign amTap[" + amIndex + "] = O" +
-                            destIndex + "read " +
-                            "&& !" + stream.label + "_empty;")
+                    write(s"assign amTap[$amIndex] = O" +
+                          s"${destIndex}read && !${stream.label}_empty;")
                     amIndex += 1
                 }
                 if (m.useFullActivity) {
-                    write("assign amTap[" + amIndex + "] = " +
-                            stream.label + "_full;")
+                    write(s"assign amTap[$amIndex] = ${stream.label}_full;")
                     amIndex += 1
                 }
                 if (m.useInterPush) {
-                    write("assign imAvail[" + imIndex + "] = 1;")
-                    write("assign imRead[" + imIndex + "] = " +
-                            stream.label + "_write;")
+                    write(s"assign imAvail[$imIndex] = 1;")
+                    write(s"assign imRead[$imIndex] = ${stream.label}_write;")
                     imIndex += 1
                 }
                 if (m.useInterPop) {
-                    write("assign imAvail[" + imIndex + "] = not " +
-                            stream.label + "_empty;")
-                    write("assign imRead[" + imIndex + "] = O" +
-                            destIndex + "read " +
-                            "&& !" + stream.label + "_empty;")
+                    write(s"assign imAvail[$imIndex] = !${stream.label}_empty;")
+                    write(s"assign imRead[$imIndex] = " +
+                          s"O${destIndex}read && !${stream.label}_empty;")
                     imIndex += 1
                 }
             }

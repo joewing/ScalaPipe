@@ -1,17 +1,14 @@
-
 package scalapipe.gen
 
 import java.lang.ClassLoader
-import java.io.File
-import java.io.InputStreamReader
-import java.io.LineNumberReader
+import java.io.{File, InputStreamReader, LineNumberReader}
 import java.net.URL
 
 import scalapipe._
 
 private[scalapipe] object RawFileGenerator extends Generator {
 
-    private def emit(name: String) {
+    private def emit(srcName: String) {
 
         try {
 
@@ -19,7 +16,7 @@ private[scalapipe] object RawFileGenerator extends Generator {
             if (cl == null) {
                 cl = ClassLoader.getSystemClassLoader
             }
-            val is = cl.getResourceAsStream("code/" + name)
+            val is = cl.getResourceAsStream(s"code/$srcName")
             if (is != null) {
 
                 val reader = new LineNumberReader(new InputStreamReader(is))
@@ -34,20 +31,20 @@ private[scalapipe] object RawFileGenerator extends Generator {
                 }
 
             } else {
-                Error.raise("Resource not found: " + name)
+                Error.raise(s"Resource not found: $srcName")
             }
         } catch {
             case ex: Exception =>
                 ex.printStackTrace()
-                Error.raise("Could not read resource: " + name)
+                Error.raise(s"Could not read resource: $srcName")
         }
 
     }
 
-    def emitFile(dir: File, name: String) {
-        emit(name)
+    def emitFile(dir: File, srcName: String, destName: String = null) {
+        emit(srcName)
+        val name = if (destName != null) destName else srcName
         writeFile(dir, name)
     }
 
 }
-

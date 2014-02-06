@@ -23,6 +23,7 @@ private[scalapipe] class Parameters {
 
     // Parameters and defaults.
     add('queueDepth, 256)
+    add('fpgaQueueDepth, 1)
     add('defaultHost, "localhost")
     add('timeTrialOutput, null: String)
     add('timeTrialBufferSize, 8192)

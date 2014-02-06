@@ -27,7 +27,7 @@ private[scalapipe] class CEdgeGenerator
     private def writeInit(stream: Stream) {
 
         val qname = queueName(stream)
-        val depth = stream.depth
+        val depth = stream.sp.parameters.get[Int]('queueDepth)
         val vtype = stream.valueType
 
         // Initialize the queue.

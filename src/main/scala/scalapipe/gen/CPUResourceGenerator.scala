@@ -184,9 +184,6 @@ private[scalapipe] class CPUResourceGenerator(
     private def emitKernelSend(kernel: KernelInstance) {
 
         val instance = kernel.label
-        val minDepth = kernel.getOutputs.foldLeft(Int.MaxValue) {
-            (a, s) => scala.math.min(a, s.depth)
-        }
 
         write(s"static void ${instance}_send(int out_port)")
         write(s"{")
@@ -556,7 +553,7 @@ private[scalapipe] class CPUResourceGenerator(
                 val id = measure.stream.index
                 val stat = measure.getTTAStat
                 val metric = measure.getTTAMetric
-                val depth = measure.stream.depth
+                val depth = sp.parameters.get[Int]('queueDepth)
                 val name = "\"" + measure.getName + "\""
                 write(s"tta->SendStart($id, $stat, $metric, $depth, $name);")
             }
