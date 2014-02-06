@@ -13,8 +13,10 @@ private[scalapipe] trait DebugInfo {
                 val trace = e.getStackTrace().filter {
                     !_.getClassName().startsWith("scalapipe.")
                 }
-                fileName = trace.head.getFileName
-                lineNumber = trace.head.getLineNumber
+                if (!trace.isEmpty) {
+                    fileName = trace.head.getFileName
+                    lineNumber = trace.head.getLineNumber
+                }
         }
     }
 
