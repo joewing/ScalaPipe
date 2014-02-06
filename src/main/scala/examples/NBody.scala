@@ -390,7 +390,7 @@ object NBody {
         }
 
         val Print = if (useX) PrintX else PrintText
-        val Dup = new DuplicateBlock(PARTICLE, 2)
+        val Dup = new Duplicate(PARTICLE, 2)
 
         val app = new Application {
 

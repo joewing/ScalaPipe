@@ -1,6 +1,7 @@
 package scalapipe.gen
 
 import scalapipe._
+import scalapipe.dsl.Stream
 import java.io.File
 
 private[scalapipe] abstract class HDLResourceGenerator(

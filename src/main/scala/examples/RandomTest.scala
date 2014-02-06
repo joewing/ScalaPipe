@@ -1,6 +1,5 @@
 package examples
 
-import scalapipe._
 import scalapipe.dsl._
 import scalapipe.kernels._
 
@@ -51,7 +50,7 @@ object RandomTest extends App {
 
     val app = new Application {
 
-        val gen = GenState()
+        val gen = MT19937State()
         val random = RNG(gen)
         val normal = ZigguratNormal(random)
         val sink = Sink(normal)
@@ -60,7 +59,7 @@ object RandomTest extends App {
         mode match {
             case 0 => ()
             case 1 | 2 =>
-                map(GenState -> RNG, CPU2FPGA())
+                map(MT19937State -> RNG, CPU2FPGA())
                 map(Sink -> Terminate, FPGA2CPU())
         }
 

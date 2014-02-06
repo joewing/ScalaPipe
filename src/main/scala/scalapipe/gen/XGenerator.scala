@@ -4,6 +4,7 @@ import scala.collection.mutable.HashMap
 import scala.collection.mutable.ListBuffer
 
 import scalapipe._
+import scalapipe.dsl.Stream
 
 private[scalapipe] object XGenerator extends Generator {
 

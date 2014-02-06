@@ -1,6 +1,7 @@
 package scalapipe
 
 import scala.collection.mutable.{HashMap, HashSet}
+import scalapipe.dsl.Stream
 import scalapipe.gen.ResourceGenerator
 import scalapipe.gen.CPUResourceGenerator
 import scalapipe.gen.SmartFusionResourceGenerator

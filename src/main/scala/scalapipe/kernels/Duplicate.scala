@@ -2,7 +2,7 @@ package scalapipe.kernels
 
 import scalapipe.dsl._
 
-class DuplicateBlock(t: Type, n: Int = 2) extends Kernel {
+class Duplicate(t: Type, n: Int = 2) extends Kernel {
 
     val x0 = input(t)
     val temp = local(t)

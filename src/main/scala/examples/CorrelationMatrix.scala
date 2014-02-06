@@ -1,16 +1,15 @@
 package examples
 
-import scalapipe.kernels.DuplicateBlock
 import scalapipe.kernels.MT19937
 import scalapipe.kernels.stdio
-import scalapipe.kernels.GenState
+import scalapipe.kernels.MT19937State
 import scalapipe._
 import scalapipe.dsl._
 
 
 
 object CorrelationMatrix {
-	
+
 
 	def main(args: Array[String]) {
 		val pi = 3.14159265359
@@ -21,8 +20,6 @@ object CorrelationMatrix {
 
 		val SmallArray = new Vector(FLOAT32, n)
 		val BigArray = new Vector(FLOAT32, n*n)
-
-		
 
 		val pow = new Func {
 			val x = input(FLOAT32)
@@ -41,7 +38,7 @@ object CorrelationMatrix {
 					answer = answer / x
 					counter -= 1
 				}
-			}	
+			}
 			return answer
 		}
 
@@ -89,9 +86,6 @@ object CorrelationMatrix {
 			return answer
 		}
 
-
-
-		
 
 		val CorrelationMatrixGenerator = new Kernel("CorrelationMatrixGenerator") {
 			val n = config(SIGNED32, 'n, 5)
@@ -340,8 +334,7 @@ object CorrelationMatrix {
 			stop
 		}*/
 
-		val Random = GenState
-
+		val Random = MT19937State
 		val MT = MT19937
 
 		object CorrelationMatrix extends Application {

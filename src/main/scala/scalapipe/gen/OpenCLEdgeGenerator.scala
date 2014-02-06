@@ -3,6 +3,7 @@ package scalapipe.gen
 import scala.collection.mutable.HashSet
 
 import scalapipe._
+import scalapipe.dsl.Stream
 
 private[scalapipe] class OpenCLEdgeGenerator(
         val sp: ScalaPipe

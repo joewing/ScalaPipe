@@ -1,8 +1,6 @@
 package examples
 
 import scalapipe.kernels._
-
-import scalapipe._
 import scalapipe.dsl._
 import scala.math.log
 
@@ -26,8 +24,8 @@ object Laplace {
 
     def main(args: Array[String]) {
 
-        val Split    = new SplitBlock(UNSIGNED32)
-        val Average = new AverageBlock(UNSIGNED32)
+        val SplitU32 = new Split(UNSIGNED32)
+        val AverageU32 = new Average(UNSIGNED32)
 
         object ExternalMT19937 extends Kernel("mt19937") {
             val state = input(UNSIGNED32, 'state)
@@ -137,17 +135,15 @@ object Laplace {
 
         val Laplace = new Application {
 
-param('queueDepth, 64)
-
             // Determine the number of levels of splits we need.
             val levels = (log(walkCount) / log(2)).toInt
 
             // Set up the RNG state and walk configuration.
-            val state = GenState()
+            val state = MT19937State()
             val random = RNG(state)
 
             // Set up the split blocks.
-            val splits = random.iteratedMap(levels, Split)
+            val splits = random.iteratedMap(levels, SplitU32)
 
             // Set up the walk blocks.
             val walks = Array.tabulate[Stream](walkCount)(x => {
@@ -155,7 +151,7 @@ param('queueDepth, 64)
             })
 
             // Set up the average blocks.
-            val result = iteratedFold(walks, Average)
+            val result = iteratedFold(walks, AverageU32)
 
             // Set up the print block.
             Print(result)

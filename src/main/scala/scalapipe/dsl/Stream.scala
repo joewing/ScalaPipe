@@ -1,7 +1,7 @@
-package scalapipe
+package scalapipe.dsl
 
 import scala.collection.mutable.HashSet
-import scalapipe.dsl.Kernel
+import scalapipe._
 
 class Stream(
         sp: ScalaPipe,

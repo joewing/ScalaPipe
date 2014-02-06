@@ -1,11 +1,11 @@
 package examples
 
 import scalapipe.kernels.stdio
-import scalapipe.kernels.GenState
+import scalapipe.kernels.MT19937State
 import scalapipe.kernels.MT19937
 import scalapipe.kernels.ZigguratNormalFloat
 import scalapipe.kernels.CholeskyDecomposition
-import scalapipe.kernels.DuplicateBlock
+import scalapipe.kernels.Duplicate
 import scalapipe.kernels.ANY_KERNEL
 
 
@@ -21,22 +21,22 @@ object BLSC {
 		val mtlength = size * size
 		val pi = 3.14159265359
 
-		val Random = GenState
+		val Random = MT19937State
 
 		val MT = MT19937
 
 		val Ziggy = ZigguratNormalFloat
 
-		val FloatArray = new Vector(FLOAT32, size)
+		val FloatArray = Vector(FLOAT32, size)
 
 		val Cholesky = CholeskyDecomposition
 
-		val Dup = new DuplicateBlock(FLOAT32)
+		val Dup = new Duplicate(FLOAT32)
 
-		val SDup = new DuplicateBlock(UNSIGNED32)
+		val SDup = new Duplicate(UNSIGNED32)
 
-		val SmallArray = new Vector(FLOAT32, size)
-		val BigArray = new Vector(FLOAT32, size*size)
+		val SmallArray = Vector(FLOAT32, size)
+		val BigArray = Vector(FLOAT32, size*size)
 
 
 

@@ -1,7 +1,6 @@
 package examples
 
 import scalapipe.kernels._
-import scalapipe._
 import scalapipe.dsl._
 
 object Search {
@@ -16,7 +15,7 @@ object Search {
 
         val TERM = new Vector(UNSIGNED64, 2)
 
-        // Block to read a list of terms of length up to 8.
+        // Kernel to read a list of terms of length up to 8.
         val TermReader = new Kernel {
 
             val y0 = output(TERM)
@@ -60,7 +59,7 @@ object Search {
 
         }
 
-        // Block to read data.
+        // Kernel to read data.
         val FileReader = new Kernel {
 
             val y0 = output(UNSIGNED8)
@@ -84,7 +83,7 @@ object Search {
 
         }
 
-        // Block to distribute terms among the search engines.
+        // Kernel to distribute terms among the search engines.
         // Note that "maxTerms" determines how many ways to split.
         val SplitTerms = new Kernel {
 
@@ -110,7 +109,7 @@ object Search {
 
         }
 
-        // Block to distribute data among the search engines.
+        // Kernel to distribute data among the search engines.
         val SplitData = new Kernel {
             val x0 = input(UNSIGNED8)
             val outs = Array.tabulate(maxTerms) { i => output(UNSIGNED8) }
@@ -121,7 +120,7 @@ object Search {
             }
         }
 
-        // Block to do the searching.
+        // Kernel to do the searching.
         val SearchData = new Kernel {
             val conf = input(TERM)
             val data = input(UNSIGNED8)
@@ -146,7 +145,7 @@ object Search {
 
         }
 
-        // Block to combine results.
+        // Kernel to combine results.
         val Combine = new Kernel {
 
             val ins = Array.tabulate(maxTerms) { i => input(UNSIGNED64) }
@@ -160,7 +159,7 @@ object Search {
 
         }
 
-        // Block to print results.
+        // Kernel to print results.
         val Print = new Kernel {
             val x0 = input(UNSIGNED64)
 

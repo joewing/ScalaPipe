@@ -1,6 +1,7 @@
 package scalapipe.gen
 
 import scalapipe._
+import scalapipe.dsl._
 
 import scala.collection.mutable.HashMap
 import scala.collection.mutable.HashSet

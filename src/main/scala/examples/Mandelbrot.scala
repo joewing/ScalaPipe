@@ -1,6 +1,5 @@
 package examples
 
-import scalapipe._
 import scalapipe.dsl._
 import scalapipe.kernels._
 
@@ -89,9 +88,6 @@ object Mandelbrot {
 
         }
 
-        val Split = new SplitBlock(UNSIGNED32)
-        val Join = new JoinBlock(UNSIGNED64)
-
         val Iterate = new Kernel {
 
             val in = input(UNSIGNED32)
@@ -167,15 +163,18 @@ object Mandelbrot {
 
         }
 
+        val SplitPixels = new Split(UNSIGNED32)
+        val JoinResults = new Join(UNSIGNED64)
+
         val Mandelbrot = new Application {
 
             val pixels = PixelGenerator(Start())
-            val splits = pixels.iteratedMap(levels, Split)
+            val splits = pixels.iteratedMap(levels, SplitPixels)
 
             val results = Array.tabulate(1 << levels)(i => {
                 Iterate(splits(i))(0)
             })
-            val result = iteratedFold(results, Join)
+            val result = iteratedFold(results, JoinResults)
 
             Print(result)
 

@@ -2,7 +2,7 @@ package scalapipe.kernels
 
 import scalapipe.dsl._
 
-class PrioritySplitBlock(t: Type) extends Kernel {
+class PrioritySplit(t: Type) extends Kernel {
 
     val x0 = input(t)
     val y0 = output(t)

@@ -11,11 +11,15 @@ object socket {
         external("C")
     }
 
-    val ap_connect = new sockFunc("ap_connect") {
+    val socket = new sockFunc("socket") {
         returns(SIGNED32)
     }
 
-    val ap_accept = new sockFunc("ap_accept") {
+    val connect = new sockFunc("connect") {
+        returns(SIGNED32)
+    }
+
+    val accept = new sockFunc("accept") {
         returns(SIGNED32)
     }
 

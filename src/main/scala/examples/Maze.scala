@@ -1,8 +1,6 @@
 package examples
 
 import scalapipe.kernels._
-
-import scalapipe._
 import scalapipe.dsl._
 
 object Maze {
@@ -197,22 +195,15 @@ object Maze {
 
         val Maze = new Application {
 
-            param('trace, true)
-            val random = MT19937(GenState('seed -> seed))
+            val random = MT19937(MT19937State('seed -> seed))
             val runs = GenRun(random)
             val maze = CarveMaze(runs(0), runs(1))
             Print(maze)
 
             if (use_hw) {
-                map(GenState -> MT19937, CPU2FPGA())
+                map(MT19937State -> MT19937, CPU2FPGA())
                 map(ANY_KERNEL -> Print, FPGA2CPU())
             }
-
-//map(MT19937 -> ANY_KERNEL, CPU2GPU())
-//map(ANY_KERNEL -> GenRun, CPU2GPU())
-//map(ANY_KERNEL -> CarveMaze, GPU2CPU())
-//map(ANY_KERNEL -> CarveMaze, CPU2GPU())
-//map(ANY_KERNEL -> Print, GPU2CPU())
 
         }
         Maze.emit("maze")

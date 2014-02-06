@@ -1,6 +1,6 @@
 package scalapipe
 
-import scalapipe.dsl.Kernel
+import scalapipe.dsl.{Kernel, Stream, StreamList}
 
 private[scalapipe] class KernelInstance(
         val sp: ScalaPipe,

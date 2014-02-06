@@ -1,7 +1,6 @@
 package examples
 
 import scalapipe.kernels._
-import scalapipe._
 import scalapipe.dsl._
 
 object Pi extends App {
@@ -37,7 +36,7 @@ object Pi extends App {
     }
 
     val app = new Application {
-        val state = GenState()
+        val state = MT19937State()
         val darts = MT19937(state)
         val result = PiSim(darts)
         Print(result)

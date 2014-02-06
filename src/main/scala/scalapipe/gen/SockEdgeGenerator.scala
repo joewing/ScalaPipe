@@ -1,6 +1,7 @@
 package scalapipe.gen
 
 import scalapipe._
+import scalapipe.dsl.Stream
 
 private[scalapipe] class SockEdgeGenerator(
         val sp: ScalaPipe,

@@ -2,7 +2,7 @@ package scalapipe.kernels
 
 import scalapipe.dsl._
 
-object GenState extends Kernel {
+object MT19937State extends Kernel {
 
     val state = output(UNSIGNED32)
     val seed = config(UNSIGNED32, 'seed, 15)

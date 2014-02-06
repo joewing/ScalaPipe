@@ -1,6 +1,5 @@
 package examples
 
-import scalapipe._
 import scalapipe.dsl._
 import scalapipe.kernels._
 
@@ -321,13 +320,11 @@ object Simplex extends App {
 
     }
 
-    val DupValues = new DuplicateBlock(VALUE_TYPE, rowCount)
-    val DupInt = new DuplicateBlock(SIGNED32, rowCount)
+    val DupValues = new Duplicate(VALUE_TYPE, rowCount)
+    val DupInt = new Duplicate(SIGNED32, rowCount)
 
     val app = new Application {
 
-        param('queueDepth, 2)
-        param('fpga, "Simulation")
         map(Parser -> ANY_KERNEL, CPU2FPGA())
         map(ANY_KERNEL -> Output, FPGA2CPU())
 

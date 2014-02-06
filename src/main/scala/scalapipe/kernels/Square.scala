@@ -2,13 +2,12 @@ package scalapipe.kernels
 
 import scalapipe.dsl._
 
-class SquareBlock(t: Type) extends Kernel {
+class Square(t: Type) extends Func {
 
     val x0 = input(t)
-    val y0 = output(t)
     val temp = local(t)
 
     temp = x0
-    y0 = temp * temp
+    return temp * temp
 
 }

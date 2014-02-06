@@ -1,15 +1,11 @@
 package examples
 
 import scalapipe.kernels.stdio
-import scalapipe.kernels.DuplicateBlock
+import scalapipe.kernels.Duplicate
 import scalapipe.kernels.CholeskyDecomposition
 
 import scalapipe._
 import scalapipe.dsl._
-
-
-
-
 
 object CholeskyTest {
 
@@ -108,15 +104,14 @@ object CholeskyTest {
 					}
 				}
 			}
-			
-				
+
+
 		}
 
-		
-		val Dup = new DuplicateBlock(FLOAT32)
-		
 
-		object CholeskyTest extends Application {
+		val Dup = new Duplicate(FLOAT32)
+
+		val CholeskyTest = new Application {
 
 			val iMatrix = Dup(InputMatrix('size -> arraysize))
 			//val printiMatrix = Print2(iMatrix)
@@ -124,11 +119,8 @@ object CholeskyTest {
 			Print(iMatrix(1), oMatrix, 'size -> arraysize)
 
 		}
-
 		CholeskyTest.emit("CholeskyTest")
 
-
-		
 	}
 }
 

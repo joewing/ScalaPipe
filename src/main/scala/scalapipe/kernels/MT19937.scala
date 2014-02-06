@@ -29,8 +29,7 @@ object MT19937 extends Kernel {
 
         // Generate the array of untempered numbers.
         if (configured) {
-            i = 0
-            while (i < 624) {
+            for (i <- 0 until 627) {
                 j = i + 1
                 if (j == 624) {
                     j = 0
@@ -45,7 +44,6 @@ object MT19937 extends Kernel {
                 if (y & 1) {
                     mt(i) ^= 0x9908b0df
                 }
-                i += 1
             }
             index = 0
         } else {

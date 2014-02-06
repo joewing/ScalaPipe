@@ -2,7 +2,7 @@ package scalapipe.kernels
 
 import scalapipe.dsl._
 
-class EqualSplitBlock(t: Type, n: Int = 2) extends Kernel {
+class EqualSplit(t: Type, n: Int = 2) extends Kernel {
 
     val x = input(t)
 
