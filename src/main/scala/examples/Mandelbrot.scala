@@ -122,7 +122,7 @@ object Mandelbrot {
 
             val result = input(UNSIGNED64)
 
-            val BUFFER_TYPE = new Vector(UNSIGNED32, width * height)
+            val BUFFER_TYPE = Vector(UNSIGNED32, width * height)
 
             val temp = local(UNSIGNED64)
             val count = local(UNSIGNED32, 0)

@@ -26,7 +26,7 @@ object RadixSort extends App {
         val in = input(UNSIGNED32)
         val out = output(UNSIGNED32)
         val radix = config(UNSIGNED32, 'radix, 0)
-        val buffer = local(new Vector(UNSIGNED32, itemCount))
+        val buffer = local(Vector(UNSIGNED32, itemCount))
         val temp = local(UNSIGNED32)
         val j = local(UNSIGNED32)
 

@@ -16,7 +16,7 @@ object Cluster {
         val BUFFER_SIZE = MAX_WIDTH * MAX_HEIGHT
 
         val ValueType = UNSIGNED32
-        val ClusterType = new Vector(ValueType, clusterCount)
+        val ClusterType = Vector(ValueType, clusterCount)
 
         val LAST_INDEX = -1
 

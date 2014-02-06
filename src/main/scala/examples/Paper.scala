@@ -32,7 +32,7 @@ object Paper {
 
             val out = output(UNSIGNED32)
 
-            val mt = local(new Vector(UNSIGNED32, 624))
+            val mt = local(Vector(UNSIGNED32, 624))
             val index = local(UNSIGNED32, 0)
             val configured = local(BOOL, false)
             val i = local(UNSIGNED32, randSeed)

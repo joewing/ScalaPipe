@@ -162,7 +162,7 @@ object BOPM {
 
 
 			val i = local(UNSIGNED32, 0)
-			val prices = local(new Vector(FLOAT32, n))
+			val prices = local(Vector(FLOAT32, n))
 			val j = local(SIGNED32, n - 1)
 
 			if (state == 0 && avail(x0) && avail(x1) && avail(x2) && avail(x3) && avail(x4) && avail(x5)) {

@@ -18,7 +18,7 @@ object LZ77 extends App {
     val dictMask = dictSize - 1
     val lengthMask = lengthBits - 1
 
-    val DICT = new Vector(UNSIGNED8, dictSize)
+    val DICT = Vector(UNSIGNED8, dictSize)
 
     val FileReader = new Kernel {
 

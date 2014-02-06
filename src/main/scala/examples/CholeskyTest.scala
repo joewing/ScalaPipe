@@ -15,7 +15,7 @@ object CholeskyTest {
 
 		val InputMatrix = new Kernel("InputMatrix") {
 			val size = 3
-			val matrix = local(new Vector(FLOAT32, 9))
+			val matrix = local(Vector(FLOAT32, 9))
 			val state = local(SIGNED32, 0)
 			val i = local(SIGNED32, 0)
 

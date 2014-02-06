@@ -13,7 +13,7 @@ object Search {
 
     def main(args: Array[String]) {
 
-        val TERM = new Vector(UNSIGNED64, 2)
+        val TERM = Vector(UNSIGNED64, 2)
 
         // Kernel to read a list of terms of length up to 8.
         val TermReader = new Kernel {
