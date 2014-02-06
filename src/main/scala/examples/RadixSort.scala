@@ -1,12 +1,9 @@
 package examples
 
 import scalapipe.kernels._
-import scalapipe._
 import scalapipe.dsl._
 
-import scala.util.Random
-
-object RadixSort {
+object RadixSort extends App {
 
     val bitCount = 8
     val itemCount = 16
@@ -14,7 +11,7 @@ object RadixSort {
     val Source = new Kernel {
         val out = output(UNSIGNED32)
         for (i <- 0 until itemCount) {
-            out = Random.nextInt(1 << bitCount)
+            out = stdio.rand() % (1 << bitCount)
         }
         stop
     }
@@ -31,11 +28,9 @@ object RadixSort {
         val radix = config(UNSIGNED32, 'radix, 0)
         val buffer = local(new Vector(UNSIGNED32, itemCount))
         val temp = local(UNSIGNED32)
-        val i = local(UNSIGNED32)
         val j = local(UNSIGNED32)
 
-        i = 0
-        while (i < itemCount) {
+        for (i <- 0 until itemCount) {
             temp = in
             if ((temp & radix) == 0) {
                 out = temp
@@ -43,12 +38,9 @@ object RadixSort {
                 buffer(j) = temp
                 j += 1
             }
-            i += 1
         }
-        i = 0
-        while (i < j) {
+        for (i <- 0 until j) {
             out = buffer(i)
-            i += 1
         }
         stop
 
@@ -61,9 +53,6 @@ object RadixSort {
         }
         Print(src)
     }
-
-    def main(args: Array[String]) {
-        RadixSort.emit("radix")
-    }
+    RadixSort.emit("radix")
 
 }
