@@ -28,7 +28,7 @@ object UnionTest {
         val t = local(Union2)
 
         t = x0
-        stdio.printf("OUTPUT %d %d\n", t.x.a, sizeof(t))
+        stdio.printf("OUTPUT %d %d\n", t.x.a, cast(sizeof(t), SIGNED32))
         stdio.exit(0)
     }
 
