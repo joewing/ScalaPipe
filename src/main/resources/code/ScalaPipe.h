@@ -1,6 +1,10 @@
 #ifndef SCALAPIPE_H_
 #define SCALAPIPE_H_
 
+#ifndef _GNU_SOURCE
+#   define _GNU_SOURCE
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
@@ -28,10 +32,26 @@ extern "C" {
 #   define SPUNLIKELY(x) (x)
 #endif
 
+/** Set CPU affinity. */
+static inline void sp_set_affinity(int cpu)
+{
+#ifdef __linux
+    cpu_set_t mask;
+    CPU_ZERO(&mask);
+    CPU_SET(cpu, &mask);
+    sched_setaffinity(0, sizeof(mask), &mask);
+#endif
+}
+
 /** Atomic decrement. */
 static inline void sp_decrement(volatile uint32_t *v)
 {
+#if defined(__i386) || defined(__x86_64__)
     asm volatile("lock decl %0" : "=m" (*v) : "m" (*v));
+#else
+#   warning "Unsupported architecture"
+    *v -= 1;
+#endif
 }
 
 /** Structure to represent the per-instance fields for a kernel.
