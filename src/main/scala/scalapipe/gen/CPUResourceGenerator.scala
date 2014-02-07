@@ -319,10 +319,14 @@ private[scalapipe] class CPUResourceGenerator(
         val kernelType = kernel.kernelType
         val inPortCount = kernel.getInputs.size
         val outPortCount = kernel.getOutputs.size
+        val affinity = kernel.device.index
 
         write(s"static void *run_thread$id(void *arg)")
         write(s"{")
         enter
+
+        // Thread affinity.
+        write(s"sp_set_affinity($affinity);")
 
         // SP_kernel_data
         write(s"$instance.data.in_port_count = $inPortCount;")
@@ -525,7 +529,7 @@ private[scalapipe] class CPUResourceGenerator(
 
         // Declare threads.
         for (t <- threadIds.values) {
-            write("pthread_t thread" + t + ";")
+            write(s"pthread_t thread$t;")
         }
 
         write("start_ticks = sp_get_ticks();")

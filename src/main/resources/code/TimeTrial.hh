@@ -71,10 +71,11 @@ public:
 
     /** Constructor.
      * @param buffer_size The size of each buffer in bytes.
-     * @param affinity Thread affinity mask.
+     * @param affinity CPU to use (-1 for any CPU).
+     * @param filename File name (NULL for stdout).
      */
     TimeTrialAgent(const size_t buffer_size,
-                   const uint64_t affinity,
+                   const int affinity,
                    const char *filename);
 
     /** Destructor. */
@@ -129,7 +130,7 @@ private:
     static void *StartThread(void *arg);
 
     const size_t    m_buffer_size;
-    const uint64_t  m_affinity;
+    const int       m_affinity;
     const char     *m_filename;
     volatile bool   m_should_stop;
 

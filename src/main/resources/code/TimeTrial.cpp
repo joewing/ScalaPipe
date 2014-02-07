@@ -42,7 +42,7 @@ void *TimeTrialAgent::StartThread(void *arg)
 
 /** Constructor. */
 TimeTrialAgent::TimeTrialAgent(const size_t buffer_size,
-                               const uint64_t affinity,
+                               const int affinity,
                                const char *filename) :
 
     m_buffer_size(buffer_size),
@@ -192,7 +192,7 @@ void TimeTrialAgent::FinishRead(SPQ *q, TTAEntry *entry)
 void TimeTrialAgent::Run()
 {
 
-    // TODO: Set thread affinity.
+    sp_set_affinity(m_affinity);
 
     // Open the file.
     FILE *fd = stdout;

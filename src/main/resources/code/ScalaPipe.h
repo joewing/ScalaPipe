@@ -32,15 +32,19 @@ extern "C" {
 #   define SPUNLIKELY(x) (x)
 #endif
 
-/** Set CPU affinity. */
+/** Set CPU affinity.
+ * @param cpu The CPU to use (-1 for any CPU).
+ */
 static inline void sp_set_affinity(int cpu)
 {
+    if(cpu >= 0) {
 #ifdef __linux
-    cpu_set_t mask;
-    CPU_ZERO(&mask);
-    CPU_SET(cpu, &mask);
-    sched_setaffinity(0, sizeof(mask), &mask);
+        cpu_set_t mask;
+        CPU_ZERO(&mask);
+        CPU_SET(cpu, &mask);
+        sched_setaffinity(0, sizeof(mask), &mask);
 #endif
+    }
 }
 
 /** Atomic decrement. */

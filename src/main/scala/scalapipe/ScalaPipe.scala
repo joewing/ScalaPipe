@@ -454,7 +454,6 @@ private[scalapipe] class ScalaPipe {
         insertEdges
         assignDevices
         createKernelTypes
-        deviceManager.reassignIndexes
         checkStreams
         checkKernels
         insertMeasures

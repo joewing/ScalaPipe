@@ -27,7 +27,7 @@ private[scalapipe] class Parameters {
     add('defaultHost, "localhost")
     add('timeTrialOutput, null: String)
     add('timeTrialBufferSize, 8192)
-    add('timeTrialAffinity, 0)
+    add('timeTrialAffinity, -1)
     add('share, 1)              // Share FPGA resources within a kernel:
                                 //  0 - no sharing
                                 //  1 - share independent resources

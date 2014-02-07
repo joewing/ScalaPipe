@@ -15,7 +15,7 @@ private[scalapipe] class DeviceSpec(
     }
 
     private def canCombine(i1: Int, i2: Int) = {
-        i1 == Int.MaxValue || i2 == Int.MaxValue || i1 == i2
+        i1 < 0 || i2 < 0|| i1 == i2
     }
 
     def canCombine(other: DeviceSpec): Boolean = {
@@ -62,4 +62,4 @@ private[scalapipe] class DeviceSpec(
 }
 
 private[scalapipe] object AnyDeviceSpec
-    extends DeviceSpec(Platforms.ANY, null, Int.MaxValue)
+    extends DeviceSpec(Platforms.ANY, null, -1)
