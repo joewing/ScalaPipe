@@ -38,7 +38,7 @@ private[scalapipe] class SmartFusionResourceGenerator(
         }
 
         // Wrapper around the ScalaPipe kernels.
-        write(s"module XModule(")
+        write(s"module wrap$id(")
         enter
         write(s"input wire clk,")
         write(s"input wire rst")
@@ -78,7 +78,7 @@ private[scalapipe] class SmartFusionResourceGenerator(
         write
 
         // Instantiate the ScalaPipe kernels.
-        write(s"fpga0 x(.clk(clk), .rst(rst)")
+        write(s"fpga0 sp(.clk(clk), .rst(rst)")
         enter
         for (i <- inputStreams) {
             write(s", .I${i.index}input(data${i.index}), " +
@@ -206,7 +206,7 @@ private[scalapipe] class SmartFusionResourceGenerator(
         leave
         write(s"endmodule")
 
-        writeFile(dir, "fpga_wrap.v")
+        writeFile(dir, s"wrap_${device.label}.v")
 
     }
 
@@ -317,7 +317,7 @@ private[scalapipe] class SmartFusionResourceGenerator(
         write
 
         // Instantiate the module.
-        write(s"XModule X(.clk(clk), .rst(x_reset)")
+        write(s"wrap$id inst(.clk(clk), .rst(x_reset)")
         enter
         for (i <- inputStreams.map(_.index)) {
             write(s", .din$i(PWDATA), " +
@@ -369,7 +369,7 @@ private[scalapipe] class SmartFusionResourceGenerator(
         leave
         write(s"endmodule")
 
-        writeFile(dir, "sp_interface.v")
+        writeFile(dir, s"fpga_${device.label}.v")
 
     }
 

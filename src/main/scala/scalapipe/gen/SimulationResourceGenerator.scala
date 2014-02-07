@@ -24,24 +24,28 @@ private[scalapipe] class SimulationResourceGenerator(
 
         val kernelTypes = sp.getKernelTypes(device)
         val names = kernelTypes.map(_.name)
-        val base = "sim.v scalapipe.v platform.v fpga_x.v fpga_wrap.v"
-        val bstr = names.foldLeft(base) { (s, name) =>
+        val label = device.label
+        val simName = s"sim_${label}.v"
+        val topName = s"fpga_${label}.v"
+        val wrapName = s"wrap_${label}.v"
+        val base = s"$simName scalapipe.v platform.v $topName $wrapName"
+        val kstr = names.foldLeft(base) { (s, name) =>
             s"$s $name/$name.v"
         }
 
-        write("SIM_BLOCKS =" + bstr)
-        write("TARGETS += hdl")
+        write(s"SIM_${label}_KERNELS =$kstr")
+        write(s"TARGETS += hdl_${label}")
         write
 
-        write("build: hdl")
+        write(s"build_${label}: hdl_${label}")
         write
 
-        write("hdl: $(SIM_BLOCKS)")
-        write("\tiverilog -o hdl $(SIM_BLOCKS)")
+        write(s"hdl_${label}: $$(SIM_${label}_KERNELS)")
+        write(s"\tiverilog -o hdl_${label} $$(SIM_${label}_KERNELS)")
         write
 
-        write("sim: hdl compile")
-        write("\techo finish | ./proc_localhost")
+        write(s"sim: $$(TARGETS) compile")
+        write(s"\techo finish | ./proc_localhost")
         write
 
         getOutput
@@ -63,7 +67,7 @@ private[scalapipe] class SimulationResourceGenerator(
         }
 
         // Wrapper around the ScalaPipe kernels.
-        write(s"module XModule(")
+        write(s"module wrap$id(")
         enter
         write(s"input wire clk,")
         write(s"input wire rst")
@@ -117,7 +121,7 @@ private[scalapipe] class SimulationResourceGenerator(
         write
 
         // Instantiate the ScalaPipe kernels.
-        write(s"fpga0 x(.clk(clk), .rst(rst)")
+        write(s"fpga$id sp(.clk(clk), .rst(rst)")
         enter
         for (i <- inputStreams) {
             val index = i.index
@@ -138,7 +142,7 @@ private[scalapipe] class SimulationResourceGenerator(
         leave
         write(s"endmodule")
 
-        writeFile(dir, "fpga_wrap.v")
+        writeFile(dir, s"wrap_${device.label}.v")
 
     }
 
@@ -151,7 +155,7 @@ private[scalapipe] class SimulationResourceGenerator(
             s.sourceKernel.device == device && s.destKernel.device != device
         }
 
-        write(s"module sim;")
+        write(s"module sim_${device.label};")
         enter
         write
 
@@ -184,7 +188,7 @@ private[scalapipe] class SimulationResourceGenerator(
         }
         write
 
-        write(s"XModule dut(.clk(clk), .rst(rst)")
+        write(s"wrap$id dut(.clk(clk), .rst(rst)")
         enter
         for (s <- inputStreams.map(_.index)) {
             write(s", .din$s(din$s)")
@@ -226,7 +230,8 @@ private[scalapipe] class SimulationResourceGenerator(
         write
 
         if (sp.parameters.get[Boolean]('wave)) {
-            write("$dumpvars;")
+            write(s"""$$dumpfile(\"${device.label}.vcd\");""")
+            write(s"$$dumpvars;")
             write
         }
 
@@ -304,7 +309,7 @@ private[scalapipe] class SimulationResourceGenerator(
         leave
         write(s"endmodule")
 
-        writeFile(dir, "sim.v")
+        writeFile(dir, s"sim_${device.label}.v")
 
     }
 

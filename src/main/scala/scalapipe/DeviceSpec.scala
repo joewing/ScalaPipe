@@ -15,7 +15,7 @@ private[scalapipe] class DeviceSpec(
     }
 
     private def canCombine(i1: Int, i2: Int) = {
-        i1 < 0 || i2 < 0|| i1 == i2
+        i1 < 0 || i2 < 0 || i1 == i2
     }
 
     def canCombine(other: DeviceSpec): Boolean = {
@@ -32,7 +32,7 @@ private[scalapipe] class DeviceSpec(
         if (h1 != null) h1 else h2
     }
 
-    private def combined(i1: Int, i2: Int) = math.min(i1, i2)
+    private def combined(i1: Int, i2: Int) = math.max(i1, i2)
 
     def combine(other: DeviceSpec): DeviceSpec = {
 
@@ -49,11 +49,11 @@ private[scalapipe] class DeviceSpec(
     }
 
     override def toString =
-        if (host != null && index != Int.MaxValue) {
+        if (host != null && index >= 0) {
             s"$platform($host, $index)"
         } else if (host != null) {
             s"$platform($host)"
-        } else if (index != Int.MaxValue) {
+        } else if (index >= 0) {
             s"$platform($index)"
         } else {
             s"$platform"

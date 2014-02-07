@@ -106,12 +106,18 @@ private[scalapipe] class SimulationEdgeGenerator(
             writeReceiveFunctions(s, senderStreams)
         }
 
-        write("static pid_t sim_pid = 0;")
+        for (d <- devices) {
+            val label = d.label
+            write(s"static pid_t sim_${label}_pid = 0;")
+        }
         write("static void stopSimulation()")
         write("{")
         enter
-        write("kill(sim_pid, SIGINT);")
-        write("waitpid(sim_pid, NULL, 0);")
+        for (d <- devices) {
+            val label = d.label
+            write(s"kill(sim_${label}_pid, SIGINT);")
+            write(s"waitpid(sim_${label}_pid, NULL, 0);")
+        }
         for (s <- streams) {
             val label = s.label
             write(s"close(stream$label);")
@@ -164,23 +170,26 @@ private[scalapipe] class SimulationEdgeGenerator(
 
         }
 
-        // Start the simulation.
-        write(s"sim_pid = fork();")
-        write(s"if(sim_pid == 0) {")
-        enter
-        write(s"""int rc = execlp(\"vvp\", \"vvp\", \"hdl\", NULL);""")
-        write(s"if(rc < 0) {")
-        enter
-        write(s"""perror(\"could not run hdl\");""")
-        write(s"exit(-1);");
-        leave
-        write(s"}")
-        leave
-        write(s"} else {")
-        enter
+        // Start the simulation(s).
+        val devices = getDevices(streams)
+        for (d <- devices) {
+            val label = d.label
+            write(s"sim_${label}_pid = fork();")
+            write(s"if(sim_${label}_pid == 0) {")
+            enter
+            write(s"""int rc = execlp(\"vvp\", \"vvp\", """ +
+                  s"""\"hdl_${label}\", NULL);""")
+            write(s"if(rc < 0) {")
+            enter
+            write(s"""perror(\"could not run hdl_${label}\");""")
+            write(s"exit(-1);");
+            leave
+            write(s"}")
+            leave
+            write(s"}")
+        }
+
         write(s"atexit(stopSimulation);")
-        leave
-        write(s"}")
 
     }
 

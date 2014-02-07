@@ -323,44 +323,35 @@ private[scalapipe] class ScalaPipe {
             return k.device
         }
 
-        // Look for an incoming edge.
+        // Check input edges.
         var spec: DeviceSpec = AnyDeviceSpec
         val inputs = kl.flatMap(_.getInputs)
         val inEdges = inputs.filter(_.edge != null).map(_.edge)
-        if (!inEdges.isEmpty) {
-
-            // We have one or more incoming edges.
-            // Get the device from the edge and make sure all
-            // of the devices match.
-            for (e <- inEdges) {
-                if (spec != null && !spec.canCombine(e.dest)) {
-                    Error.raise("device assignment error: " +
-                                "in-edges from multiple devices (" +
-                                e.dest + " and " + spec + ")")
-                }
-                spec = e.dest.combine(spec)
+        for (e <- inEdges) {
+            if (spec != null && !spec.canCombine(e.dest)) {
+                Error.raise("device assignment error: " +
+                            "in-edges from multiple devices (" +
+                            e.dest + " and " + spec + ")")
             }
-
+            spec = e.dest.combine(spec)
         }
 
-        // No incoming edges.
+        // If the spec is complete, create the device.
+        if (spec.platform != Platforms.ANY) {
+            return deviceManager.create(spec)
+        }
+
         // Check output edges.
         val outputs = kl.flatMap(_.getOutputs)
         val outEdges = outputs.filter(_.edge != null).map(_.edge)
-        if (!outEdges.isEmpty) {
-
-            // Get the default device and make sure they all match.
-            for (e <- outEdges) {
-                val source = e.defaultSource
-                if (spec != null && !spec.canCombine(source)) {
-                    Error.raise("device assignment error: " +
-                                "out-edges to multiple devices (" +
-                                source + " and " + spec + ")")
-                }
-                spec = source.combine(spec)
+        for (e <- outEdges) {
+            val source = e.defaultSource
+            if (spec != null && !spec.canCombine(source)) {
+                Error.raise("device assignment error: " +
+                            "out-edges to multiple devices (" +
+                            source + " and " + spec + ")")
             }
-
-
+            spec = source.combine(spec)
         }
 
         return deviceManager.create(spec)

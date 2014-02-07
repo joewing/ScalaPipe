@@ -9,7 +9,7 @@ private[scalapipe] abstract class HDLResourceGenerator(
         val device: Device
     ) extends ResourceGenerator {
 
-    protected val host = device.host
+    protected val host  = device.host
     protected val id    = device.index
 
     protected class TimeTrial(val streams: Traversable[Stream]) {
@@ -393,7 +393,8 @@ private[scalapipe] abstract class HDLResourceGenerator(
 
         leave
         write("endmodule")
-        writeFile(dir, "fpga_x.v") // FIXME: name needs to be id/host unique
+        val filename = s"fpga_${device.label}.v"
+        writeFile(dir, filename)
 
     }
 

@@ -15,7 +15,7 @@ private[scalapipe] class EdgeObject[T <: Edge](
         val platform: Platforms.Value
     )(implicit m: Manifest[T]) {
 
-    def apply(host: String = null, id: Int = Int.MaxValue): T = {
+    def apply(host: String = null, id: Int = -1): T = {
         val c = m.runtimeClass.getConstructor(classOf[DeviceSpec])
         val o = c.newInstance(new DeviceSpec(platform, host, id))
         o.asInstanceOf[T]
