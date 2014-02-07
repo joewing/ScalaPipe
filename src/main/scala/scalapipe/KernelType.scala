@@ -87,7 +87,7 @@ private[scalapipe] abstract class KernelType(
 
     override def toString = name
 
-    private[scalapipe] def inputType(p: PortName): ValueType = {
+    def inputType(p: PortName): ValueType = {
         val s = symbols.getInput(p)
         if (s == null) {
             Error.raise("input port " + p + " not found", this)
@@ -95,7 +95,7 @@ private[scalapipe] abstract class KernelType(
         s.valueType
     }
 
-    private[scalapipe] def outputType(p: PortName): ValueType = {
+    def outputType(p: PortName): ValueType = {
         val s = symbols.getOutput(p)
         if (s == null) {
             Error.raise("output port " + p + " not found", this)
@@ -103,9 +103,13 @@ private[scalapipe] abstract class KernelType(
         s.valueType
     }
 
-    private[scalapipe] def inputIndex(p: PortName) = symbols.inputIndex(p)
+    def inputType(n: String): ValueType = inputType(new StringPortName(n))
 
-    private[scalapipe] def outputIndex(p: PortName) = symbols.outputIndex(p)
+    def outputType(n: String): ValueType = outputType(new StringPortName(n))
+
+    def inputIndex(p: PortName) = symbols.inputIndex(p)
+
+    def outputIndex(p: PortName) = symbols.outputIndex(p)
 
     def inputIndex(n: String): Int = inputIndex(new StringPortName(n))
 

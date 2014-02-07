@@ -592,6 +592,35 @@ private[scalapipe] class CPUResourceGenerator(
 
         write("atexit(showStats);")
 
+        // Write trace info.
+        if (sp.parameters.get[Boolean]('trace)) {
+            write("{")
+            enter
+            write("""FILE *fd = fopen("trace.benchmark", "w");""")
+
+            // Kernels.
+            write(s"""fprintf(fd, "(benchmarks\\n");""")
+            for (k <- cpuInstances) {
+                val name = s"${k.name}${k.index}"
+                write(s"""fprintf(fd, "    (trace (name $name))\\n");""")
+            }
+            write(s"""fprintf(fd, ")\\n");""")
+
+            // FIFOs.
+            write(s"""fprintf(fd, "(fifos\\n");""")
+            for (s <- localStreams) {
+                val size = sp.parameters.get[Int]('queueDepth)
+                val itemSize = s.valueType.bytes
+                write(s"""fprintf(fd, "   (fifo (size $size)""" +
+                      s"""(item_size $itemSize))\\n");""")
+            }
+            write(s"""fprintf(fd, ")\\n");""")
+
+            write(s"""fclose(fd);""")
+            leave
+            write("}")
+        }
+
         // Start the threads.
         for (t <- threadIds.values) {
             write(s"pthread_create(&thread$t, NULL, run_thread$t, NULL);")
