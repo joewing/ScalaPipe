@@ -7,8 +7,7 @@ private[scalapipe] abstract class Edge(
 
     private[scalapipe] val label = LabelMaker.getDeviceLabel
 
-    private[scalapipe] def defaultSource: DeviceSpec =
-        new DeviceSpec(source, null, Int.MaxValue)
+    private[scalapipe] def defaultSource = new DeviceSpec(source, null, -1)
 
 }
 
