@@ -74,9 +74,6 @@ typedef struct {
     int in_port_count;
     int out_port_count;
 
-    int instance;
-    int padding;
-
 } SPKernelData;
 
 /** Primitive types. */
@@ -120,10 +117,6 @@ typedef char       *STRING;
 /** Release data on an input port. */
 #define sp_release( kernel, in_port ) \
     (sp_get_private(kernel)->release)(in_port)
-
-/** Get the instance ID for a kernel. */
-#define sp_get_instance( kernel ) \
-    (sp_get_private(kernel)->instance)
 
 /** Create a function to read a value from an input port. */
 #define SP_READ_FUNCTION( RTYPE, KTYPE, port ) \

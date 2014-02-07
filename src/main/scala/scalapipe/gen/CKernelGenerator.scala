@@ -36,21 +36,23 @@ private[scalapipe] class CKernelGenerator(
 
         write(s"$sname")
         enter
-        kt.configs.foreach { c =>
+        for (c <- kt.configs) {
             val cname = c.name
             val vtype = c.valueType
             write(s"$vtype $cname;")
         }
-        kt.states.filter(!_.isLocal).foreach { s =>
+        for (s <- kt.states if !s.isLocal) {
             val sname = s.name
             val vtype = s.valueType
             write(s"$vtype $sname;")
         }
-        if (kt.parameters.get('profile)) {
+        if (kt.parameters.get[Boolean]('profile)) {
             write(s"unsigned long sp_clocks;")
         }
-        if (kt.parameters.get('trace)) {
+        if (kt.parameters.get[Boolean]('trace)) {
+            val streamCount = kt.inputs.size + kt.outputs.size
             write(s"FILE *trace_fd;")
+            write(s"int trace_streams[$streamCount];")
         }
         leave
         write(";")
@@ -72,9 +74,6 @@ private[scalapipe] class CKernelGenerator(
 
         write(s"void sp_${kname}_init(struct $sname *kernel)")
         enter
-        if (kt.parameters.get('trace)) {
-            write(s"char file_name[128];")
-        }
         for (s <- kt.states if !s.isLocal && s.value != null) {
             val field = s.name
             val value = kt.getLiteral(s.value)
@@ -84,11 +83,6 @@ private[scalapipe] class CKernelGenerator(
             // We initialize the clocks to one to account for the start state.
             write(s"kernel->sp_clocks = 1;")
         }
-        if (kt.parameters.get('trace)) {
-            write(s"""sprintf(file_name, "$kname%d", """ +
-                  s"""sp_get_instance(kernel));""")
-            write(s"""kernel->trace_fd = fopen(file_name, "w");""")
-        }
         leave
     }
 
@@ -96,9 +90,6 @@ private[scalapipe] class CKernelGenerator(
         val kname = kt.name
         write(s"void sp_${kname}_destroy(struct sp_${kname}_data *kernel)")
         enter
-        if (kt.parameters.get('trace)) {
-            write(s"fclose(kernel->trace_fd);")
-        }
         leave
     }
 

@@ -103,9 +103,9 @@ private[scalapipe] abstract class KernelType(
         s.valueType
     }
 
-    private[scalapipe] def inputIndex(p: PortName): Int = symbols.inputIndex(p)
+    private[scalapipe] def inputIndex(p: PortName) = symbols.inputIndex(p)
 
-    private[scalapipe] def outputIndex(p: PortName): Int = symbols.outputIndex(p)
+    private[scalapipe] def outputIndex(p: PortName) = symbols.outputIndex(p)
 
     def inputIndex(n: String): Int = inputIndex(new StringPortName(n))
 

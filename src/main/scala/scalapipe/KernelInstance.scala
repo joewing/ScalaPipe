@@ -118,7 +118,7 @@ private[scalapipe] class KernelInstance(
     }
 
     private[scalapipe] def inputIndex(s: Stream): Int = {
-        val matches = inputs.toList.filter { case (k, v) => v == s }
+        val matches = inputs.toSeq.filter { case (k, v) => v == s }
         inputIndex(matches.head._1)
     }
 
@@ -127,9 +127,14 @@ private[scalapipe] class KernelInstance(
         case _ => kernel.outputs.indexWhere(_.name == pn)
     }
 
-    private[scalapipe] def getInputs: List[Stream] = inputs.toList.map(_._2)
+    private[scalapipe] def outputIndex(s: Stream): Int = {
+        val matches = outputs.toSeq.filter { case (k, v) => v == s }
+        outputIndex(matches.head._1)
+    }
 
-    private[scalapipe] def getOutputs: List[Stream] = outputs.toList.map(_._2)
+    private[scalapipe] def getInputs: Seq[Stream] = inputs.toSeq.map(_._2)
+
+    private[scalapipe] def getOutputs: Seq[Stream] = outputs.toSeq.map(_._2)
 
     override def toString = name
 

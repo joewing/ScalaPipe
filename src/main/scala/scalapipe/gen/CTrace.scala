@@ -23,8 +23,11 @@ trait CTrace extends CNodeEmitter with ASTUtils {
         if (kt.parameters.get[Boolean]('trace)) {
 
             // Trace inputs.
+            val inputOffset = 0
             for (index <- localInputs(node).map(kt.inputIndex)) {
-                write(s"""fprintf(kernel->trace_fd, \"C$index\\n\");""")
+                val offset = inputOffset + index
+                write(s"""fprintf(kernel->trace_fd, \"C%x\\n\", """ +
+                      s"""kernel->trace_streams[$offset]);""")
             }
 
             // Trace reads.
@@ -44,8 +47,11 @@ trait CTrace extends CNodeEmitter with ASTUtils {
             }
 
             // Trace outputs.
+            val outputOffset = kt.inputs.size
             for (index <- localOutputs(node).map(kt.outputIndex)) {
-                write(s"""fprintf(kernel->trace_fd, \"P$index\\n\");""")
+                val offset = outputOffset + index
+                write(s"""fprintf(kernel->trace_fd, \"P%x\\n\", """ +
+                      s"""kernel->trace_streams[$offset]);""")
             }
 
         }

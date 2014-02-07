@@ -328,6 +328,24 @@ private[scalapipe] class CPUResourceGenerator(
         // Thread affinity.
         write(s"sp_set_affinity($affinity);")
 
+        // Open the trace file and set up the stream mapping.
+        if (sp.parameters.get[Boolean]('trace)) {
+            val fname = s"${name}${kernel.index}.trace"
+            write(s"""$instance.priv.trace_fd = fopen("$fname", "w");""")
+            val inputOffset = 0
+            for (i <- kernel.getInputs) {
+                val key = kernel.inputIndex(i) + inputOffset
+                val value = i.index
+                write(s"$instance.priv.trace_streams[$key] = $value;")
+            }
+            val outputOffset = kernel.getInputs.size
+            for (o <- kernel.getOutputs) {
+                val key = kernel.outputIndex(o) + outputOffset
+                val value = o.index
+                write(s"$instance.priv.trace_streams[$key] = $value;")
+            }
+        }
+
         // SP_kernel_data
         write(s"$instance.data.in_port_count = $inPortCount;")
         write(s"$instance.data.out_port_count = $outPortCount;")
@@ -337,7 +355,6 @@ private[scalapipe] class CPUResourceGenerator(
         write(s"$instance.data.get_available = ${instance}_get_available;")
         write(s"$instance.data.read_value = ${instance}_read_value;")
         write(s"$instance.data.release = ${instance}_release;")
-        write(s"$instance.data.instance = ${kernel.index};")
 
         // Clock
         write(s"spc_init(&${instance}.clock);")
@@ -351,6 +368,9 @@ private[scalapipe] class CPUResourceGenerator(
         write(s"}")
         write(s"sp_${name}_destroy(&$instance.priv);")
         write(s"spc_stop(&$instance.clock);")
+        if (sp.parameters.get[Boolean]('trace)) {
+            write(s"fclose($instance.priv.trace_fd);")
+        }
         kernel.getOutputs.filter {
             _.destKernel.device == kernel.device
         }.map(_.destKernel.label).foreach { dest =>
