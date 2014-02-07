@@ -199,27 +199,29 @@ module sp_divS(clk, start, a_in, b_in, c_out, ready_out);
 
 endmodule
 
+/** Generic multiplier. */
 module sp_mul_impl(clk, start_in, a_in, b_in, c_out, ready_out);
 
-    parameter WIDTH = 24;
-    parameter SHIFT = 18;
+    parameter WIDTH         = 24;
+    parameter OUTPUT_WIDTH  = WIDTH * 2;
+    parameter SHIFT         = 18;
 
     input wire clk;
     input wire start_in;
     input wire [WIDTH-1:0] a_in;
     input wire [WIDTH-1:0] b_in;
-    output wire [WIDTH*2-1:0] c_out;
+    output wire [OUTPUT_WIDTH-1:0] c_out;
     output wire ready_out;
 
     reg [WIDTH-1:0] a;
     reg [WIDTH-1:0] b;
-    reg [2*WIDTH-1:0] result;
+    reg [OUTPUT_WIDTH-1:0] result;
     reg [WIDTH:0] state;
 
-    wire [2*WIDTH-1:0] add_sa = b[WIDTH-1] ? a : 0;
-    wire [2*WIDTH-1:0] add_sb = result << 1;
-    wire [2*WIDTH-1:0] add_result;
-    sp_addI #(.WIDTH(2*WIDTH)) add(add_sa, add_sb, add_result);
+    wire [OUTPUT_WIDTH-1:0] add_sa = b[WIDTH-1] ? a : 0;
+    wire [OUTPUT_WIDTH-1:0] add_sb = result << 1;
+    wire [OUTPUT_WIDTH-1:0] add_result;
+    sp_addI #(.WIDTH(OUTPUT_WIDTH)) add(add_sa, add_sb, add_result);
 
     always @(posedge clk) begin
         if (start_in) begin
@@ -242,7 +244,6 @@ endmodule
 module sp_mulI(clk, start_in, a_in, b_in, c_out, ready_out);
 
     parameter WIDTH = 32;
-    parameter SHIFT = 18;
 
     input wire clk;
     input wire start_in;
@@ -251,24 +252,8 @@ module sp_mulI(clk, start_in, a_in, b_in, c_out, ready_out);
     output wire [WIDTH-1:0] c_out;
     output wire ready_out;
 
-    reg [WIDTH-1:0] a;
-    reg [WIDTH-1:0] b;
-    reg [WIDTH-1:0] result;
-
-    always @(posedge clk) begin
-        if (start_in) begin
-            result <= 0;
-            a <= a_in;
-            b <= b_in;
-        end else if (!ready_out) begin
-            result <= result + b * a[SHIFT-1:0];
-            a <= a >> SHIFT;
-            b <= b << SHIFT;
-        end
-    end
-
-    assign ready_out = a == 0;
-    assign c_out = result;
+    sp_mul_plat #(.WIDTH(WIDTH), .OUTPUT_WIDTH(WIDTH))
+        impl(clk, start_in, a_in, b_in, c_out, ready_out);
 
 endmodule
 
@@ -552,7 +537,7 @@ module sp_mulF(clk, start, a_in, b_in, c_out, ready_out);
         end
     end
 
-    sp_mul_impl #(.WIDTH(FRACTION+1))
+    sp_mul_plat #(.WIDTH(FRACTION+1), .OUTPUT_WIDTH((FRACTION+1)*2))
         mul(clk, start_mul, fraca, fracb, mul_result, mul_ready);
 
     assign c_out = {sign, exp, product[FRACTION*2:FRACTION+1]};
