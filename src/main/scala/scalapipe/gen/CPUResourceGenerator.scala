@@ -609,10 +609,11 @@ private[scalapipe] class CPUResourceGenerator(
             // FIFOs.
             write(s"""fprintf(fd, "(fifos\\n");""")
             for (s <- localStreams) {
+                val id = s.index
                 val size = sp.parameters.get[Int]('queueDepth)
                 val itemSize = s.valueType.bytes
-                write(s"""fprintf(fd, "   (fifo (size $size)""" +
-                      s"""(item_size $itemSize))\\n");""")
+                write(s"""fprintf(fd, "   (fifo (id $id)""" +
+                      s"""(size $size)(item_size $itemSize))\\n");""")
             }
             write(s"""fprintf(fd, ")\\n");""")
 
