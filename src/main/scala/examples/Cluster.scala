@@ -296,7 +296,7 @@ object Cluster {
         }
 
         val Cluster = new Application {
-            val loop = Cycle(ClusterType)
+            val loop = Cycle()
             val csrc = ClusterSource(loop)
             val bmp = BMPReader('file -> "in.bmp")
             val vsrc = ValueSource(bmp(0), bmp(1), bmp(2))

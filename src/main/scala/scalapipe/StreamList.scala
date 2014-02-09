@@ -1,8 +1,8 @@
 package scalapipe
 
-class StreamList(
-        val sp: ScalaPipe,
-        val kernel: KernelInstance
+class StreamList private[scalapipe](
+        private[scalapipe] val sp: ScalaPipe,
+        private[scalapipe] val kernel: KernelInstance
     ) {
 
     private[scalapipe] var streams = Seq[Stream]()

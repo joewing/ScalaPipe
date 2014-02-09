@@ -3,7 +3,7 @@ package scalapipe
 import scala.language.dynamics
 import scalapipe.dsl.{Kernel, Func, Type}
 
-abstract class ASTNode(
+private[scalapipe] abstract class ASTNode(
         val op: NodeType.Value,
         val kernel: Kernel
     ) extends DebugInfo {

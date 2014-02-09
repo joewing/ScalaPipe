@@ -394,7 +394,7 @@ object NBody {
 
         val app = new Application {
 
-            val cycle = Cycle(PARTICLE)
+            val cycle = Cycle()
             val source = Source()
             val buffer = Buffer(source(0), cycle)
             val stream = Streamer(buffer(0))

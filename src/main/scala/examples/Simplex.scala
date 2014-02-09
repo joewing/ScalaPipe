@@ -328,7 +328,7 @@ object Simplex extends App {
         map(Parser -> ANY_KERNEL, CPU2FPGA())
         map(ANY_KERNEL -> Output, FPGA2CPU())
 
-        val cycle = Cycle(VALUE_TYPE)
+        val cycle = Cycle()
         val stream = Streamer(Parser(), cycle)
         val split = ArraySplitter(stream(0))
         val pivot = PivotSelect(stream(1))

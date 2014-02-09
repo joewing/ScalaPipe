@@ -2,7 +2,7 @@ package scalapipe
 
 import scalapipe.dsl.Kernel
 
-class Stream(
+class Stream private[scalapipe](
         private[scalapipe] val sp: ScalaPipe,
         private[scalapipe] val sourceKernel: KernelInstance,
         private[scalapipe] val sourcePort: PortName

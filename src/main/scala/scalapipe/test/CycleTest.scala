@@ -43,7 +43,7 @@ object CycleTest {
     def main(args: Array[String]) {
         val mapping = args.headOption.getOrElse("0").toInt
         val app = new Application {
-            val cycle = Cycle(SIGNED32)
+            val cycle = Cycle()
             val result = Looper(Start(), cycle)
             Print(result(0))
             cycle(result(1))

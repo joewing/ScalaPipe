@@ -1,33 +1,30 @@
 package scalapipe.dsl
 
-import scalapipe._
+import scalapipe.{ScalaPipe, Stream, Error}
 
 object Cycle {
-    def apply(t: Type) = new Cycle(t)
+    def apply() = new Cycle
 }
 
-class Cycle(val t: Type) {
+class Cycle {
 
     private var stream: Stream = null
 
-    private val kernel = new Kernel {
-        val in = input(t)
-        val out = output(t)
-        out = in
-    }
-
-    private var instance: KernelInstance = null
-
     private[dsl] def output(sp: ScalaPipe): Stream = {
-        instance = sp.createInstance(kernel)
-        instance.apply()()
+        if (stream != null) {
+            Error.raise("cycle connected multiple times")
+        }
+        stream = new Stream(sp, null, null)
+        stream
     }
 
     def apply(s: Stream) {
-        if (instance == null) {
+        if (stream == null) {
             Error.raise("unconnected cycle")
         } else {
-            instance.setInput(null, s)
+            stream.destKernel.replaceInput(stream, s)
+            s.setDest(stream.destKernel, stream.destPort)
+            stream = null
         }
     }
 
