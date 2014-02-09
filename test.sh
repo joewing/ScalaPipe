@@ -23,6 +23,26 @@ function run_test {
 # Run unit tests.
 sbt test
 
+# Test socket edges.
+echo "OUTPUT 0"     >  test.expected
+echo "OUTPUT 1"     >> test.expected
+echo "OUTPUT 2"     >> test.expected
+echo "OUTPUT 3"     >> test.expected
+echo "OUTPUT 4"     >> test.expected
+echo "OUTPUT 5"     >> test.expected
+echo "OUTPUT 6"     >> test.expected
+echo "OUTPUT 7"     >> test.expected
+echo "OUTPUT 8"     >> test.expected
+echo "OUTPUT 9"     >> test.expected
+rm -rf SocketTest
+sbt "run-main scalapipe.test.SocketTest"
+cd SocketTest
+make
+./proc_localhost & ./proc_127.0.0.1 > ../test.out
+cd ..
+cmp test.out test.expected
+rm -rf SocketTest
+
 # Test control structures.
 echo "OUTPUT 5" > test.expected
 run_test ControlTest 0
