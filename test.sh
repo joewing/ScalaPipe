@@ -43,6 +43,19 @@ cd ..
 cmp test.out test.expected
 rm -rf SocketTest
 
+# Test cycles.
+echo "OUTPUT 1"     >  test.expected
+echo "OUTPUT 2"     >> test.expected
+echo "OUTPUT 3"     >> test.expected
+echo "OUTPUT 4"     >> test.expected
+echo "OUTPUT 5"     >> test.expected
+echo "OUTPUT 6"     >> test.expected
+echo "OUTPUT 7"     >> test.expected
+echo "OUTPUT 8"     >> test.expected
+echo "OUTPUT 9"     >> test.expected
+run_test CycleTest 0
+run_test CycleTest 1
+
 # Test control structures.
 echo "OUTPUT 5" > test.expected
 run_test ControlTest 0
