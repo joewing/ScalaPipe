@@ -1,7 +1,6 @@
 package scalapipe.gen
 
 import scalapipe._
-import scalapipe.dsl.Stream
 
 /** Edge generator for edges mapped to CPUs on the same host.
  * Note that the sending and receiving sides will always be in

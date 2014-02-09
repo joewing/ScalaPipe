@@ -146,8 +146,8 @@ object Laplace {
             val splits = random.iteratedMap(levels, SplitU32)
 
             // Set up the walk blocks.
-            val walks = Array.tabulate[Stream](walkCount)(x => {
-                Walk(splits(x))
+            val walks = Array.tabulate(walkCount)(x => {
+                Walk(splits(x))()
             })
 
             // Set up the average blocks.

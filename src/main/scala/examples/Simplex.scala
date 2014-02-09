@@ -336,10 +336,10 @@ object Simplex extends App {
         val pvalue = DupValues(pivot(1))
         val pindex = DupInt(pivot(2))
         val column = DupInt(pivot(3))
-        val rows = Array.tabulate[Stream](rowCount) { i =>
+        val rows = Array.tabulate(rowCount) { i =>
             val row = RowProcessor(split(i), prow(i), pvalue(i),
-                                          pindex(i), column(i), 'index -> i)
-            RowBuffer(row)
+                                   pindex(i), column(i), 'index -> i)
+            RowBuffer(row)()
         }
         cycle(ArrayBuilder(rows))
         Output(stream(2))

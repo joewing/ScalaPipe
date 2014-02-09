@@ -1,7 +1,5 @@
 package scalapipe
 
-import scalapipe.dsl.Stream
-
 private[scalapipe] class Measure(
         val stream: Stream,
         val stat: Symbol,

@@ -1,7 +1,6 @@
 package scalapipe.gen
 
 import scalapipe._
-import scalapipe.dsl.Stream
 
 /** Edge generator for edges mapped between the CPU and FPGA simulation. */
 private[scalapipe] class SimulationEdgeGenerator(

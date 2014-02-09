@@ -1,6 +1,4 @@
-package scalapipe.dsl
-
-import scalapipe._
+package scalapipe
 
 class StreamList(
         val sp: ScalaPipe,

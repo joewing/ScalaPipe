@@ -1,6 +1,6 @@
-package scalapipe.dsl
+package scalapipe
 
-import scalapipe._
+import scalapipe.dsl.Kernel
 
 class Stream(
         private[scalapipe] val sp: ScalaPipe,
