@@ -20,7 +20,7 @@ private[scalapipe] object Error {
     }
 
     def raise(msg: String, info: DebugInfo): String = {
-        if (info != null) {
+        if (info != null && info.fileName != null) {
             val prefix = s"${info.fileName}[${info.lineNumber}]: "
             raise(msg, prefix)
         } else {
@@ -32,15 +32,12 @@ private[scalapipe] object Error {
         if (!kernel.scopeStack.isEmpty) {
             val scope = kernel.scopeStack.last
             if (!scope.conditions.isEmpty) {
-                raise(msg, scope.conditions.head)
+                return raise(msg, scope.conditions.head)
             } else if (!scope.bodies.isEmpty) {
-                raise(msg, scope.bodies.head)
-            } else {
-                raise(msg)
+                return raise(msg, scope.bodies.head)
             }
-        } else {
-            raise(msg)
         }
+        return raise(msg, kernel.asInstanceOf[DebugInfo])
     }
 
     def raise(msg: String, kt: KernelType): String = kt match {

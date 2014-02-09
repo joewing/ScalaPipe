@@ -38,16 +38,20 @@ class Kernel(val name: String) extends LowPriorityImplicits with DebugInfo {
     private[dsl] def getLabel: String = labelCounter.next()
 
     def output(t: Type, n: Symbol = null): Variable = {
+        val vt = t.create
+        DSLHelper.ifThen(!vt.flat, Error.raise("output port too wide", this))
         val label = DSLHelper.ifThenElse(n != null, n.name, getLabel)
         val node = new Variable(label, this)
-        outputs += new KernelOutput(label, t.create())
+        outputs += new KernelOutput(label, vt)
         node
     }
 
     def input(t: Type, n: Symbol = null): Variable = {
+        val vt = t.create
+        DSLHelper.ifThen(!vt.flat, Error.raise("input port too wide", this))
         val label = DSLHelper.ifThenElse(n != null, n.name, getLabel)
         val node = new Variable(label, this)
-        inputs += new KernelInput(label, t.create())
+        inputs += new KernelInput(label, vt)
         node
     }
 

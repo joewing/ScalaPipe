@@ -6,7 +6,7 @@ class Stream private[scalapipe](
         private[scalapipe] val sp: ScalaPipe,
         private[scalapipe] val sourceKernel: KernelInstance,
         private[scalapipe] val sourcePort: PortName
-    ) {
+    ) extends DebugInfo {
 
     private[scalapipe] val index = LabelMaker.getEdgeIndex
     private[scalapipe] val label = s"edge$index"
@@ -14,6 +14,8 @@ class Stream private[scalapipe](
     private[scalapipe] var destPort: PortName = null
     private[scalapipe] var measures = Set[Measure]()
     private[scalapipe] var edge: Edge = null
+
+    collectDebugInfo
 
     /** Take this stream and apply it to the input of a split kernel. */
     def iteratedMap(iterations: Int, splitter: Kernel): Seq[Stream] = {
@@ -45,7 +47,7 @@ class Stream private[scalapipe](
         val st = sourceKernel.outputType(sourcePort)
         val dt = destKernel.inputType(destPort)
         if (st != dt) {
-            Error.raise(s"stream type mismatch: $st vs $dt")
+            Error.raise(s"stream type mismatch: $st vs $dt", this)
         }
     }
 
