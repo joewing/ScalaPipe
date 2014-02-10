@@ -1,8 +1,6 @@
 package examples
 
-import scalapipe.kernels.stdio
-
-import scalapipe._
+import scalapipe.kernels.{stdio, Duplicate}
 import scalapipe.dsl._
 
 object MultiOutput {
@@ -14,30 +12,28 @@ object MultiOutput {
 			val Random = new Kernel("Random") {
 				val y0 = output(FLOAT32)
 				val iterations = local(UNSIGNED32, count)
-
-				val temp = local(FLOAT32, 0)
 				while (iterations > 0) {
-					temp = stdio.rand() % 10000
-					temp = temp / 100.0
-					y0 = temp
+					y0 = (stdio.rand() % 10000) + 1
 					iterations -= 1
 				}
 				stop
 			}
 
 			class MathBlock(t: Type) extends Kernel("MathBlock") {
-
 				val x0 = input(t)
 				val x1 = input(t)
 				val y0 = output(t)
 				val y1 = output(t)
 				val y2 = output(t)
 				val y3 = output(t)
-
-				y0 = x0 + x1
-				y1 = x0 - x1
-				y2 = x0 * x1
-				y3 = x0 / x1
+                val a = local(t)
+                val b = local(t)
+                a = x0
+                b = x1
+				y0 = a + b
+				y1 = a - b
+				y2 = a * b
+				y3 = a / b
 			}
 
 			val Math = new MathBlock(FLOAT32)
@@ -49,22 +45,23 @@ object MultiOutput {
 				val x3 = input(FLOAT32)
 				val x4 = input(FLOAT32)
 				val x5 = input(FLOAT32)
-
-				stdio.printf("Number 1:\t%f\nNumber 2:\t%f\nAddition:\t%f\nSubtraction:\t%f\nMultiplication:\t%f\nDivision:\t%f\n", x0, x1, x2, x3, x4, x5)
-				
+                stdio.printf("Input: %g, %g\n", x0, x1)
+                stdio.printf("\tAddition: %g\n", x2)
+                stdio.printf("\tSubtraction: %g\n", x2)
+                stdio.printf("\tMultiplication: %g\n", x4)
+                stdio.printf("\tDivision: %g\n", x5)
 			}
 
-			object MultiOutput extends Application {
+            val DupF32 = new Duplicate(FLOAT32)
 
-				
-				val random0 = Random()
-				val random1 = Random()
-				val result = Math(random0, random1)
-				Print(random0, random1, result)
+			val MultiOutput = new Application {
+				val random0 = DupF32(Random())
+				val random1 = DupF32(Random())
+				val result = Math(random0(0), random1(0))
+				Print(random0(1), random1(1), result(0), result(1),
+                      result(2), result(3))
 
 			}
-
 			MultiOutput.emit("MultiOutput")
-
 		}
 }
