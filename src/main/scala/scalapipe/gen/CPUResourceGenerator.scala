@@ -248,6 +248,7 @@ private[scalapipe] class CPUResourceGenerator(
         write(s"{")
         enter
         write(s"void *ptr = NULL;")
+        write(s"int end_count = 0;")
         write(s"spc_stop(&$instance.clock);")
         write(s"for(;;) {")
         enter
@@ -272,7 +273,12 @@ private[scalapipe] class CPUResourceGenerator(
         write(s"}")
         write(s"if(SPUNLIKELY($instance.active_inputs == 0)) {")
         enter
+        write(s"if(end_count > 1) {")
+        enter
         write(s"longjmp($instance.env, 1);")
+        leave
+        write(s"}")
+        write(s"end_count += 1;")
         leave
         write(s"}")
         write(s"sched_yield();")
