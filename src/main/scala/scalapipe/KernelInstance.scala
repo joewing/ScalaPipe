@@ -11,8 +11,8 @@ private[scalapipe] class KernelInstance(
     private[scalapipe] val index = LabelMaker.getInstanceIndex
     private[scalapipe] val label = s"instance$index"
     private[scalapipe] var device: Device = null
-    private var outputs = Map[PortName, Stream]()
-    private var inputs = Map[PortName, Stream]()
+    private[this] var outputs = Map[IntPortName, Stream]()
+    private[this] var inputs = Map[IntPortName, Stream]()
     private[scalapipe] var configs = Map[String, Literal]()
 
     collectDebugInfo
@@ -26,7 +26,7 @@ private[scalapipe] class KernelInstance(
 
     def apply(args: (Symbol, Any)*) = {
         for(a <- args) {
-            val name = if(a._1 == null) null else a._1.name
+            val name = if (a._1 == null) null else a._1.name
             if(a._2.isInstanceOf[Stream]) {
                 setInput(name, a._2.asInstanceOf[Stream])
             } else if(name != null) {
@@ -43,15 +43,32 @@ private[scalapipe] class KernelInstance(
 
     private[scalapipe] def kernelType = sp.kernelType(name, device.platform)
 
-    private[scalapipe] def setInput(n: String, s: Stream) {
-        val portName: PortName = if(n == null) new IntPortName(inputs.size)
-                                 else new StringPortName(n)
-        s.setDest(this, portName)
-        inputs += (portName -> s)
+    private[this] def setInput(n: String, s: Stream) {
+        val portName = if (n == null) {
+                new IntPortName(inputs.size)
+            } else {
+                new StringPortName(n)
+            }
+        if (!isInput(portName)) {
+            Error.raise(s"invalid input port: $portName", this)
+        }
+        val portIndex = new IntPortName(inputIndex(portName))
+        if (inputs.contains(portIndex)) {
+            Error.raise(s"input connected multiple times: $portName", this)
+        }
+        s.setDest(this, portIndex)
+        inputs += (portIndex -> s)
     }
 
     private[scalapipe] def setOutput(pn: PortName, s: Stream) {
-        outputs += (pn -> s)
+        if (!isOutput(pn)) {
+            Error.raise(s"invalid output port: $pn", this)
+        }
+        val portIndex = new IntPortName(outputIndex(pn))
+        if (outputs.contains(portIndex)) {
+            Error.raise(s"output connected multiple times: $pn", this)
+        }
+        outputs += (portIndex -> s)
     }
 
     private[scalapipe] def replaceInput(os: Stream, ns: Stream) {
@@ -80,17 +97,17 @@ private[scalapipe] class KernelInstance(
         }
     }
 
-    private def getPort(pn: PortName,
-                        lst: Seq[KernelPort]): Option[KernelPort] = {
+    private[this] def getPort(pn: PortName,
+                              lst: Seq[KernelPort]): Option[KernelPort] = {
         pn match {
             case ip: IntPortName if ip.name < lst.size => Some(lst(ip.name))
             case _ => lst.find(_.name == pn)
         }
     }
 
-    private def getInput(pn: PortName) = getPort(pn, kernel.inputs)
+    private[this] def getInput(pn: PortName) = getPort(pn, kernel.inputs)
 
-    private def getOutput(pn: PortName) = getPort(pn, kernel.outputs)
+    private[this] def getOutput(pn: PortName) = getPort(pn, kernel.outputs)
 
     private[scalapipe] def inputName(pn: PortName) = getInput(pn) match {
         case Some(i)    => i.name
@@ -111,6 +128,10 @@ private[scalapipe] class KernelInstance(
         case Some(o)    => o.valueType
         case _          => ValueType.void
     }
+
+    private[this] def isInput(pn: PortName) = !getInput(pn).isEmpty
+
+    private[this] def isOutput(pn: PortName) = !getOutput(pn).isEmpty
 
     private[scalapipe] def inputIndex(pn: PortName): Int = pn match {
         case in: IntPortName => in.name

@@ -90,7 +90,7 @@ private[scalapipe] class ScalaPipe {
     }
 
     private[scalapipe] def createStream(sourceKernel: KernelInstance,
-                                       sourcePort: PortName): Stream = {
+                                        sourcePort: PortName): Stream = {
         val stream = new Stream(this, sourceKernel, sourcePort)
         streams = streams + stream
         stream
