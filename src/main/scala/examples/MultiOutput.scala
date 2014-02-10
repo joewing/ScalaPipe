@@ -47,7 +47,7 @@ object MultiOutput {
 				val x5 = input(FLOAT32)
                 stdio.printf("Input: %g, %g\n", x0, x1)
                 stdio.printf("\tAddition: %g\n", x2)
-                stdio.printf("\tSubtraction: %g\n", x2)
+                stdio.printf("\tSubtraction: %g\n", x3)
                 stdio.printf("\tMultiplication: %g\n", x4)
                 stdio.printf("\tDivision: %g\n", x5)
 			}
