@@ -4,7 +4,9 @@ private[scalapipe] class DeviceManager(param: Parameters) {
 
     private var deviceTypes = Map[Platforms.Value, DeviceType]()
 
-    private def defaultPlatform = Platforms.C
+    private def defaultPlatform: Platforms.Value = {
+        Platforms.withName(param.get[String]('defaultPlatform))
+    }
     private def defaultHost = param.get[String]('defaultHost)
     private def defaultIndex(platform: Platforms.Value) = platform match {
         case Platforms.C    => -1
