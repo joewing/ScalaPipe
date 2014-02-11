@@ -91,7 +91,7 @@ class Application {
         sp.addEdge(new EdgeMapping(edge._1, edge._2, t))
     }
 
-    def param(name: Symbol, value: Any) {
+    def param(name: Symbol, value: Any = true) {
         sp.setParameter(name, value)
     }
 
