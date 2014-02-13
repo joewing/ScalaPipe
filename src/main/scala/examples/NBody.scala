@@ -292,8 +292,8 @@ object NBody {
             val tv = local(stdio.TIMEVAL)
             val result = local(UNSIGNED64)
             stdio.gettimeofday(addr(tv), 0)
-            result = cast(tv.tv_sec, UNSIGNED64) * 1000000
-            result += cast(tv.tv_usec, UNSIGNED64)
+            result = UNSIGNED64(tv.tv_sec) * 1000000
+            result += UNSIGNED64(tv.tv_usec)
             return result
         }
 

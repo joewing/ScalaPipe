@@ -1,6 +1,7 @@
 package scalapipe.dsl
 
 import scalapipe.{LabelMaker, ValueType, SymbolValidator, DebugInfo}
+import scalapipe.{ASTNode, ASTConvertNode}
 
 abstract class Type(val name: String) extends DebugInfo {
 
@@ -16,5 +17,7 @@ abstract class Type(val name: String) extends DebugInfo {
     protected def validateTypeName {
         SymbolValidator.validateType(name, this)
     }
+
+    def apply(n: ASTNode) = ASTConvertNode(n, create, n.kernel)
 
 }
