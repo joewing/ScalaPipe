@@ -18,6 +18,6 @@ abstract class Type(val name: String) extends DebugInfo {
         SymbolValidator.validateType(name, this)
     }
 
-    def apply(n: ASTNode) = ASTConvertNode(n, create, n.kernel)
+    def apply[T <% ASTNode](n: T) = ASTConvertNode(n, create, n.kernel)
 
 }
