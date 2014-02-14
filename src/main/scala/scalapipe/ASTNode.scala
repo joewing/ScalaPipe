@@ -72,9 +72,9 @@ private[scalapipe] abstract class ASTNode(
 
     final def sin = ASTOpNode(NodeType.sin, this, null, kernel)
 
-    final def cos = ASTOpNode(NodeType.sin, this, null, kernel)
+    final def cos = ASTOpNode(NodeType.cos, this, null, kernel)
 
-    final def tan = ASTOpNode(NodeType.sin, this, null, kernel)
+    final def tan = ASTOpNode(NodeType.tan, this, null, kernel)
 
     protected def assignOp(op: NodeType.Value, other: ASTNode) = {
         Error.raise("invalid assignment", kernel)
