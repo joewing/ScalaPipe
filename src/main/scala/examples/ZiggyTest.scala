@@ -59,7 +59,7 @@ object ZiggyTest {
             			val q  = local(FLOAT32)
             			val i  = local(UNSIGNED32)
             			q = vn / exp(dn * dn * -0.5)
-            			kn(0) = cast((dn / q) * m1, UNSIGNED64)
+            			kn(0) = UNSIGNED64((dn / q) * m1)
             			kn(1) = 0
 
             			wn(0) = q / m1
@@ -71,7 +71,7 @@ object ZiggyTest {
             			i = 126
             			while (i >= 1) {
                 			dn = sqrt(log(vn / dn + exp(dn * dn * -0.5)) * -2.0)
-                			kn(i + 1) = cast((dn / tn) * m1, UNSIGNED64)
+                			kn(i + 1) = UNSIGNED64((dn / tn) * m1)
                 			tn = dn
                 			fn(i) = exp(dn * dn * -0.5)
                 			wn(i) = dn / m1
@@ -84,7 +84,7 @@ object ZiggyTest {
             			hz = in //ival
             			iz = hz & 0x7F
             			if (abs(hz) < kn(iz)) {
-                			out = cast(hz * wn(iz) * p, SIGNED32)
+                			out = SIGNED32(hz * wn(iz) * p)
             			} else {
                 			if (iz == 0) {
                     				state = 1
@@ -106,9 +106,9 @@ object ZiggyTest {
             			y = -log(u(1))
             			if (y + y >= x * x) {
                 			if (hz > 0) {
-                    				out = cast((x + r) * p, SIGNED32)
+                    				out = SIGNED32((x + r) * p)
                 			} else {
-                    				out = cast((-x - r) * p, SIGNED32)
+                    				out = SIGNED32((-x - r) * p)
                 			}
                 			state = 0
             			} else {
@@ -119,7 +119,7 @@ object ZiggyTest {
         			when(3) {
             			u(0) = 0.5 + in * uni
             			if (fn(iz) + u(0) * (fn(iz - 1) - fn(iz)) < exp(x * x * -0.5)) {
-                			out = cast(x * p, SIGNED32)
+                			out = SIGNED32(x * p)
             			}
             			state = 0
         			}

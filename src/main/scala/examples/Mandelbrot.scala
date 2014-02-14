@@ -102,8 +102,8 @@ object Mandelbrot {
             val temp = local(FIXED)
 
             pixel = in
-            x0 = (3.5 * cast(pixel >> 16, FIXED)) / width - 2.5
-            y0 = (2.0 * cast(pixel & 0xFFFF, FIXED)) / height - 1.0
+            x0 = (3.5 * FIXED(pixel >> 16)) / width - 2.5
+            y0 = (2.0 * FIXED(pixel & 0xFFFF)) / height - 1.0
 
             x = 0
             y = 0

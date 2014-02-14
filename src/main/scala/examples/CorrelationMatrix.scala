@@ -120,7 +120,7 @@ object CorrelationMatrix {
 						if(j < n) {
 							//stdio.printf("i: %d j: %d\t", i, j)
 							if(i > j) {
-								switcher = cast(x0 % 6283, FLOAT32) 
+								switcher = FLOAT32(x0 % 6283) 
 								//switcher = switcher % 6283
 								switcher = switcher / 1000.0 
 								switcher -= 3.14159

@@ -121,7 +121,7 @@ object BLSC {
 				when(0) {
 					i = 0
 					while(i < n){
-						temp = cast(x0 % cast(resolution*(upperrange - lowerrange), UNSIGNED32), FLOAT32)
+						temp = FLOAT32(x0 % UNSIGNED32(resolution*(upperrange - lowerrange)))
 						temp = temp / resolution
 						temp += lowerrange
 						y0 = temp
@@ -227,7 +227,7 @@ object BLSC {
 						if(j < n) {
 							//stdio.printf("i: %d j: %d\t", i, j)
 							if(i > j) {
-								switcher = cast(x0 % 6283, FLOAT32)
+								switcher = FLOAT32(x0 % 6283)
 								//switcher = switcher % 6283
 								switcher = switcher / 1000.0
 								switcher -= 3.14159
