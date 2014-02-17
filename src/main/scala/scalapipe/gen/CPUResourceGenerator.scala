@@ -604,24 +604,35 @@ private[scalapipe] class CPUResourceGenerator(
             enter
             write("""FILE *fd = fopen("trace.benchmark", "w");""")
 
-            // Kernels.
-            write(s"""fprintf(fd, "(benchmarks\\n");""")
+            // Memories.
+            write(s"""fprintf(fd, "(memory\\n");""")
+            write(s"""fprintf(fd, "  (main (memory (dram)))\\n");""")
             for (k <- cpuInstances) {
-                val name = s"${k.name}${k.index}"
-                write(s"""fprintf(fd, "    (trace (name $name))\\n");""")
+                val id = k.index
+                write(s"""fprintf(fd, "  (subsystem (id $id)""" +
+                      s"""(memory (main)))\\n");""")
             }
-            write(s"""fprintf(fd, ")\\n");""")
-
-            // FIFOs.
-            write(s"""fprintf(fd, "(fifos\\n");""")
             for (s <- localStreams) {
                 val id = s.index
                 val size = sp.parameters.get[Int]('queueDepth)
                 val itemSize = s.valueType.bytes
-                write(s"""fprintf(fd, "   (fifo (id $id)""" +
-                      s"""(size $size)(item_size $itemSize))\\n");""")
+                val sid = s.sourceKernel.index
+                val did = s.destKernel.index
+                write(s"""fprintf(fd, "  (fifo (id $id)(size $size)""" +
+                      s"""(item_size $itemSize)(memory (main)))""" +
+                      s""" ; $sid -> $did\\n");""")
             }
             write(s"""fprintf(fd, ")\\n");""")
+
+            // Kernels.
+            write(s"""fprintf(fd, "(benchmarks\\n");""")
+            for (k <- cpuInstances) {
+                val id = k.index
+                val name = s"${k.name}${k.index}"
+                write(s"""fprintf(fd, "  (trace (id $id)(name $name))\\n");""")
+            }
+            write(s"""fprintf(fd, ")\\n");""")
+
 
             write(s"""fclose(fd);""")
             leave
