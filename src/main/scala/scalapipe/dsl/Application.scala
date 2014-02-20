@@ -95,6 +95,34 @@ class Application {
         sp.setParameter(name, value)
     }
 
+    def param(name: Symbol) {
+        param(name, true)
+    }
+
+    def param(edge: (Kernel, Kernel), name: Symbol, value: Any) {
+        sp.addParameter(new EdgeParameter(edge._1, edge._2, name, value))
+    }
+
+    def param(edge: (Kernel, Kernel), name: Symbol) {
+        param(edge, name, true)
+    }
+
+    def param(edge: Stream, name: Symbol, value: Any) {
+        edge.addParameter(name, value)
+    }
+
+    def param(edge: Stream, name: Symbol) {
+        param(edge, name, true)
+    }
+
+    def param(edge: StreamList, name: Symbol, value: Any) {
+        edge.addParameter(name, value)
+    }
+
+    def param(edge: StreamList, name: Symbol) {
+        param(edge, name, true)
+    }
+
     def emit(dirname: String) {
         sp.emit(dirname)
     }

@@ -583,7 +583,7 @@ private[scalapipe] class CPUResourceGenerator(
                 val id = measure.stream.index
                 val stat = measure.getTTAStat
                 val metric = measure.getTTAMetric
-                val depth = sp.parameters.get[Int]('queueDepth)
+                val depth = measure.stream.parameters.get[Int]('queueDepth)
                 val name = "\"" + measure.getName + "\""
                 write(s"tta->SendStart($id, $stat, $metric, $depth, $name);")
             }
@@ -614,7 +614,7 @@ private[scalapipe] class CPUResourceGenerator(
             }
             for (s <- localStreams) {
                 val id = s.index
-                val size = sp.parameters.get[Int]('queueDepth)
+                val size = s.parameters.get[Int]('queueDepth)
                 val itemSize = s.valueType.bytes
                 val sid = s.sourceKernel.index
                 val did = s.destKernel.index
