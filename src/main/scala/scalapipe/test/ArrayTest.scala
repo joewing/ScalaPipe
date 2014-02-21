@@ -5,9 +5,9 @@ import scalapipe.dsl._
 
 object ArrayTest {
 
-    val SmallArray = new Vector(UNSIGNED8, 8)
+    val SmallArray = Vector(UNSIGNED8, 8)
 
-    val LargeArray = new Vector(SmallArray, 1024)
+    val LargeArray = Vector(SmallArray, 1024)
 
     val Gen = new Func("Gen") {
         val y0      = output(SmallArray)
@@ -29,7 +29,7 @@ object ArrayTest {
 
     val Print = new Kernel("Print") {
         val x0      = input(SmallArray)
-        val temp    = local(SmallArray)
+        val temp    = local(Vector(UNSIGNED8, 8))
         val count   = local(UNSIGNED32, 0)
 
         temp = x0

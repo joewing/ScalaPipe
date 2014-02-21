@@ -7,7 +7,10 @@ object Vector {
         new Vector(itemType, length)
 }
 
-class Vector(val itemType: Type, val length: Int) extends Type {
+class Vector(
+        val itemType: Type,
+        val length: Int
+    ) extends Type("V" + length + "_" + itemType.name) {
 
     private[scalapipe] override def create = 
         ValueType.create(this, () => new ArrayValueType(this))
