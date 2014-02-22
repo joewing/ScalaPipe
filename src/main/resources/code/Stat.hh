@@ -255,23 +255,16 @@ public:
             m_buckets.resize(value + 1, 0);
         }
         m_buckets[value] += time_ns;
-        m_updates.insert(value);
     }
 
     virtual void Log()
     {
-        if(m_updates.empty()) {
-            if (!m_buckets.empty()) {
-                Print(m_frame, 0, m_buckets[0]);
+        for(size_t i = 0; i < m_buckets.size(); i++) {
+            const uint64_t value = m_buckets[i];
+            if(value > 0) {
+                Print(m_frame, i, value);
+                m_buckets[i] = 0;
             }
-        } else {
-            std::set<uint64_t>::const_iterator it;
-            for(it = m_updates.begin(); it != m_updates.end(); ++it) {
-                const uint64_t key = *it;
-                const uint64_t value = m_buckets[key];
-                Print(m_frame, key, value);
-            }
-            m_updates.clear();
         }
         m_frame += 1;
     }
@@ -279,7 +272,6 @@ public:
 private:
 
     std::vector<uint64_t> m_buckets;
-    std::set<uint64_t> m_updates;
     uint64_t m_frame;
 
 };

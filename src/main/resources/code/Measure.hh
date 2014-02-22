@@ -434,8 +434,8 @@ private:
                     current = push - t;
                     m_stat->Record(current, m_depth);
                 }
-                m_depth += 1;
                 m_time_map[m_depth] = push;
+                m_depth += 1;
 
             }
 
