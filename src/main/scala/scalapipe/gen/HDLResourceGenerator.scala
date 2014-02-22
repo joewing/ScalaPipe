@@ -57,8 +57,8 @@ private[scalapipe] abstract class HDLResourceGenerator(
         emitInternal(dir)
     }
 
-    private def getDepthBits: Int = {
-        val depth = sp.parameters.get[Int]('fpgaQueueDepth)
+    private def getDepthBits(stream: Stream): Int = {
+        val depth = stream.parameters.get[Int]('fpgaQueueDepth)
         math.ceil(math.log(depth) / math.log(2.0)).toInt
     }
 
@@ -196,7 +196,7 @@ private[scalapipe] abstract class HDLResourceGenerator(
         // Connect internal streams.
         for (stream <- internalStreams) {
             val width = stream.valueType.bits
-            val addrWidth = getDepthBits
+            val addrWidth = getDepthBits(stream)
 
             // Hook up the FIFO.
             val fifo = if (addrWidth == 0) "sp_register" else "sp_fifo"
@@ -261,7 +261,7 @@ private[scalapipe] abstract class HDLResourceGenerator(
         // Connect input streams.
         for (stream <- inStreams) {
             val width = stream.valueType.bits
-            val addrWidth = getDepthBits
+            val addrWidth = getDepthBits(stream)
             val srcIndex = stream.index
 
             // Hook up the FIFO.
@@ -327,7 +327,7 @@ private[scalapipe] abstract class HDLResourceGenerator(
         for (stream <- outStreams) {
 
             val width = stream.valueType.bits
-            val addrWidth = getDepthBits
+            val addrWidth = getDepthBits(stream)
             val destIndex = stream.index
 
             // Hook up the FIFO.

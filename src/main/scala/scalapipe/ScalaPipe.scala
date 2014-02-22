@@ -13,11 +13,12 @@ private[scalapipe] class ScalaPipe {
     private[scalapipe] var instances = Seq[KernelInstance]()
     private[scalapipe] var streams = Set[Stream]()
     private[scalapipe] var devices = Set[Device]()
-    private[scalapipe] val parameters = new Parameters
+    private[scalapipe] val parameters = new ApplicationParameters
     private var kernels = Map[String, Kernel]()
     private var kernelTypes = Map[(String, Platforms.Value), KernelType]()
     private var edges = Set[EdgeMapping]()
     private var measures = Set[EdgeMeasurement]()
+    private var edgeParameters = Set[EdgeParameter]()
     private val deviceManager = new DeviceManager(parameters)
     private val resourceManager = new ResourceManager(this)
 
@@ -61,6 +62,11 @@ private[scalapipe] class ScalaPipe {
     // Add a measurement at the specified edge(s).
     private[scalapipe] def addMeasure(measure: EdgeMeasurement) {
         measures += measure
+    }
+
+    // Set a parameter at the specified edge(s).
+    private[scalapipe] def addParameter(param: EdgeParameter) {
+        edgeParameters += param
     }
 
     // Set a parameter.
@@ -141,6 +147,21 @@ private[scalapipe] class ScalaPipe {
             }
         }
 
+    }
+
+    private def insertParameters {
+        val anyName = ANY_KERNEL.name
+        for (s <- streams; p <- edgeParameters) {
+            val source = s.sourceKernel.name
+            val dest = s.destKernel.name
+            val fromName = p.fromKernel.name
+            val toName = p.toKernel.name
+            if (fromName == source || fromName == anyName) {
+                if (toName == dest || toName == anyName) {
+                    s.addParameter(p.param, p.value)
+                }
+            }
+        }
     }
 
     private def insertMeasures {
@@ -447,6 +468,7 @@ private[scalapipe] class ScalaPipe {
         createKernelTypes
         checkStreams
         checkKernels
+        insertParameters
         insertMeasures
 
         // Create the directory.

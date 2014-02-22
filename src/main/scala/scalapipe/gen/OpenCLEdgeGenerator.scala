@@ -250,7 +250,7 @@ private[scalapipe] class OpenCLEdgeGenerator(
     private def initSender(device: Device, stream: Stream) {
 
         val context = device.label + "_context"
-        val depth = sp.parameters.get[Int]('queueDepth)
+        val depth = stream.parameters.get[Int]('queueDepth)
         val valueType = stream.valueType
         val copied = stream.label + "_data.copied"
         val offset = stream.label + "_data.offset"
@@ -276,7 +276,7 @@ private[scalapipe] class OpenCLEdgeGenerator(
     private def initReceiver(device: Device, stream: Stream) {
 
         val context = device.label + "_context"
-        val depth = sp.parameters.get[Int]('queueDepth)
+        val depth = stream.parameters.get[Int]('queueDepth)
         val valueType = stream.valueType
 
         // Note that we cap the max transfer to the queue depth / 2, so
@@ -301,7 +301,7 @@ private[scalapipe] class OpenCLEdgeGenerator(
     private def initInternal(device: Device, stream: Stream) {
 
         val context = device.label + "_context"
-        val depth = sp.parameters.get[Int]('queueDepth)
+        val depth = stream.parameters.get[Int]('queueDepth)
         val valueType = stream.valueType
 
         write(stream.label + "_data.queue = (APQ*)malloc(sizeof(APQ));")
@@ -839,7 +839,7 @@ private[scalapipe] class OpenCLEdgeGenerator(
             if (kernel.kernelType.states.filter(s => !s.isLocal).isEmpty) {
                 write("size_t workgroup_size = " + device.label + "_wgsize;")
                 for (o <- kernel.getOutputs) {
-                    val maxdepth = sp.parameters.get[Int]('queueDepth) / 4
+                    val maxdepth = o.parameters.get[Int]('queueDepth) / 4
                     write("if(workgroup_size > " + maxdepth + ") {")
                     enter
                     write("workgroup_size = " + maxdepth + ";")

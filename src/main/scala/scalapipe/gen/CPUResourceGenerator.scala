@@ -85,6 +85,26 @@ private[scalapipe] class CPUResourceGenerator(
 
     }
 
+    private def emitConfig(kernel: KernelInstance,
+                           t: ValueType,
+                           config: ConfigLiteral): String = {
+        val lit = Literal.get(config.default)
+        val d = lit match {
+            case c: ConfigLiteral =>
+                emitConfig(kernel, t, c)
+            case _ =>
+                val other = kernel.kernelType.getLiteral(lit)
+                if (lit.valueType.getClass == t.getClass) {
+                    s"($t)$other"
+                } else {
+                    Error.raise("invalid conversion for config parameter",
+                                kernel)
+                }
+        }
+        val param = config.name
+        return s"""get_arg<$t>(argc, argv, "-$param", $d)"""
+    }
+
     private def emitKernelInit(kernel: KernelInstance) {
 
         val instance = kernel.label
@@ -97,9 +117,14 @@ private[scalapipe] class CPUResourceGenerator(
             val t = c.valueType.baseType
             val custom = kernel.getConfig(name)
             val value = if (custom != null) custom else c.value
-            if (value != null) {
-                val lit = kernel.kernelType.getLiteral(value)
-                write(s"$instance.priv.$name = ($t)$lit;")
+            value match {
+                case cl: ConfigLiteral =>
+                    write(s"""$instance.priv.$name = """ +
+                          emitConfig(kernel, t, cl) + ";")
+                case l: Literal =>
+                    val lit = kernel.kernelType.getLiteral(value)
+                    write(s"$instance.priv.$name = ($t)$lit;")
+                case _ => ()
             }
         }
 
@@ -450,6 +475,31 @@ private[scalapipe] class CPUResourceGenerator(
 
     }
 
+    private def emitGetArg {
+
+        write("template<typename T>")
+        write("static inline T get_arg(int argc, char **argv, " +
+              "const char *name, const T d)")
+        write("{")
+        enter
+        write("for(int i = 1; i < argc; i++) {")
+        enter
+        write("if(!strcmp(argv[i], name) && i + 1 < argc) {")
+        enter
+        write("std::stringstream str(argv[i + 1]);")
+        write("T temp = d;")
+        write("str >> temp;")
+        write("return temp;")
+        leave
+        write("}")
+        leave
+        write("}")
+        write("return d;")
+        leave
+        write("}")
+
+    }
+
     override def getRules: String = ""
 
     override def emit(dir: File) {
@@ -467,6 +517,7 @@ private[scalapipe] class CPUResourceGenerator(
         write("#include \"ScalaPipe.h\"")
         write("#include <pthread.h>")
         write("#include <signal.h>")
+        write("#include <sstream>")
 
         // Get streams on this host.
         val localStreams = sp.streams.filter { s =>
@@ -548,6 +599,9 @@ private[scalapipe] class CPUResourceGenerator(
             funcs.foreach { f => f.apply(i) }
         }
 
+        // Create the "get_arg" function.
+        emitGetArg
+
         // Create the main function.
         write("int main(int argc, char **argv)")
         write("{")
@@ -583,7 +637,7 @@ private[scalapipe] class CPUResourceGenerator(
                 val id = measure.stream.index
                 val stat = measure.getTTAStat
                 val metric = measure.getTTAMetric
-                val depth = sp.parameters.get[Int]('queueDepth)
+                val depth = measure.stream.parameters.get[Int]('queueDepth)
                 val name = "\"" + measure.getName + "\""
                 write(s"tta->SendStart($id, $stat, $metric, $depth, $name);")
             }
@@ -604,24 +658,35 @@ private[scalapipe] class CPUResourceGenerator(
             enter
             write("""FILE *fd = fopen("trace.benchmark", "w");""")
 
-            // Kernels.
-            write(s"""fprintf(fd, "(benchmarks\\n");""")
+            // Memories.
+            write(s"""fprintf(fd, "(memory\\n");""")
+            write(s"""fprintf(fd, "  (main (memory (dram)))\\n");""")
             for (k <- cpuInstances) {
-                val name = s"${k.name}${k.index}"
-                write(s"""fprintf(fd, "    (trace (name $name))\\n");""")
+                val id = k.index
+                write(s"""fprintf(fd, "  (subsystem (id $id)""" +
+                      s"""(memory (main)))\\n");""")
+            }
+            for (s <- localStreams) {
+                val id = s.index
+                val size = s.parameters.get[Int]('queueDepth)
+                val itemSize = s.valueType.bytes
+                val sid = s.sourceKernel.index
+                val did = s.destKernel.index
+                write(s"""fprintf(fd, "  (fifo (id $id)(size $size)""" +
+                      s"""(item_size $itemSize)(memory (main)))""" +
+                      s""" ; $sid -> $did\\n");""")
             }
             write(s"""fprintf(fd, ")\\n");""")
 
-            // FIFOs.
-            write(s"""fprintf(fd, "(fifos\\n");""")
-            for (s <- localStreams) {
-                val id = s.index
-                val size = sp.parameters.get[Int]('queueDepth)
-                val itemSize = s.valueType.bytes
-                write(s"""fprintf(fd, "   (fifo (id $id)""" +
-                      s"""(size $size)(item_size $itemSize))\\n");""")
+            // Kernels.
+            write(s"""fprintf(fd, "(benchmarks\\n");""")
+            for (k <- cpuInstances) {
+                val id = k.index
+                val name = s"${k.name}${k.index}"
+                write(s"""fprintf(fd, "  (trace (id $id)(name $name))\\n");""")
             }
             write(s"""fprintf(fd, ")\\n");""")
+
 
             write(s"""fclose(fd);""")
             leave

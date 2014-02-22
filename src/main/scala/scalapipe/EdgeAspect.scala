@@ -19,3 +19,10 @@ private[scalapipe] class EdgeMeasurement(
         val stat: Symbol,
         val metric: Symbol
     ) extends EdgeAspect(_fk, _tk)
+
+private[scalapipe] class EdgeParameter(
+        _fk: Kernel,
+        _tk: Kernel,
+        val param: Symbol,
+        val value: Any
+    ) extends EdgeAspect(_fk, _tk)

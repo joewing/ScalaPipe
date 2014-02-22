@@ -23,6 +23,27 @@ function run_test {
 # Run unit tests.
 sbt test
 
+# Test configuration parameters.
+echo "OUTPUT 0"     >  test.expected
+echo "OUTPUT 1"     >> test.expected
+echo "OUTPUT 2"     >> test.expected
+echo "OUTPUT 3"     >> test.expected
+echo "OUTPUT 4"     >> test.expected
+echo "OUTPUT 5"     >> test.expected
+echo "OUTPUT 6"     >> test.expected
+echo "OUTPUT 7"     >> test.expected
+echo "OUTPUT 8"     >> test.expected
+echo "OUTPUT 9"     >> test.expected
+rm -rf ConfigTest
+sbt "run-main scalapipe.test.ConfigTest"
+cd ConfigTest
+make
+./proc_localhost -mc 10 > ../test.out
+cd ..
+cmp test.out test.expected
+rm -rf ConfigTest
+
+
 # Test socket edges.
 echo "OUTPUT 0"     >  test.expected
 echo "OUTPUT 1"     >> test.expected

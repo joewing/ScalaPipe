@@ -14,6 +14,7 @@ class Stream private[scalapipe](
     private[scalapipe] var destPort: PortName = null
     private[scalapipe] var measures = Set[Measure]()
     private[scalapipe] var edge: Edge = null
+    private[scalapipe] val parameters = new EdgeParameters(sp.parameters)
 
     collectDebugInfo
 
@@ -53,6 +54,10 @@ class Stream private[scalapipe](
 
     private[scalapipe] def addMeasure(stat: Symbol, metric: Symbol) {
         measures += new Measure(this, stat, metric)
+    }
+
+    private[scalapipe] def addParameter(param: Symbol, value: Any) {
+        parameters.set(param, value)
     }
 
     private[scalapipe] def setDest(k: KernelInstance, p: PortName) {
