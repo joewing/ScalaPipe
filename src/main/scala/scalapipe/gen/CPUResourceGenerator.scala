@@ -93,7 +93,13 @@ private[scalapipe] class CPUResourceGenerator(
             case c: ConfigLiteral =>
                 emitConfig(kernel, t, c)
             case _ =>
-                s"($t)" + kernel.kernelType.getLiteral(lit)
+                val other = kernel.kernelType.getLiteral(lit)
+                if (lit.valueType.getClass == t.getClass) {
+                    s"($t)$other"
+                } else {
+                    Error.raise("invalid conversion for config parameter",
+                                kernel)
+                }
         }
         val param = config.name
         return s"""get_arg<$t>(argc, argv, "-$param", $d)"""
