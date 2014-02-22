@@ -410,7 +410,6 @@ private:
             const uint64_t push = m_pushes.front();
             const uint64_t pop  = m_pops.front();
             const uint64_t t = m_time_map[m_depth];
-            uint64_t current = 0;
             if(pop < push) {
 
                 // Process the pop.
@@ -418,7 +417,7 @@ private:
 
                 if(m_depth > 0) {
                     if(t > 0) {
-                        current = pop - t;
+                        const uint64_t current = pop - t;
                         m_stat->Record(current, m_depth);
                     }
                     m_depth -= 1;
@@ -431,11 +430,11 @@ private:
                 m_pushes.pop_front();
 
                 if(t > 0) {
-                    current = push - t;
+                    const uint64_t current = push - t;
                     m_stat->Record(current, m_depth);
                 }
-                m_time_map[m_depth] = push;
                 m_depth += 1;
+                m_time_map[m_depth] = push;
 
             }
 
