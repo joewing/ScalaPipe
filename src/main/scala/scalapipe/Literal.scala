@@ -1,6 +1,6 @@
 package scalapipe
 
-import scalapipe.dsl.Kernel
+import scalapipe.dsl.{Config, Kernel}
 
 object Literal {
 
@@ -12,6 +12,7 @@ object Literal {
         case d: Double  => FloatLiteral(ValueType.float64, d, kernel)
         case s: Symbol  => SymbolLiteral(ValueType.any, s.name, kernel)
         case s: String  => StringLiteral(s, kernel)
+        case c: Config  => ConfigLiteral(c)
         case null       => null
         case _          =>
             Error.raise("invalid literal: " + v, kernel)
@@ -207,6 +208,29 @@ class SymbolLiteral(
 
     override def equals(other: Any): Boolean = other match {
         case l: SymbolLiteral => symbol.equals(l.symbol)
+        case _ => false
+    }
+
+}
+
+object ConfigLiteral {
+
+    def apply(c: Config) = new ConfigLiteral(c)
+
+}
+
+class ConfigLiteral(
+        val config: Config
+    ) extends Literal(ValueType.any, null) {
+
+    val name = config.name.name
+
+    val default = config.default
+
+    override def toString = name
+
+    override def equals(other: Any): Boolean = other match {
+        case l: ConfigLiteral => l.config == config
         case _ => false
     }
 

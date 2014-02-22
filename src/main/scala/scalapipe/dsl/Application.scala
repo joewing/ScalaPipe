@@ -37,6 +37,8 @@ class Application {
 
     }
 
+    def config(name: Symbol, default: Any) = new Config(name, default)
+
     implicit def kernel2instance(k: Kernel) = sp.createInstance(k)
 
     implicit def instance2StreamList(k: KernelInstance): StreamList = k.apply()
