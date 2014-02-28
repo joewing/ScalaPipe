@@ -663,7 +663,9 @@ private[scalapipe] class CPUResourceGenerator(
             write(s"""fprintf(fd, "  (main (memory (dram)))\\n");""")
             for (k <- cpuInstances) {
                 val id = k.index
+                val wordSize = 4    // FIXME
                 write(s"""fprintf(fd, "  (subsystem (id $id)""" +
+                      s"""(word_size $wordSize)""" +
                       s"""(memory (main)))\\n");""")
             }
             for (s <- localStreams) {
@@ -673,7 +675,7 @@ private[scalapipe] class CPUResourceGenerator(
                 val sid = s.sourceKernel.index
                 val did = s.destKernel.index
                 write(s"""fprintf(fd, "  (fifo (id $id)(size $size)""" +
-                      s"""(item_size $itemSize)(memory (main)))""" +
+                      s"""(word_size $itemSize)(memory (main)))""" +
                       s""" ; $sid -> $did\\n");""")
             }
             write(s"""fprintf(fd, ")\\n");""")
