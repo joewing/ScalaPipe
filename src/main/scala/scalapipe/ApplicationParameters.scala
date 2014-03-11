@@ -18,5 +18,6 @@ private[scalapipe] class ApplicationParameters extends Parameters {
     add('trace, false)          // Set to generate address traces from C code.
     add('wave, false)           // Dump waveform from simulation.
     add('basePort, 9000)        // First port number to use.
+    add('memoryWidth, 32)       // FPGA memory port width.
 
 }

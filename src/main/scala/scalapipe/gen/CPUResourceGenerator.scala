@@ -663,7 +663,7 @@ private[scalapipe] class CPUResourceGenerator(
             write(s"""fprintf(fd, "  (main (memory (dram)))\\n");""")
             for (k <- cpuInstances) {
                 val id = k.index
-                val wordSize = 4    // FIXME
+                val wordSize = sp.parameters.get[Int]('memoryWidth) / 8
                 write(s"""fprintf(fd, "  (subsystem (id $id)""" +
                       s"""(word_size $wordSize)""" +
                       s"""(memory (main)))\\n");""")
@@ -674,7 +674,7 @@ private[scalapipe] class CPUResourceGenerator(
                 val itemSize = s.valueType.bytes
                 val sid = s.sourceKernel.index
                 val did = s.destKernel.index
-                write(s"""fprintf(fd, "  (fifo (id $id)(size $size)""" +
+                write(s"""fprintf(fd, "  (fifo (id $id)(depth $size)""" +
                       s"""(word_size $itemSize)(memory (main)))""" +
                       s""" ; $sid -> $did\\n");""")
             }

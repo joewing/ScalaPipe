@@ -6,7 +6,7 @@ private[gen] trait HDLGenerator extends Generator {
 
     protected val kt: KernelType
 
-    protected val ramWidth = 32
+    protected val ramWidth = kt.sp.parameters.get[Int]('memoryWidth)
 
     def hasState(node: ASTNode): Boolean = node match {
         case in: ASTIfNode      => in.iFalse != null
