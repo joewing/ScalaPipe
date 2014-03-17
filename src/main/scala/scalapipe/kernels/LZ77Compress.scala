@@ -29,10 +29,8 @@ class LZ77Compress(
     val pointer = local(UNSIGNED32, 0)
 
     if (!initialized) {
-        x = 0
-        while (x < dictSize) {
+        for (x <- 0 until dictSize) {
             dictionary(x) = x
-            x += 1
         }
         initialized = true
     }
@@ -46,7 +44,7 @@ class LZ77Compress(
         // Done; output the current match, if any.
         if (offset > 0) {
             out = (matchOffset << offsetShift) |
-                  ((offset - 1) << 8) | buffer(offset)
+                  ((offset - 1) << 8) | buffer(offset - 1)
         }
 
         // "Done" marker.
@@ -78,7 +76,7 @@ class LZ77Compress(
         out = (matchOffset << offsetShift) | (offset << 8) | value
 
         // Update the dictionary.
-        pointer = matchOffset + offset
+        pointer = (matchOffset + offset) & dictMask
         dictionary(pointer) = value
 
         // Reset the offset.

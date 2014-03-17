@@ -10,7 +10,7 @@ class LZ77Decompress(
     val dictSize = 1 << offsetBits
     val DICT = Vector(UNSIGNED8, dictSize)
     val dictMask = dictSize - 1
-    val lengthMask = lengthBits - 1
+    val lengthMask = (1 << lengthBits) - 1
     val offsetShift = 8 + lengthBits
 
     val in = input(UNSIGNED32)
@@ -19,16 +19,12 @@ class LZ77Decompress(
     val dictionary = local(DICT)
     val initialized = local(BOOL, false)
     val value = local(UNSIGNED32)
-    val pointer = local(UNSIGNED32, 0)
     val offset = local(UNSIGNED32)
     val length = local(UNSIGNED32)
-    val x = local(UNSIGNED32)
 
     if (!initialized) {
-        x = 0
-        while (x < dictSize) {
+        for (x <- 0 until dictSize) {
             dictionary(x) = x
-            x += 1
         }
         initialized = true
     }
@@ -45,10 +41,9 @@ class LZ77Decompress(
     // Output the match from the dictionary.
     offset = value >> offsetShift
     length = (value >> 8) & lengthMask
-    x = 0
-    while (x < length) {
-        out = dictionary((offset + x) & dictMask)
-        x += 1
+    for (x <- 0 until length) {
+        out = dictionary(offset)
+        offset = (offset + 1 & dictMask)
     }
 
     // Output the new character.
@@ -56,7 +51,6 @@ class LZ77Decompress(
     out = value
 
     // Update the dictionary.
-    pointer = offset + length
-    dictionary(pointer) = value
+    dictionary(offset) = value
 
 }
