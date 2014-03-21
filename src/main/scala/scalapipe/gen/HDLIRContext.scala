@@ -44,10 +44,14 @@ private[scalapipe] class HDLIRContext(val kt: KernelType) extends IRContext {
                     }
                 case _ => false
             }
-        case (ia: IRStore, ib: IRStore) => ia.dest == ib.dest
-        case (ia: IRStore, ib: IRLoad)  => ia.dest == ib.src
-        case (ia: IRLoad,  ib: IRStore) => ia.src  == ib.dest
-        case (ia: IRLoad,  ib: IRLoad)  => ia.src  == ib.src
+        case (ia: IRStore, ib: IRStore) => ia.dest == ib.dest ||
+            (!ia.dest.valueType.flat && !ib.dest.valueType.flat)
+        case (ia: IRStore, ib: IRLoad)  => ia.dest == ib.src ||
+            (!ia.dest.valueType.flat && !ib.src.valueType.flat)
+        case (ia: IRLoad,  ib: IRStore) => ia.src  == ib.dest ||
+            (!ia.src.valueType.flat && !ib.dest.valueType.flat)
+        case (ia: IRLoad,  ib: IRLoad)  => ia.src  == ib.src ||
+            (!ia.src.valueType.flat && !ib.src.valueType.flat)
         case _ => false
     }
 

@@ -305,22 +305,50 @@ private[scalapipe] case class IRNodeEmitter(
             null
     }
 
+    private def emitAssign(dest: ASTSymbolNode, src: ASTNode, node: ASTNode) {
+        val vt = TypeChecker.getType(kt, src)
+        if (vt.flat) {
+            val srcSymbol = emitExpr(src)
+            val destSymbol = kt.getSymbol(dest.symbol)
+            if (dest.indexes.isEmpty) {
+                append(IRInstruction(NodeType.assign, destSymbol,
+                                     srcSymbol), node)
+            } else {
+                val offset = emitOffset(dest)
+                append(IRStore(destSymbol, offset, srcSymbol), node)
+                kt.releaseTemp(offset)
+            }
+            kt.releaseTemp(srcSymbol)
+        } else {
+            val srcSymbol = src match {
+                case sn: ASTSymbolNode => sn
+                case _ => sys.error("internal")
+            }
+            vt match {
+                case st: StructValueType =>
+                    for (f <- st.fieldNames) {
+                        val newDest = dest.copy().apply(Symbol(f))
+                        val newSrc = srcSymbol.copy().apply(Symbol(f))
+                        emitAssign(newDest, newSrc, node)
+                    }
+                case at: ArrayValueType =>
+                    for (i <- 0 until at.length) {
+                        val newDest = dest.copy().apply(Literal.get(i))
+                        val newSrc = srcSymbol.copy().apply(Literal.get(i))
+                        emitAssign(newDest, newSrc, node)
+                    }
+                case _ => sys.error("internal")
+            }
+        }
+    }
+
     private def emitAssign(node: ASTAssignNode) {
-        val src = emitExpr(node.src)
         node.dest match {
             case sn: ASTSymbolNode =>
-                val dest = kt.getSymbol(sn.symbol)
-                if (sn.indexes.isEmpty) {
-                    append(IRInstruction(node.op, dest, src), node)
-                } else {
-                    val offset = emitOffset(sn)
-                    append(IRStore(dest, offset, src), node)
-                    kt.releaseTemp(offset)
-                }
+                emitAssign(sn, node.src, node)
             case _ =>
                 Error.raise("invalid LValue", node)
         }
-        kt.releaseTemp(src)
     }
 
     private def emitIf(node: ASTIfNode) {

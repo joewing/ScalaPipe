@@ -115,6 +115,10 @@ run_test ArrayTest2 1 1
 run_test ArrayTest2 1 2
 run_test ArrayTest2 1 3
 
+echo "OUTPUT 4950" > test.expected
+run_test ArrayTest3 0
+run_test ArrayTest3 1
+
 # Test unions.
 echo "OUTPUT 5 4" > test.expected
 run_test UnionTest 0

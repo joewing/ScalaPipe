@@ -15,7 +15,7 @@ object ArrayTest2 {
             case 3 => UNSIGNED64
         }
 
-        val ArrayType = new Vector(vtype, 1024)
+        val ArrayType = Vector(vtype, 1024)
 
         val Gen = new Func("Gen") {
             val y0      = output(UNSIGNED32)
