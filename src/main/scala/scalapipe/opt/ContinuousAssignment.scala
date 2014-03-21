@@ -165,7 +165,7 @@ private[opt] object ContinuousAssignment extends Pass {
                 case _                  => continuousInt(in)
             }
         case ld: IRLoad     => ld.src.valueType.flat
-        case st: IRStore    => st.src.valueType.flat
+        case st: IRStore    => st.dest.valueType.flat
         case gt: IRGoto     => true
         case _              => false
     }
