@@ -1,6 +1,6 @@
 
-`include "fp.v"
-`include "int.v"
+`include "scalapipe.v"
+`include "simulation.v"
 
 module tb;
 
