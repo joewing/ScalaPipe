@@ -39,6 +39,7 @@ private[scalapipe] class HDLKernelGenerator(
             write(s"write_$o,")
             write(s"afull_$o,")
         }
+        write("running,")
         write("rst,")
         write("clk")
         leave
@@ -60,6 +61,7 @@ private[scalapipe] class HDLKernelGenerator(
             write(s"output wire write_$name;")
             write(s"input wire afull_$name;")
         }
+        write("output reg running;")
         write("input wire rst;")
         write("input wire clk;")
 

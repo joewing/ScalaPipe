@@ -12,7 +12,7 @@ object NBody {
 
         val maxParticles = 1000
         val useX = true
-        val hw = false
+        val hw = true
 
         val VTYPE = FLOAT32
         val PARTICLE = new Struct {

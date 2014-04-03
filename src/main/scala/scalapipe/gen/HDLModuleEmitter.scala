@@ -145,9 +145,8 @@ private[gen] class HDLModuleEmitter(
         write(s"wire [${width - 1}:0] ${instanceName}_result;")
         write(s"wire ${instanceName}_ready;")
 
-        write(s"$name  #(.WIDTH($width))")
+        write(s"$name #(.WIDTH($width)) $instanceName(clk,")
         enter
-        write(s"$instanceName(clk,")
         enter
         write(s"${instanceName}_start,")
         for (i <- 0 until component.argCount) {

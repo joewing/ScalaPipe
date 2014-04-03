@@ -98,6 +98,8 @@ private[scalapipe] abstract class HDLResourceGenerator(
             write(s"output wire O${index}avail,")
             write(s"input wire O${index}read")
         }
+        write(s",")
+        write(s"output wire running")
         if (tt.amCount > 0) {
             write(s",")
             write(s"output wire [${tt.amCount - 1}:0] amTap")
@@ -159,6 +161,7 @@ private[scalapipe] abstract class HDLResourceGenerator(
         // Instantiate kernels.
         for (kernel <- sp.instances if kernel.device == device) {
             val kernelName = s"kernel_${kernel.name}"
+            write(s"wire ${kernel.label}_running;")
             write(kernelName)
             enter
             if (!kernel.configs.isEmpty) {
@@ -169,7 +172,8 @@ private[scalapipe] abstract class HDLResourceGenerator(
             }
             write(s"${kernel.label}(")
             enter
-            write(s".clk(clk), .rst(rst)")
+            write(s".clk(clk), .rst(rst),")
+            write(s".running(${kernel.label}_running)")
             for (i <- kernel.getInputs) {
                 val destPort = i.destKernel.inputName(i.destPort)
                 write(s",")
@@ -192,6 +196,12 @@ private[scalapipe] abstract class HDLResourceGenerator(
             }
             write
         }
+
+        // Connect the running signal.
+        val running_signals = sp.instances.filter { k =>
+            k.device == device
+        }.map { k => s"${k.label}_running" }
+        write("assign running = " + running_signals.mkString("|") + ";")
 
         // Connect internal streams.
         for (stream <- internalStreams) {

@@ -70,7 +70,8 @@ private[scalapipe] class SimulationResourceGenerator(
         write(s"module wrap$id(")
         enter
         write(s"input wire clk,")
-        write(s"input wire rst")
+        write(s"input wire rst,")
+        write(s"output wire running")
         for (i <- inputStreams) {
             val index = i.index
             val width = i.valueType.bits
@@ -121,7 +122,7 @@ private[scalapipe] class SimulationResourceGenerator(
         write
 
         // Instantiate the ScalaPipe kernels.
-        write(s"fpga$id sp(.clk(clk), .rst(rst)")
+        write(s"fpga$id sp(.clk(clk), .rst(rst), .running(running)")
         enter
         for (i <- inputStreams) {
             val index = i.index
@@ -161,6 +162,8 @@ private[scalapipe] class SimulationResourceGenerator(
 
         write(s"reg clk;")
         write(s"reg rst;")
+        write(s"wire running;")
+        write(s"integer ticks = 0;")
         write(s"integer rc;")
         write
         for (s <- inputStreams ++ outputStreams) {
@@ -188,7 +191,7 @@ private[scalapipe] class SimulationResourceGenerator(
         }
         write
 
-        write(s"wrap$id dut(.clk(clk), .rst(rst)")
+        write(s"wrap$id dut(.clk(clk), .rst(rst), .running(running)")
         enter
         for (s <- inputStreams.map(_.index)) {
             write(s", .din$s(din$s)")
@@ -248,6 +251,21 @@ private[scalapipe] class SimulationResourceGenerator(
         leave
         write(s"end")
         write
+
+        write("always @(posedge clk) begin")
+        enter
+        write("if (running) begin")
+        enter
+        write("ticks <= ticks + 1;")
+        write("if ((ticks % 100) == 0) begin")
+        enter
+        write("""$display("Ticks: %d", ticks);""")
+        leave
+        write("end")
+        leave
+        write("end")
+        leave
+        write("end")
 
         for (s <- inputStreams) {
             val index = s.index

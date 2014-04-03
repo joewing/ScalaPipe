@@ -71,6 +71,7 @@ private[gen] class HDLKernelNodeEmitter(
 
     override def emitStop(block: StateBlock, node: IRStop) {
         write("state <= 0;")
+        write("running <= 0;")
     }
 
     override def emitReturn(block: StateBlock, node: IRReturn) {

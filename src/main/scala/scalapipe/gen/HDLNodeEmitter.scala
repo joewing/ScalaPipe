@@ -35,8 +35,17 @@ private[gen] abstract class HDLNodeEmitter(
 
     private def emitEnd(block: StateBlock) {
         releasePorts(block)
-        leave
-        write("end")
+        if (block.srcs.exists(_.isInstanceOf[InputSymbol])) {
+            leave
+            write("end else begin")
+            enter
+            write("running <= 0;")
+            leave
+            write("end")
+        } else {
+            leave
+            write("end")
+        }
         endScope
         initializers.foreach { i =>
             write("if (state != last_state) begin")
@@ -641,9 +650,11 @@ private[gen] abstract class HDLNodeEmitter(
             }
         } else {
             write("last_state <= 0;")
+            write("running <= 1;")
             leave
             write("end else begin")
             enter
+            write("running <= 1;")
             write("last_state <= state;")
         }
     }

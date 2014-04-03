@@ -38,6 +38,7 @@ private[scalapipe] class HDLFunctionGenerator(
         val pts = getTypeString("result_out", ft.returnType)
         write(s"output reg $pts;")
         write(s"output wire ready_out;")
+        write(s"reg running;")
 
         emitLocals
 
