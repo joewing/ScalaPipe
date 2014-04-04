@@ -50,29 +50,28 @@ private[scalapipe] class SimulationEdgeGenerator(
         enter
 
         write("ssize_t offset = 0;")
-        write("for(;;) {")
-        enter
-        write("ssize_t rc = read(fd, &data[offset], size - offset);")
-        write("if(rc > 0) {")
-        enter
-        write("offset += rc;")
-        write("if(offset == size) {")
-        enter
-        write("return 1;")
-        leave
-        write("} else if(offset == 0) {")
+        write("char ch = 0;")
+        write("ssize_t rc = read(fd, &ch, 1);")
+        write("if(rc <= 0) {")
         enter
         write("return 0;")
         leave
-        write("}")
-        leave
-        write("} else if(errno != EAGAIN) {")
+        write("} else if(ch == 0) {")
         enter
         write("return -1;")
         leave
         write("}")
+        write("while(offset < size) {")
+        enter
+        write("rc = read(fd, &data[offset], size - offset);")
+        write("if(rc > 0) {")
+        enter
+        write("offset += rc;")
         leave
         write("}")
+        leave
+        write("}")
+        write("return 1;")
 
         leave
         write("}")
@@ -146,7 +145,7 @@ private[scalapipe] class SimulationEdgeGenerator(
             if (s.sourceKernel.device.platform == platform) {
                 // Edge from the device.
                 write(s"""stream$label = open(\"stream$label\", """ +
-                      s"O_RDONLY | O_NONBLOCK | O_SYNC);")
+                      s"O_RDWR | O_NONBLOCK | O_SYNC);")
             } else {
                 // Edge to the device.
                 write(s"""stream$label = open(\"stream$label\", """ +
@@ -213,6 +212,7 @@ private[scalapipe] class SimulationEdgeGenerator(
         // Globals.
         write(s"static int stream$label = -1;")
         write(s"static SPQ *$queue = NULL;")
+        write(s"static char active$label = 1;")
 
         // "get_free"
         write(s"static int ${label}_get_free()")
@@ -242,6 +242,14 @@ private[scalapipe] class SimulationEdgeGenerator(
         leave
         write(s"}")
 
+        // "finish"
+        write(s"static void ${label}_finish()")
+        write(s"{")
+        enter
+        write(s"active$label = 0;")
+        leave
+        write(s"}")
+
     }
 
     private def writeReceiveFunctions(stream: Stream,
@@ -266,9 +274,13 @@ private[scalapipe] class SimulationEdgeGenerator(
         write(s"const uint32_t f = spq_get_free($queue);")
         write(s"char *ptr = spq_start_blocking_write($queue, f);")
         write(s"const int c = sim_read($fd, ptr, sizeof($vtype), f);")
-        write(s"if(c > 0) {")
+        write(s"if(c >= 0) {")
         enter
         write(s"spq_finish_write($queue, c);")
+        leave
+        write(s"} else if(c < 0) {")
+        enter
+        write(s"sp_decrement(&${destLabel}.active_inputs);")
         leave
         write(s"}")
         write(s"return spq_get_used($queue);")
@@ -279,22 +291,16 @@ private[scalapipe] class SimulationEdgeGenerator(
         write(s"static void *${label}_read_value()")
         write(s"{")
         enter
-        write(s"static int active = 1;")
         for (s <- senders) {
             val srcLabel = s.sourceKernel.label
             val sfd = s"stream${s.label}"
-            write(s"if($srcLabel.active_inputs == 0) {")
+            write(s"if(active${s.label}) {")
             enter
-            write(s"if(active) {")
-            enter
-            write(s"sim_write($sfd, NULL, 0, -1);")
-            write(s"active = 0;")
-            leave
-            write(s"}")
+            write(s"sim_write($sfd, NULL, 0, 0);")
             leave
             write(s"} else {")
             enter
-            write(s"sim_write($sfd, NULL, 0, 0);")
+            write(s"sim_write($sfd, NULL, 0, -1);")
             leave
             write(s"}")
         }

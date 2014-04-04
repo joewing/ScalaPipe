@@ -64,6 +64,11 @@ private[scalapipe] class SockEdgeGenerator(
         // Globals.
         write(s"static int $sock = 0;")
         write(s"static char *$bufname = NULL;")
+        write(s"static struct")
+        enter
+        write(s"volatile uint32_t active_inputs;")
+        leave
+        write(s"${stream.destKernel.label};")
 
         // "get_free"
         write(s"static bool ${stream.label}_get_free()")
@@ -99,6 +104,12 @@ private[scalapipe] class SockEdgeGenerator(
         write("perror(\"send failed\");")
         write("exit(-1);")
         writeEnd
+        leave
+
+        // "finish"
+        write(s"static void ${stream.label}_finish()")
+        enter
+        writeReturn()
         leave
 
     }

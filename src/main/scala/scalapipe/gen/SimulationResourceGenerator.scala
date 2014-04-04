@@ -164,8 +164,8 @@ private[scalapipe] class SimulationResourceGenerator(
         write(s"reg clk;")
         write(s"reg rst;")
         write(s"wire running;")
+        write(s"reg stopped = 0;")
         write(s"integer cycles = 0;")
-        write(s"reg waiting = 1;")
         write(s"integer rc;")
         write
         for (s <- inputStreams ++ outputStreams) {
@@ -246,13 +246,6 @@ private[scalapipe] class SimulationResourceGenerator(
         write(s"#10 clk <= 1; #10 clk <= 0;")
         write(s"rst <= 0;")
         write
-        write(s"while (!running) begin")
-        enter
-        write(s"#10 clk <= !clk;")
-        leave
-        write(s"end")
-        write(s"waiting <= 0;")
-        write
         write(s"forever begin")
         enter
         write(s"#10 clk <= !clk;")
@@ -264,24 +257,29 @@ private[scalapipe] class SimulationResourceGenerator(
 
         val activeValues = inputStreams.map {
             s => s"active${s.index}"
-        }.toSeq :+ "waiting"
+        }.toSeq :+ "running"
         val activeCheck = activeValues.mkString(" | ")
 
         write("always @(posedge clk) begin")
         enter
-        write(s"if (running | $activeCheck) begin")
+        write(s"if (running) begin")
         enter
         write("cycles <= cycles + 1;")
-        write("if ((cycles % 100) == 0) begin")
+        write("if ((cycles % 1000) == 0) begin")
         enter
         write("""$display("Cycles: %d", cycles);""")
         leave
         write("end")
         leave
-        write(s"end else if (!($activeCheck)) begin")
+        write(s"end else if (!($activeCheck) & !stopped) begin")
         enter
         write("""$display("Cycles: %d", cycles);""")
-        write("""$finish;""")
+        for (s <- outputStreams) {
+            val fd = s"stream${s.label}"
+            write(s"rc <= $$fputc(0, $fd);")
+            write(s"$$fflush($fd);")
+        }
+        write("stopped <= 1;")
         leave
         write("end")
         leave
@@ -336,6 +334,7 @@ private[scalapipe] class SimulationResourceGenerator(
             enter
             write(s"if(!rst & avail$index) begin")
             enter
+            write(s"rc <= $$fputc(1, $fd);")
             for (i <- (s.valueType.bits + 7) / 8 until 0 by -1) {
                 val top = i * 8 - 1
                 val bottom = i * 8 - 8

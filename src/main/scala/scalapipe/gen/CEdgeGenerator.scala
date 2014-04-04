@@ -95,6 +95,12 @@ private[scalapipe] class CEdgeGenerator
         write(s"spq_finish_read($qname, 1);")
         leave
 
+        // "finish"
+        write(s"static void ${label}_finish()")
+        enter
+        write(s"sp_decrement(&${destLabel}.active_inputs);")
+        leave
+
     }
 
     private def writeDestroy(stream: Stream) {

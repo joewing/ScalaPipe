@@ -402,10 +402,8 @@ private[scalapipe] class CPUResourceGenerator(
         if (sp.parameters.get[Boolean]('trace)) {
             write(s"fclose($instance.priv.trace_fd);")
         }
-        kernel.getOutputs.filter {
-            _.destKernel.device == kernel.device
-        }.map(_.destKernel.label).foreach { dest =>
-            write(s"sp_decrement(&$dest.active_inputs);")
+        kernel.getOutputs.map(_.label).foreach { label =>
+            write(s"${label}_finish();")
         }
         write(s"return NULL;")
         leave

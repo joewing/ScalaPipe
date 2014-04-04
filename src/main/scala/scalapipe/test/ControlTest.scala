@@ -186,7 +186,6 @@ object ControlTest {
     val Print = new Kernel {
         val x0 = input(SIGNED32)
         stdio.printf("OUTPUT %d\n", x0)
-        stdio.exit(0)
     }
 
     def main(args: Array[String]) {
