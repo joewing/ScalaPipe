@@ -14,19 +14,20 @@ private[scalapipe] class SimulationEdgeGenerator(
         write("#include <fcntl.h>")
         write("#include <unistd.h>")
         write("#include <signal.h>")
+        write("#include <errno.h>")
     }
 
     private def emitWriteFunction {
         write("static pthread_mutex_t sim_mutex = PTHREAD_MUTEX_INITIALIZER;")
         write("static void sim_write(int fd, const char *data, " +
-              "size_t size, uint32_t count)")
+              "size_t size, int count)")
         write("{")
         enter
         write("pthread_mutex_lock(&sim_mutex);")
-        write("const size_t total = size * count + 4;")
+        write("const size_t total = size * (count > 0 ? count : 0) + 4;")
         write("char *buffer = (char*)alloca(total);")
-        write("*(uint32_t*)&buffer[0] = count;")
-        write("if(count) {")
+        write("*(int*)&buffer[0] = count;")
+        write("if(count > 0) {")
         enter
         write("memcpy(&buffer[4], data, size * count);")
         leave
@@ -43,40 +44,36 @@ private[scalapipe] class SimulationEdgeGenerator(
     }
 
     private def emitReadFunction {
-        write("static uint32_t sim_read(int fd, char *data, " +
+        write("static int sim_read(int fd, char *data, " +
               "ssize_t size, uint32_t max_count)")
         write("{")
         enter
 
-        write("uint32_t count = 0;")
         write("ssize_t offset = 0;")
         write("for(;;) {")
         enter
-
         write("ssize_t rc = read(fd, &data[offset], size - offset);")
         write("if(rc > 0) {")
         enter
         write("offset += rc;")
         write("if(offset == size) {")
         enter
-        write("count += 1;")
-        write("data += size;")
-        write("offset = 0;")
+        write("return 1;")
         leave
-        write("}")
-        leave
-        write("}")
-
-        write("if(offset == 0) {")
+        write("} else if(offset == 0) {")
         enter
-        write("int temp = 0;")
-        write("write(fd, &temp, sizeof(temp));")
-        write("return count;")
+        write("return 0;")
+        leave
+        write("}")
+        leave
+        write("} else if(errno != EAGAIN) {")
+        enter
+        write("return -1;")
+        leave
+        write("}")
         leave
         write("}")
 
-        leave
-        write("}")
         leave
         write("}")
     }
@@ -266,10 +263,14 @@ private[scalapipe] class SimulationEdgeGenerator(
         write(s"static int ${label}_get_available()")
         write(s"{")
         enter
-        write(s"uint32_t c = spq_get_free($queue);")
-        write(s"char *ptr = spq_start_blocking_write($queue, c);")
-        write(s"c = sim_read($fd, ptr, sizeof($vtype), c);")
+        write(s"const uint32_t f = spq_get_free($queue);")
+        write(s"char *ptr = spq_start_blocking_write($queue, f);")
+        write(s"const int c = sim_read($fd, ptr, sizeof($vtype), f);")
+        write(s"if(c > 0) {")
+        enter
         write(s"spq_finish_write($queue, c);")
+        leave
+        write(s"}")
         write(s"return spq_get_used($queue);")
         leave
         write(s"}")
@@ -278,14 +279,37 @@ private[scalapipe] class SimulationEdgeGenerator(
         write(s"static void *${label}_read_value()")
         write(s"{")
         enter
+        write(s"static int active = 1;")
         for (s <- senders) {
+            val srcLabel = s.sourceKernel.label
             val sfd = s"stream${s.label}"
+            write(s"if($srcLabel.active_inputs == 0) {")
+            enter
+            write(s"if(active) {")
+            enter
+            write(s"sim_write($sfd, NULL, 0, -1);")
+            write(s"active = 0;")
+            leave
+            write(s"}")
+            leave
+            write(s"} else {")
+            enter
             write(s"sim_write($sfd, NULL, 0, 0);")
+            leave
+            write(s"}")
         }
-        write(s"uint32_t c = spq_get_free($queue);")
-        write(s"char *ptr = spq_start_blocking_write($queue, c);")
-        write(s"c = sim_read($fd, ptr, sizeof($vtype), c);")
+        write(s"const uint32_t f = spq_get_free($queue);")
+        write(s"char *ptr = spq_start_blocking_write($queue, f);")
+        write(s"const int c = sim_read($fd, ptr, sizeof($vtype), f);")
+        write(s"if(c >= 0) {")
+        enter
         write(s"spq_finish_write($queue, c);")
+        leave
+        write(s"} else {")
+        enter
+        write(s"sp_decrement(&$destLabel.active_inputs);")
+        leave
+        write(s"}")
         write(s"if(spq_start_read($queue, &ptr) > 0) {")
         enter
         write(s"return ptr;")

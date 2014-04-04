@@ -160,10 +160,12 @@ private[scalapipe] class SimulationResourceGenerator(
         enter
         write
 
+        val inputCount = inputStreams.size
         write(s"reg clk;")
         write(s"reg rst;")
         write(s"wire running;")
-        write(s"integer ticks = 0;")
+        write(s"integer cycles = 0;")
+        write(s"reg waiting = 1;")
         write(s"integer rc;")
         write
         for (s <- inputStreams ++ outputStreams) {
@@ -175,7 +177,8 @@ private[scalapipe] class SimulationResourceGenerator(
         for (s <- inputStreams) {
             val index = s.index
             val width = s.valueType.bits
-            write(s"reg [31:0] count$index;")
+            write(s"reg active$index;")
+            write(s"reg signed [31:0] count$index;")
             write(s"reg [${width - 1}:0] din$index;")
             write(s"wire write$index;")
             write(s"wire full$index;")
@@ -243,6 +246,13 @@ private[scalapipe] class SimulationResourceGenerator(
         write(s"#10 clk <= 1; #10 clk <= 0;")
         write(s"rst <= 0;")
         write
+        write(s"while (!running) begin")
+        enter
+        write(s"#10 clk <= !clk;")
+        leave
+        write(s"end")
+        write(s"waiting <= 0;")
+        write
         write(s"forever begin")
         enter
         write(s"#10 clk <= !clk;")
@@ -252,16 +262,26 @@ private[scalapipe] class SimulationResourceGenerator(
         write(s"end")
         write
 
+        val activeValues = inputStreams.map {
+            s => s"active${s.index}"
+        }.toSeq :+ "waiting"
+        val activeCheck = activeValues.mkString(" | ")
+
         write("always @(posedge clk) begin")
         enter
-        write("if (running) begin")
+        write(s"if (running | $activeCheck) begin")
         enter
-        write("ticks <= ticks + 1;")
-        write("if ((ticks % 100) == 0) begin")
+        write("cycles <= cycles + 1;")
+        write("if ((cycles % 100) == 0) begin")
         enter
-        write("""$display("Ticks: %d", ticks);""")
+        write("""$display("Cycles: %d", cycles);""")
         leave
         write("end")
+        leave
+        write(s"end else if (!($activeCheck)) begin")
+        enter
+        write("""$display("Cycles: %d", cycles);""")
+        write("""$finish;""")
         leave
         write("end")
         leave
@@ -277,6 +297,7 @@ private[scalapipe] class SimulationResourceGenerator(
             write(s"if (rst) begin")
             enter
             write(s"count$index <= 0;")
+            write(s"active$index <= 1;")
             leave
             write(s"end else if (!full$index && count$index > 0) begin")
             enter
@@ -294,6 +315,11 @@ private[scalapipe] class SimulationResourceGenerator(
             write(s"count$index[15:8] <= $$fgetc($fd);")
             write(s"count$index[23:16] <= $$fgetc($fd);")
             write(s"count$index[31:24] <= $$fgetc($fd);")
+            leave
+            write(s"end else if (count$index < 0) begin")
+            enter
+            write(s"active$index <= 0;")
+            write(s"count$index <= 0;")
             leave
             write(s"end")
             leave
