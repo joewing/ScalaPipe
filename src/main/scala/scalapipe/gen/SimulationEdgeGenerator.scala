@@ -247,6 +247,7 @@ private[scalapipe] class SimulationEdgeGenerator(
         write(s"{")
         enter
         write(s"active$label = 0;")
+        write(s"sim_write(stream$label, NULL, 0, -1);")
         leave
         write(s"}")
 
@@ -291,6 +292,15 @@ private[scalapipe] class SimulationEdgeGenerator(
         write(s"static void *${label}_read_value()")
         write(s"{")
         enter
+        write(s"const uint32_t f = spq_get_free($queue);")
+        write(s"char *ptr = spq_start_blocking_write($queue, f);")
+        write(s"const int c = sim_read($fd, ptr, sizeof($vtype), f);")
+        write(s"if(c > 0) {")
+        enter
+        write(s"spq_finish_write($queue, c);")
+        leave
+        write(s"} else if(c == 0) {")
+        enter
         for (s <- senders) {
             val srcLabel = s.sourceKernel.label
             val sfd = s"stream${s.label}"
@@ -298,18 +308,8 @@ private[scalapipe] class SimulationEdgeGenerator(
             enter
             write(s"sim_write($sfd, NULL, 0, 0);")
             leave
-            write(s"} else {")
-            enter
-            write(s"sim_write($sfd, NULL, 0, -1);")
-            leave
             write(s"}")
         }
-        write(s"const uint32_t f = spq_get_free($queue);")
-        write(s"char *ptr = spq_start_blocking_write($queue, f);")
-        write(s"const int c = sim_read($fd, ptr, sizeof($vtype), f);")
-        write(s"if(c >= 0) {")
-        enter
-        write(s"spq_finish_write($queue, c);")
         leave
         write(s"} else {")
         enter

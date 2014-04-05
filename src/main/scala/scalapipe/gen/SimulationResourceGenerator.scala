@@ -180,10 +180,8 @@ private[scalapipe] class SimulationResourceGenerator(
             write(s"reg active$index;")
             write(s"reg signed [31:0] count$index;")
             write(s"reg [${width - 1}:0] din$index;")
-            write(s"wire write$index;")
+            write(s"reg write$index;")
             write(s"wire full$index;")
-            write(s"reg got_data$index;")
-            write(s"reg sent_data$index;")
         }
         for (s <- outputStreams) {
             val index = s.index
@@ -290,8 +288,7 @@ private[scalapipe] class SimulationResourceGenerator(
             val fd = s"stream${s.label}"
             write(s"always @(posedge clk) begin")
             enter
-            write(s"got_data$index <= 0;")
-            write(s"sent_data$index <= got_data$index;")
+            write(s"write$index <= 0;")
             write(s"if (rst) begin")
             enter
             write(s"count$index <= 0;")
@@ -304,7 +301,7 @@ private[scalapipe] class SimulationResourceGenerator(
                 val bottom = i * 8 - 8
                 write(s"din$index[$top:$bottom] <= $$fgetc($fd);")
             }
-            write(s"got_data$index <= 1;")
+            write(s"write$index <= 1;")
             write(s"count$index <= count$index - 1;")
             leave
             write(s"end else if (!full$index && count$index == 0) begin")
@@ -317,12 +314,10 @@ private[scalapipe] class SimulationResourceGenerator(
             write(s"end else if (count$index < 0) begin")
             enter
             write(s"active$index <= 0;")
-            write(s"count$index <= 0;")
             leave
             write(s"end")
             leave
             write(s"end")
-            write(s"assign write$index = got_data$index & !sent_data$index;")
             write
         }
 
