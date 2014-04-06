@@ -96,6 +96,7 @@ private[scalapipe] class SimulationEdgeGenerator(
         for (s <- streams) {
             val label = s.label
             write(s"static char active$label = 1;")
+            write(s"static void *${label}_read_value();")
         }
 
         for (s <- senderStreams) {
@@ -280,12 +281,10 @@ private[scalapipe] class SimulationEdgeGenerator(
         write(s"if(!active${label}) {")
         enter
         for (s <- receivers if s != stream) {
-            val dest = s.destKernel.label
             val label = s.label
             write(s"if(active${label}) {")
             enter
-            write(s"active${label} = 0;")
-            write(s"sp_decrement(&$dest.active_inputs);")
+            write(s"${label}_read_value();")
             leave
             write(s"}")
         }
@@ -316,12 +315,10 @@ private[scalapipe] class SimulationEdgeGenerator(
         write(s"if(!active${label}) {")
         enter
         for (s <- receivers if s != stream) {
-            val dest = s.destKernel.label
             val label = s.label
             write(s"if(active${label}) {")
             enter
-            write(s"active${label} = 0;")
-            write(s"sp_decrement(&$dest.active_inputs);")
+            write(s"${label}_read_value();")
             leave
             write(s"}")
         }
