@@ -116,4 +116,13 @@ private[gen] class HDLKernelNodeEmitter(
         write("end")
     }
 
+    override def checkRunning(block: StateBlock) {
+        val inputs = block.srcs.collect { case i: InputSymbol => i }
+        if (!inputs.isEmpty) {
+            val inputSymbols = inputs.map { i => "avail_" + i.name }
+            val waitingString = inputSymbols.mkString(" | ")
+            write(s"running <= $waitingString;")
+        }
+    }
+
 }

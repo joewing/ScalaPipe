@@ -76,5 +76,9 @@ private[gen] class HDLFunctionNodeEmitter(
         write("end")
     }
 
+    override def checkRunning(block: StateBlock) {
+        // Nothing to do here.
+    }
+
 }
 
