@@ -206,6 +206,10 @@ module sp_mul_impl(clk, start_in, a_in, b_in, c_out, ready_out);
     parameter OUTPUT_WIDTH  = WIDTH * 2;
     parameter SHIFT         = 18;
 
+    parameter MAX_SHIFT     = SHIFT < WIDTH ? SHIFT : WIDTH;
+    parameter STATE_COUNT   = (WIDTH + MAX_SHIFT - 1) / MAX_SHIFT;
+    parameter BITS          = WIDTH / STATE_COUNT;
+
     input wire clk;
     input wire start_in;
     input wire [WIDTH-1:0] a_in;
@@ -213,29 +217,30 @@ module sp_mul_impl(clk, start_in, a_in, b_in, c_out, ready_out);
     output wire [OUTPUT_WIDTH-1:0] c_out;
     output wire ready_out;
 
-    reg [OUTPUT_WIDTH-1:0] a;
-    reg [OUTPUT_WIDTH-1:0] b;
+    reg [WIDTH-1:0] a;
+    reg [WIDTH-1:0] b;
     reg [OUTPUT_WIDTH-1:0] result;
-    reg [WIDTH:0] state;
+    reg [31:0] state;
 
-    wire [OUTPUT_WIDTH-1:0] add_sa = b * a[SHIFT-1:0];
-    wire [OUTPUT_WIDTH-1:0] add_sb = result;
+    wire [OUTPUT_WIDTH-1:0] add_sa = b * a[WIDTH-1:WIDTH-BITS];
+    wire [OUTPUT_WIDTH-1:0] add_sb = result << BITS;
     wire [OUTPUT_WIDTH-1:0] add_result;
     sp_addI #(.WIDTH(OUTPUT_WIDTH)) add(add_sa, add_sb, add_result);
 
     always @(posedge clk) begin
         if (start_in) begin
+            state <= STATE_COUNT;
             result <= 0;
             a <= a_in;
             b <= b_in;
         end else if (!ready_out) begin
             result <= add_result;
-            a <= a >> SHIFT;
-            b <= b << SHIFT;
+            a <= a << BITS;
+            state <= state - 1;
         end
     end
 
-    assign ready_out = a == 0;
+    assign ready_out = state == 0;
     assign c_out = result;
 
 endmodule
