@@ -206,9 +206,25 @@ module sp_mul_impl(clk, start_in, a_in, b_in, c_out, ready_out);
     parameter OUTPUT_WIDTH  = WIDTH * 2;
     parameter SHIFT         = 18;
 
-    parameter MAX_SHIFT     = SHIFT < WIDTH ? SHIFT : WIDTH;
-    parameter STATE_COUNT   = (WIDTH + MAX_SHIFT - 1) / MAX_SHIFT;
-    parameter BITS          = WIDTH / STATE_COUNT;
+    // We can't use constant functions in iverilog, so we
+    // expand the computation of the bits to process per cycle.
+    parameter MAX_SHIFT = SHIFT < WIDTH ? SHIFT : WIDTH;
+    parameter BITS0 = MAX_SHIFT;
+    parameter BITS1 = WIDTH % BITS0 != 0 ? BITS0 - 1 : BITS0;
+    parameter BITS2 = WIDTH % BITS1 != 0 ? BITS1 - 1 : BITS1;
+    parameter BITS3 = WIDTH % BITS2 != 0 ? BITS2 - 1 : BITS2;
+    parameter BITS4 = WIDTH % BITS3 != 0 ? BITS3 - 1 : BITS3;
+    parameter BITS5 = WIDTH % BITS4 != 0 ? BITS4 - 1 : BITS4;
+    parameter BITS6 = WIDTH % BITS5 != 0 ? BITS5 - 1 : BITS5;
+    parameter BITS7 = WIDTH % BITS6 != 0 ? BITS6 - 1 : BITS6;
+    parameter BITS8 = WIDTH % BITS7 != 0 ? BITS7 - 1 : BITS7;
+    parameter BITS9 = WIDTH % BITS8 != 0 ? BITS8 - 1 : BITS8;
+    parameter BITSA = WIDTH % BITS9 != 0 ? BITS9 - 1 : BITS9;
+    parameter BITSB = WIDTH % BITSA != 0 ? BITSA - 1 : BITSA;
+    parameter BITSC = WIDTH % BITSB != 0 ? BITSB - 1 : BITSB;
+
+    parameter BITS = BITSC;
+    parameter STATE_COUNT = WIDTH / BITS;
 
     input wire clk;
     input wire start_in;
