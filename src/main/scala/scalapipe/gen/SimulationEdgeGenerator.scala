@@ -96,6 +96,9 @@ private[scalapipe] class SimulationEdgeGenerator(
         for (s <- streams) {
             val label = s.label
             write(s"static char active$label = 1;")
+        }
+        for (s <- receiverStreams) {
+            val label = s.label
             write(s"static void *${label}_read_value();")
         }
 
