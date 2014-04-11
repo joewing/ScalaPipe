@@ -116,7 +116,7 @@ private[gen] class HDLModuleEmitter(
     def addWriteState(state: Int, port: String, value: String) {
         val a = writeStates.getOrElseUpdate(port, { new Assignment(port) })
         a.states += new AssignState(state, value)
-        addGuard(state, "!afull_" + port)
+        addGuard(state, "!full_" + port)
     }
 
     def addAssignment(str: String) {

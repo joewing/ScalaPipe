@@ -44,7 +44,7 @@ private[gen] class HDLKernelNodeEmitter(
         val dest = emitSymbol(node.dest)
         val src = node.srca match {
             case is: InputSymbol     => "avail_" + is.name
-            case os: OutputSymbol    => "!afull_" + os.name
+            case os: OutputSymbol    => "!full_" + os.name
             case _ => sys.error("internal")
         }
         if (block.continuous) {
@@ -85,10 +85,8 @@ private[gen] class HDLKernelNodeEmitter(
     }
 
     override def start {
-        if (ramDepth > 0) {
-            write("ram_re <= 0;")
-            write("ram_we <= 0;")
-        }
+        write("ram_re <= 0;")
+        write("ram_we <= 0;")
         write("if (rst) begin")
         enter
         val blocking = graph.blocks.filter(!_.continuous)

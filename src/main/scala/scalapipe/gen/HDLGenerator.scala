@@ -65,51 +65,6 @@ private[gen] trait HDLGenerator extends Generator {
         }
     }
 
-    private def emitRAM(depth: Int) {
-        val lastIndex = depth - 1
-        val top = ramWidth - 1
-        val wordBytes = ramWidth / 8
-        val wordBytesTop = wordBytes - 1
-
-        // Inputs
-        write(s"reg [$wordBytesTop:0] ram_mask;")
-        write(s"reg [31:0] ram_addr;")
-        write(s"reg [31:0] ram_state;")
-        write(s"reg [$top:0] ram_in;")
-        write(s"reg ram_we;")
-        write(s"reg ram_re;")
-
-        // Outputs
-        write(s"reg ram_ready;")
-        write(s"reg [$top:0] ram_out;")
-
-        write(s"reg [$top:0] ram_data [0:$lastIndex];")
-        write(s"always @(posedge clk) begin")
-        enter
-        write(s"ram_ready <= !(ram_re | ram_we);")
-        write(s"if (ram_re) begin")
-        enter
-        write(s"ram_out <= ram_data[ram_addr];")
-        leave
-        write(s"end")
-        write(s"if (ram_we) begin")
-        enter
-        for (i <- 0 until wordBytes) {
-            val bottom = 8 * i
-            val top = bottom + 7
-            write(s"if (ram_mask[$i]) begin")
-            enter
-            write(s"ram_data[ram_addr][$top:$bottom] <= ram_in[$top:$bottom];")
-            leave
-            write(s"end")
-        }
-        leave
-        write("end")
-        leave
-        write("end")
-        write
-    }
-
     private def emitLocal(name: String, s: BaseSymbol) {
         if (s.valueType.flat) {
             val ts = getTypeString(name, s.valueType)
@@ -142,7 +97,7 @@ private[gen] trait HDLGenerator extends Generator {
             emitLocal("temp" + t.id, t)
         }
         if (ramDepth > 0) {
-            emitRAM(ramDepth)
+            write(s"reg [31:0] ram_state;")
         }
         write("reg [31:0] state;")
         write("reg [31:0] last_state;")

@@ -49,6 +49,8 @@ private[gen] class HDLFunctionNodeEmitter(
     }
 
     override def start {
+        write("ram_re <= 0;")
+        write("ram_we <= 0;")
         write("if (start) begin")
         enter
         val blocking = graph.blocks.filter(!_.continuous)

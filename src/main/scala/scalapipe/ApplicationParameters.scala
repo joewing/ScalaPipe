@@ -19,5 +19,6 @@ private[scalapipe] class ApplicationParameters extends Parameters {
     add('wave, false)           // Dump waveform from simulation.
     add('basePort, 9000)        // First port number to use.
     add('memoryWidth, 32)       // FPGA memory port width.
+    add('bram, true)            // Set to use block RAM for memories.
 
 }
