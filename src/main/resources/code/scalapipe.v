@@ -43,7 +43,37 @@ module sp_register(clk, rst, din, dout, re, we, avail, empty, full);
 
 endmodule
 
-module sp_fifo(clk, rst, din, dout, re, we, avail, empty, full);
+module sp_ram(clk, rst, addr, din, dout, re, we, ready);
+
+    parameter WIDTH = 8;
+    parameter ADDR_WIDTH = 1;
+
+    input wire clk;
+    input wire rst;
+    input wire [ADDR_WIDTH-1:0] addr;
+    input wire [WIDTH-1:0] din;
+    output reg [WIDTH-1:0] dout;
+    input wire re;
+    input wire we;
+    output wire ready;
+
+    reg [WIDTH-1:0] data [0:(1<<ADDR_WIDTH)-1];
+
+    always @(posedge clk) begin
+        if (re) begin
+            dout <= data[addr];
+        end
+        if (we) begin
+            data[addr] <= din;
+        end
+    end
+
+    assign ready = 1;
+
+endmodule
+
+module sp_fifo(clk, rst, din, dout, re, we, avail, empty, full,
+               mem_addr, mem_in, mem_out, mem_re, mem_we, mem_ready);
 
     parameter WIDTH = 8;
     parameter ADDR_WIDTH = 1;
@@ -57,37 +87,86 @@ module sp_fifo(clk, rst, din, dout, re, we, avail, empty, full);
     output wire avail;
     output wire empty;
     output wire full;
+    output reg [ADDR_WIDTH-1:0] mem_addr;
+    input wire [WIDTH-1:0] mem_in;
+    output wire [WIDTH-1:0] mem_out;
+    output wire mem_re;
+    output wire mem_we;
+    input wire mem_ready;
 
-    reg [WIDTH-1:0] mem [0:(1 << ADDR_WIDTH) - 1];
-    reg [WIDTH-1:0] next_dout;
+    parameter STATE_IDLE = 0;
+    parameter STATE_READ = 1;
+    parameter STATE_WRITE = 2;
+
+    reg [1:0] state;
     reg [ADDR_WIDTH-1:0] read_ptr;
     reg [ADDR_WIDTH-1:0] write_ptr;
     reg [ADDR_WIDTH:0] count;
 
-    assign full = count[ADDR_WIDTH - 1];
-    assign avail = count != 0;
-    assign empty = count == 0;
+    wire busy = state != STATE_IDLE;
+    assign full = count[ADDR_WIDTH - 1] | busy;
+    assign avail = count != 0 | busy;
+    assign empty = count == 0 & !busy;
     wire do_read = re & !empty;
     wire do_write = we & !full;
     wire write_empty = we & empty;
+    wire reading = do_read | (state == STATE_READ);
+    wire writing = do_write | (state == STATE_WRITE);
 
+    // State machine.
+    always @(posedge clk) begin
+        if (rst) begin
+            state <= STATE_IDLE;
+        end else begin
+            if (state == STATE_IDLE) begin
+                if (do_read) state <= STATE_READ;
+                if (do_write) state <= STATE_WRITE;
+            end else if (mem_ready) begin
+                state <= STATE_IDLE;
+            end
+        end
+    end
+
+    // Drive the memory address.
+    always @(*) begin
+        if (do_read | reading) begin
+            mem_addr <= read_ptr;
+        end else begin
+            mem_addr <= write_ptr;
+        end
+    end
+
+    // Drive the memory control lines.
+    assign mem_re = do_read;
+    assign mem_we = do_write;
+
+    // Update the read pointer.
     always @(posedge clk) begin
         if (rst) begin
             read_ptr <= 0;
-            write_ptr <= 0;
-            count <= 0;
         end else begin
-            if (do_write) begin
-                mem[write_ptr] <= din;
+            if (mem_ready & reading) begin
+                read_ptr <= read_ptr + 1;
+            end
+        end
+    end
+
+    // Update the write pointer.
+    always @(posedge clk) begin
+        if (rst) begin
+            write_ptr <= 0;
+        end else begin
+            if (mem_ready & writing) begin
                 write_ptr <= write_ptr + 1;
             end
-            if (do_read) begin
-                read_ptr <= read_ptr + 1;
-                next_dout <= mem[read_ptr];
-                dout <= count == 1 ? din : next_dout;
-            end else if (write_empty) begin
-                dout <= din;
-            end
+        end
+    end
+
+    // Update the data count.
+    always @(posedge clk) begin
+        if (rst) begin
+            count <= 0;
+        end else begin
             case ({do_read, do_write})
                 2'b10:      count <= count - 1;
                 2'b01:      count <= count + 1;
@@ -95,6 +174,18 @@ module sp_fifo(clk, rst, din, dout, re, we, avail, empty, full);
             endcase
         end
     end
+
+    // Drive data from memory.
+    always @(posedge clk) begin
+        if (reading & mem_ready) begin
+            dout <= mem_in;
+        end else if (write_empty) begin
+            dout <= din;
+        end
+    end
+
+    // Drive data to memory.
+    assign mem_out = din;
 
 endmodule
 

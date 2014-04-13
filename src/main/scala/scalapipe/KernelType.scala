@@ -37,6 +37,20 @@ private[scalapipe] abstract class KernelType(
         dependencies.add(kernel.dependencies)
     }
 
+    private[scalapipe] def ramDepth(vt: ValueType): Int = {
+        val ramWidth = sp.parameters.get[Int]('memoryWidth)
+        if (vt.flat) {
+            return 0
+        } else {
+            return (vt.bits + ramWidth - 1) / ramWidth
+        }
+    }
+
+    private[scalapipe] def ramDepth: Int = {
+        val values = states ++ temps
+        values.map(v => ramDepth(v.valueType)).sum
+    }
+
     private[scalapipe] def getType(node: ASTSymbolNode): ValueType = {
         val name = node.symbol
         val vtype = symbols.getType(name)

@@ -83,10 +83,6 @@ private[scalapipe] abstract class HDLResourceGenerator(
         }
         val tt = new TimeTrial(streams)
 
-        val fifoMemories = internalStreams.map { s => s"ram_${s.label}" }
-        val internalMemories = kernels.map { k => s"ram_${k.label}" }
-        val memories = internalMemories ++ fifoMemories
-
         write(s"module fpga$id(")
         enter
         write(s"input wire clk,")
@@ -106,18 +102,6 @@ private[scalapipe] abstract class HDLResourceGenerator(
             write(s"input wire output${index}_read,")
         }
         write(s"output wire running")
-        for (m <- memories) {
-            val ramWidth = sp.parameters.get[Int]('memoryWidth)
-            val wordBytes = ramWidth / 8
-            write(s",")
-            write(s"output reg [31:0] ${m}_addr,")
-            write(s"input wire [${ramWidth - 1}:0] ${m}_in,")
-            write(s"output reg [${ramWidth - 1}:0] ${m}_out,")
-            write(s"output reg [${wordBytes - 1}:0] ${m}_mask,")
-            write(s"output reg ${m}_re,")
-            write(s"output reg ${m}_we,")
-            write(s"input wire ${m}_ready")
-        }
         if (tt.amCount > 0) {
             write(s",")
             write(s"output wire [${tt.amCount - 1}:0] amTap")
@@ -143,6 +127,30 @@ private[scalapipe] abstract class HDLResourceGenerator(
         write
 
         // Wires
+        for (s <- internalStreams if getDepthBits(s) > 0) {
+            val name = s"ram_${s.label}"
+            val width = s.valueType.bits
+            val wordBytes = width / 8
+            write(s"wire [31:0] ${name}_addr;")
+            write(s"wire [${width - 1}:0] ${name}_in;")
+            write(s"wire [${width - 1}:0] ${name}_out;")
+            write(s"wire [${wordBytes - 1}:0] ${name}_mask;")
+            write(s"wire ${name}_re;")
+            write(s"wire ${name}_we;")
+            write(s"wire ${name}_ready;")
+        }
+        for (m <- kernels if m.kernelType.ramDepth > 0) {
+            val ramWidth = sp.parameters.get[Int]('memoryWidth)
+            val wordBytes = ramWidth / 8
+            val name = s"ram_${m.label}"
+            write(s"wire [31:0] ${name}_addr;")
+            write(s"wire [${ramWidth - 1}:0] ${name}_in;")
+            write(s"wire [${ramWidth - 1}:0] ${name}_out;")
+            write(s"wire [${wordBytes - 1}:0] ${name}_mask;")
+            write(s"wire ${name}_re;")
+            write(s"wire ${name}_we;")
+            write(s"wire ${name}_ready;")
+        }
         for (i <- inputStreams) {
             val valueType = i.valueType.baseType
             val width = i.valueType.bits
@@ -194,17 +202,25 @@ private[scalapipe] abstract class HDLResourceGenerator(
             write(s".running(${kernel.label}_running)")
             for (i <- kernel.getInputs) {
                 val destPort = i.destKernel.inputName(i.destPort)
-                write(s",")
-                write(s".input_$destPort(${i.label}_input),")
-                write(s".avail_$destPort(${i.label}_avail),")
-                write(s".read_$destPort(${i.label}_read)")
+                write(s", .input_$destPort(${i.label}_input)")
+                write(s", .avail_$destPort(${i.label}_avail)")
+                write(s", .read_$destPort(${i.label}_read)")
             }
             for (o <- kernel.getOutputs) {
                 val srcPort = o.sourceKernel.outputName(o.sourcePort)
-                write(s",")
-                write(s".output_$srcPort(${o.label}_output),")
-                write(s".write_$srcPort(${o.label}_write),")
-                write(s".full_$srcPort(${o.label}_full)")
+                write(s", .output_$srcPort(${o.label}_output)")
+                write(s", .write_$srcPort(${o.label}_write)")
+                write(s", .full_$srcPort(${o.label}_full)")
+            }
+            if (kernel.kernelType.ramDepth > 0) {
+                val name = s"ram_${kernel.label}"
+                write(s", .ram_addr(${name}_addr)")
+                write(s", .ram_in(${name}_out)")
+                write(s", .ram_out(${name}_in)")
+                write(s", .ram_mask(${name}_mask)")
+                write(s", .ram_re(${name}_re)")
+                write(s", .ram_we(${name}_we)")
+                write(s", .ram_ready(${name}_ready)")
             }
             leave
             write(");")
@@ -221,8 +237,21 @@ private[scalapipe] abstract class HDLResourceGenerator(
 
         // Connect internal streams.
         for (stream <- internalStreams) {
+            val label = stream.label
             val width = stream.valueType.bits
             val addrWidth = getDepthBits(stream)
+
+            // Declare wires for connecting the memory.
+            if (addrWidth > 0) {
+                val mask = (width / 8) - 1
+                write(s"wire [${addrWidth - 1}:0] ${label}_addr;")
+                write(s"wire [${width - 1}:0] ${label}_in;")
+                write(s"wire [${width - 1}:0] ${label}_out;")
+                write(s"wire ${label}_mask = $mask;")
+                write(s"wire ${label}_re;")
+                write(s"wire ${label}_we;")
+                write(s"wire ${label}_ready;")
+            }
 
             // Hook up the FIFO.
             val fifo = if (addrWidth == 0) "sp_register" else "sp_fifo"
@@ -237,6 +266,11 @@ private[scalapipe] abstract class HDLResourceGenerator(
             write(s".we(${stream.label}_write),")
             write(s".empty(${stream.label}_empty),")
             write(s".full(${stream.label}_full)")
+            if (addrWidth > 0) {
+                for (s <- Seq("addr", "in", "out", "re", "we", "ready")) {
+                    write(s", mem_${s}(${stream.label}_${s})")
+                }
+            }
             leave
             write(s");")
             leave
@@ -286,9 +320,22 @@ private[scalapipe] abstract class HDLResourceGenerator(
 
         // Connect input streams.
         for (stream <- inputStreams) {
+            val label = stream.label
             val width = stream.valueType.bits
             val addrWidth = getDepthBits(stream)
             val srcIndex = stream.index
+
+            // Declare wires for connecting the memory.
+            if (addrWidth > 0) {
+                val mask = (width / 8) - 1
+                write(s"wire [${addrWidth - 1}:0] ${label}_addr;")
+                write(s"wire [${width - 1}:0] ${label}_in;")
+                write(s"wire [${width - 1}:0] ${label}_out;")
+                write(s"wire ${label}_mask = $mask;")
+                write(s"wire ${label}_re;")
+                write(s"wire ${label}_we;")
+                write(s"wire ${label}_ready;")
+            }
 
             // Hook up the FIFO.
             val fifo = if (addrWidth == 0) "sp_register" else "sp_fifo"
@@ -303,6 +350,11 @@ private[scalapipe] abstract class HDLResourceGenerator(
             write(s".we(input${srcIndex}_write),")
             write(s".empty(${stream.label}_empty),")
             write(s".full(input${srcIndex}_full)")
+            if (addrWidth > 0) {
+                for (s <- Seq("addr", "in", "out", "re", "we", "ready")) {
+                    write(s", mem_${s}(${stream.label}_${s})")
+                }
+            }
             leave
             write(s");")
             leave
@@ -352,9 +404,21 @@ private[scalapipe] abstract class HDLResourceGenerator(
         // Connect output streams.
         for (stream <- outputStreams) {
 
+            val label = stream.label
             val width = stream.valueType.bits
             val addrWidth = getDepthBits(stream)
             val destIndex = stream.index
+
+            if (addrWidth > 0) {
+                val mask = (width / 8) - 1
+                write(s"wire [${addrWidth - 1}:0] ${label}_addr;")
+                write(s"wire [${width - 1}:0] ${label}_in;")
+                write(s"wire [${width - 1}:0] ${label}_out;")
+                write(s"wire ${label}_mask = $mask;")
+                write(s"wire ${label}_re;")
+                write(s"wire ${label}_we;")
+                write(s"wire ${label}_ready;")
+            }
 
             // Hook up the FIFO.
             val fifo = if (addrWidth == 0) "sp_register" else "sp_fifo"
@@ -369,6 +433,11 @@ private[scalapipe] abstract class HDLResourceGenerator(
             write(s".we(${stream.label}_write),")
             write(s".empty(${stream.label}_empty),")
             write(s".full(${stream.label}_full)")
+            if (addrWidth > 0) {
+                for (s <- Seq("addr", "in", "out", "re", "we", "ready")) {
+                    write(s", mem_${s}(${stream.label}_${s})")
+                }
+            }
             leave
             write(s");")
             leave

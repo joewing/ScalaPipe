@@ -119,20 +119,15 @@ private[scalapipe] class SimulationResourceGenerator(
         enter
         for (i <- inputStreams) {
             val index = i.index
-            write(s", .input${index}_data(data$index), " +
-                  s".input${index}_write(do_write$index), " +
-                  s".input${index}_full(full$index)")
+            write(s", .input${index}_data(data$index)")
+            write(s", .input${index}_write(do_write$index)")
+            write(s", .input${index}_full(full$index)")
         }
         for (o <- outputStreams) {
             val index = o.index
-            write(s", .output${index}_data(data$index), " +
-                  s".output${index}_avail(avail$index), " +
-                  s".output${index}_read(do_read$index)")
-        }
-        val fifoMemories = internalStreams.map { s => s"ram_${s.label}" }
-        val internalMemories = kernels.map { k => s"ram_${k.label}" }
-        val memories = internalMemories ++ fifoMemories
-        for (m <- memories) {
+            write(s", .output${index}_data(data$index)")
+            write(s", .output${index}_avail(avail$index)")
+            write(s", .output${index}_read(do_read$index)")
         }
         leave
         write(s");")

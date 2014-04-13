@@ -76,19 +76,6 @@ private[gen] trait HDLGenerator extends Generator {
         }
     }
 
-    def ramDepth(vt: ValueType): Int = {
-        if (vt.flat) {
-            return 0
-        } else {
-            return (vt.bits + ramWidth - 1) / ramWidth
-        }
-    }
-
-    val ramDepth: Int = {
-        val values = kt.states ++ kt.temps
-        values.map(v => ramDepth(v.valueType)).sum
-    }
-
     def emitLocals {
         for (s <- kt.states) {
             emitLocal("state_" + s.name, s)
@@ -96,7 +83,7 @@ private[gen] trait HDLGenerator extends Generator {
         for (t <- kt.temps) {
             emitLocal("temp" + t.id, t)
         }
-        if (ramDepth > 0) {
+        if (kt.ramDepth > 0) {
             write(s"reg [31:0] ram_state;")
         }
         write("reg [31:0] state;")

@@ -93,7 +93,7 @@ private[gen] class HDLModuleEmitter(
     def getRAMOffset(symbol: BaseSymbol): Int = {
         ramOffsetMap.getOrElseUpdate(symbol, {
             val offset = ramOffset
-            ramOffset += ramDepth(symbol.valueType)
+            ramOffset += kt.ramDepth(symbol.valueType)
             offset
         })
     }
