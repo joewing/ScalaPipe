@@ -127,6 +127,8 @@ private[scalapipe] abstract class HDLResourceGenerator(
         write
 
         // Wires
+        val ramWidth = sp.parameters.get[Int]('memoryWidth)
+        val wordBytes = ramWidth / 8
         for (s <- internalStreams if getDepthBits(s) > 0) {
             val name = s"ram_${s.label}"
             val width = s.valueType.bits
@@ -140,8 +142,6 @@ private[scalapipe] abstract class HDLResourceGenerator(
             write(s"wire ${name}_ready;")
         }
         for (m <- kernels if m.kernelType.ramDepth > 0) {
-            val ramWidth = sp.parameters.get[Int]('memoryWidth)
-            val wordBytes = ramWidth / 8
             val name = s"ram_${m.label}"
             write(s"wire [31:0] ${name}_addr;")
             write(s"wire [${ramWidth - 1}:0] ${name}_in;")
@@ -186,7 +186,10 @@ private[scalapipe] abstract class HDLResourceGenerator(
 
         // Instantiate kernels.
         for (kernel <- kernels) {
+            val label = kernel.label
             val kernelName = s"kernel_${kernel.name}"
+            val ramDepth = kernel.kernelType.ramDepth
+
             write(s"wire ${kernel.label}_running;")
             write(kernelName)
             enter
@@ -196,10 +199,10 @@ private[scalapipe] abstract class HDLResourceGenerator(
                 }.mkString(", ")
                 write(s"#($configs)")
             }
-            write(s"${kernel.label}(")
+            write(s"${label}(")
             enter
             write(s".clk(clk), .rst(rst),")
-            write(s".running(${kernel.label}_running)")
+            write(s".running(${label}_running)")
             for (i <- kernel.getInputs) {
                 val destPort = i.destKernel.inputName(i.destPort)
                 write(s", .input_$destPort(${i.label}_input)")
@@ -212,8 +215,8 @@ private[scalapipe] abstract class HDLResourceGenerator(
                 write(s", .write_$srcPort(${o.label}_write)")
                 write(s", .full_$srcPort(${o.label}_full)")
             }
-            if (kernel.kernelType.ramDepth > 0) {
-                val name = s"ram_${kernel.label}"
+            if (ramDepth > 0) {
+                val name = s"ram_${label}"
                 write(s", .ram_addr(${name}_addr)")
                 write(s", .ram_in(${name}_out)")
                 write(s", .ram_out(${name}_in)")
@@ -227,6 +230,24 @@ private[scalapipe] abstract class HDLResourceGenerator(
             leave
             for (i <- kernel.getInputs) {
                 write(s"assign ${i.label}_avail = !${i.label}_empty;")
+            }
+            if (ramDepth > 0 && sp.parameters.get[Boolean]('bram)) {
+                write(s"sp_ram #(.WIDTH($ramWidth), .DEPTH($ramDepth))")
+                enter
+                write(s"${label}_ram (")
+                enter
+                write(s".clk(clk),")
+                write(s".rst(rst),")
+                write(s".addr(ram_${label}_addr),")
+                write(s".din(ram_${label}_in),")
+                write(s".dout(ram_${label}_out),")
+                write(s".mask(ram_${label}_mask),")
+                write(s".re(ram_${label}_re),")
+                write(s".we(ram_${label}_we),")
+                write(s".ready(ram_${label}_ready)")
+                leave
+                write(s");")
+                leave
             }
             write
         }

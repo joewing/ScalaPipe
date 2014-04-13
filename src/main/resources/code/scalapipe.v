@@ -43,30 +43,40 @@ module sp_register(clk, rst, din, dout, re, we, avail, empty, full);
 
 endmodule
 
-module sp_ram(clk, rst, addr, din, dout, re, we, ready);
+module sp_ram(clk, rst, addr, din, dout, mask, re, we, ready);
 
     parameter WIDTH = 8;
-    parameter ADDR_WIDTH = 1;
+    parameter DEPTH = 2;
+    parameter ADDR_WIDTH = 32;
 
     input wire clk;
     input wire rst;
     input wire [ADDR_WIDTH-1:0] addr;
     input wire [WIDTH-1:0] din;
     output reg [WIDTH-1:0] dout;
+    input wire [WIDTH/8-1:0] mask;
     input wire re;
     input wire we;
     output wire ready;
 
-    reg [WIDTH-1:0] data [0:(1<<ADDR_WIDTH)-1];
+    reg [WIDTH-1:0] data [0:DEPTH-1];
 
     always @(posedge clk) begin
         if (re) begin
             dout <= data[addr];
         end
-        if (we) begin
-            data[addr] <= din;
-        end
     end
+
+    genvar i;
+    generate
+        for (i = 0; i < WIDTH / 8; i = i + 1) begin
+            always @(posedge clk) begin
+                if (we & mask[i]) begin
+                    data[addr][i*8+7:i*8] <= din[i*8+7:i*8];
+                end
+            end
+        end
+    endgenerate
 
     assign ready = 1;
 
