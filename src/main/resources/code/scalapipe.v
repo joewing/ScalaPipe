@@ -69,7 +69,7 @@ module sp_ram(clk, rst, addr, din, dout, mask, re, we, ready);
 
     genvar i;
     generate
-        for (i = 0; i < WIDTH / 8; i = i + 1) begin
+        for (i = 0; i < WIDTH / 8; i = i + 1) begin : select_bytes
             always @(posedge clk) begin
                 if (we & mask[i]) begin
                     data[addr][i*8+7:i*8] <= din[i*8+7:i*8];

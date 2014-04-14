@@ -76,6 +76,42 @@ private[scalapipe] abstract class HDLResourceGenerator(
         math.ceil(math.log(depth) / math.log(2.0)).toInt
     }
 
+    private def emitRAMSignals(label: String,
+                                width: Int,
+                                addrWidth: Int) {
+        val maskWidth = width / 8
+        write(s"wire [${addrWidth - 1}:0] ${label}_addr;")
+        write(s"wire [${width - 1}:0] ${label}_in;")
+        write(s"wire [${width - 1}:0] ${label}_out;")
+        write(s"wire [${maskWidth - 1}:0] ${label}_mask;")
+        write(s"wire ${label}_re;")
+        write(s"wire ${label}_we;")
+        write(s"wire ${label}_ready;")
+    }
+
+    private def emitBRAM(label: String,
+                         width: Int,
+                         depth: Int,
+                         addrWidth: Int) {
+        write(s"sp_ram #(.WIDTH($width), .DEPTH($depth), "  +
+              s".ADDR_WIDTH($addrWidth))")
+        enter
+        write(s"$label (")
+        enter
+        write(s".clk(clk),")
+        write(s".rst(rst),")
+        write(s".addr(${label}_addr),")
+        write(s".din(${label}_in),")
+        write(s".dout(${label}_out),")
+        write(s".mask(${label}_mask),")
+        write(s".re(${label}_re),")
+        write(s".we(${label}_we),")
+        write(s".ready(${label}_ready)")
+        leave
+        write(s");")
+        leave
+    }
+
     private def emitInternal(dir: File) {
 
         val streams = sp.streams.filter { s =>
@@ -129,18 +165,6 @@ private[scalapipe] abstract class HDLResourceGenerator(
         // Wires
         val ramWidth = sp.parameters.get[Int]('memoryWidth)
         val wordBytes = ramWidth / 8
-        for (s <- internalStreams if getDepthBits(s) > 0) {
-            val name = s"ram_${s.label}"
-            val width = s.valueType.bits
-            val wordBytes = width / 8
-            write(s"wire [31:0] ${name}_addr;")
-            write(s"wire [${width - 1}:0] ${name}_in;")
-            write(s"wire [${width - 1}:0] ${name}_out;")
-            write(s"wire [${wordBytes - 1}:0] ${name}_mask;")
-            write(s"wire ${name}_re;")
-            write(s"wire ${name}_we;")
-            write(s"wire ${name}_ready;")
-        }
         for (m <- kernels if m.kernelType.ramDepth > 0) {
             val name = s"ram_${m.label}"
             write(s"wire [31:0] ${name}_addr;")
@@ -152,7 +176,6 @@ private[scalapipe] abstract class HDLResourceGenerator(
             write(s"wire ${name}_ready;")
         }
         for (i <- inputStreams) {
-            val valueType = i.valueType.baseType
             val width = i.valueType.bits
             write(s"wire [${width - 1}:0] ${i.label}_input;")
             write(s"wire [${width - 1}:0] ${i.label}_dout;")
@@ -161,7 +184,6 @@ private[scalapipe] abstract class HDLResourceGenerator(
             write(s"wire ${i.label}_empty;")
         }
         for (o <- outputStreams) {
-            val valueType = o.valueType.baseType
             val width = o.valueType.bits
             write(s"wire [${width - 1}:0] ${o.label}_output;")
             write(s"wire [${width - 1}:0] ${o.label}_din;")
@@ -170,7 +192,6 @@ private[scalapipe] abstract class HDLResourceGenerator(
             write(s"wire ${o.label}_empty;")
         }
         for (i <- internalStreams) {
-            val valueType = i.valueType.baseType
             val width = i.valueType.bits
             write(s"wire [${width - 1}:0] ${i.label}_input;")
             write(s"wire [${width - 1}:0] ${i.label}_output;")
@@ -232,22 +253,7 @@ private[scalapipe] abstract class HDLResourceGenerator(
                 write(s"assign ${i.label}_avail = !${i.label}_empty;")
             }
             if (ramDepth > 0 && sp.parameters.get[Boolean]('bram)) {
-                write(s"sp_ram #(.WIDTH($ramWidth), .DEPTH($ramDepth))")
-                enter
-                write(s"${label}_ram (")
-                enter
-                write(s".clk(clk),")
-                write(s".rst(rst),")
-                write(s".addr(ram_${label}_addr),")
-                write(s".din(ram_${label}_in),")
-                write(s".dout(ram_${label}_out),")
-                write(s".mask(ram_${label}_mask),")
-                write(s".re(ram_${label}_re),")
-                write(s".we(ram_${label}_we),")
-                write(s".ready(ram_${label}_ready)")
-                leave
-                write(s");")
-                leave
+                emitBRAM(s"ram_${label}", ramWidth, ramDepth, 32)
             }
             write
         }
@@ -264,14 +270,7 @@ private[scalapipe] abstract class HDLResourceGenerator(
 
             // Declare wires for connecting the memory.
             if (addrWidth > 0) {
-                val mask = (width / 8) - 1
-                write(s"wire [${addrWidth - 1}:0] ${label}_addr;")
-                write(s"wire [${width - 1}:0] ${label}_in;")
-                write(s"wire [${width - 1}:0] ${label}_out;")
-                write(s"wire ${label}_mask = $mask;")
-                write(s"wire ${label}_re;")
-                write(s"wire ${label}_we;")
-                write(s"wire ${label}_ready;")
+                emitRAMSignals(s"ram_${label}", width, addrWidth)
             }
 
             // Hook up the FIFO.
@@ -288,15 +287,24 @@ private[scalapipe] abstract class HDLResourceGenerator(
             write(s".empty(${stream.label}_empty),")
             write(s".full(${stream.label}_full)")
             if (addrWidth > 0) {
-                for (s <- Seq("addr", "in", "out", "re", "we", "ready")) {
-                    write(s", .mem_${s}(${stream.label}_${s})")
-                }
+                write(s", .mem_addr(ram_${stream.label}_addr)")
+                write(s", .mem_in(ram_${stream.label}_out)")
+                write(s", .mem_out(ram_${stream.label}_in)")
+                write(s", .mem_re(ram_${stream.label}_re)")
+                write(s", .mem_we(ram_${stream.label}_we)")
+                write(s", .mem_ready(ram_${stream.label}_ready)")
             }
             leave
             write(s");")
             leave
             write(s"assign ${stream.label}_din = ${stream.label}_output;")
             write(s"assign ${stream.label}_input = ${stream.label}_dout;")
+            if (addrWidth > 0 && sp.parameters.get[Boolean]('bram)) {
+                val mask = (width / 8) - 1
+                write(s"assign ram_${stream.label}_mask = $mask;")
+                emitBRAM(s"ram_${stream.label}", width,
+                         1 << addrWidth, addrWidth)
+            }
             write
 
             // Add edge instrumentation.
@@ -348,14 +356,7 @@ private[scalapipe] abstract class HDLResourceGenerator(
 
             // Declare wires for connecting the memory.
             if (addrWidth > 0) {
-                val mask = (width / 8) - 1
-                write(s"wire [${addrWidth - 1}:0] ${label}_addr;")
-                write(s"wire [${width - 1}:0] ${label}_in;")
-                write(s"wire [${width - 1}:0] ${label}_out;")
-                write(s"wire ${label}_mask = $mask;")
-                write(s"wire ${label}_re;")
-                write(s"wire ${label}_we;")
-                write(s"wire ${label}_ready;")
+                emitRAMSignals(s"ram_${label}", width, addrWidth)
             }
 
             // Hook up the FIFO.
@@ -372,14 +373,23 @@ private[scalapipe] abstract class HDLResourceGenerator(
             write(s".empty(${stream.label}_empty),")
             write(s".full(input${srcIndex}_full)")
             if (addrWidth > 0) {
-                for (s <- Seq("addr", "in", "out", "re", "we", "ready")) {
-                    write(s", .mem_${s}(${stream.label}_${s})")
-                }
+                write(s", .mem_addr(ram_${stream.label}_addr)")
+                write(s", .mem_in(ram_${stream.label}_out)")
+                write(s", .mem_out(ram_${stream.label}_in)")
+                write(s", .mem_re(ram_${stream.label}_re)")
+                write(s", .mem_we(ram_${stream.label}_we)")
+                write(s", .mem_ready(ram_${stream.label}_ready)")
             }
             leave
             write(s");")
             leave
             write(s"assign ${stream.label}_input = ${stream.label}_dout;")
+            if (addrWidth > 0 && sp.parameters.get[Boolean]('bram)) {
+                val mask = (width / 8) - 1
+                write(s"assign ram_${stream.label}_mask = $mask;")
+                emitBRAM(s"ram_${stream.label}", width,
+                         1 << addrWidth, addrWidth)
+            }
             write
 
             // Add edge instrumentation.
@@ -431,14 +441,7 @@ private[scalapipe] abstract class HDLResourceGenerator(
             val destIndex = stream.index
 
             if (addrWidth > 0) {
-                val mask = (width / 8) - 1
-                write(s"wire [${addrWidth - 1}:0] ${label}_addr;")
-                write(s"wire [${width - 1}:0] ${label}_in;")
-                write(s"wire [${width - 1}:0] ${label}_out;")
-                write(s"wire ${label}_mask = $mask;")
-                write(s"wire ${label}_re;")
-                write(s"wire ${label}_we;")
-                write(s"wire ${label}_ready;")
+                emitRAMSignals(s"ram_${label}", width, addrWidth)
             }
 
             // Hook up the FIFO.
@@ -455,15 +458,24 @@ private[scalapipe] abstract class HDLResourceGenerator(
             write(s".empty(${stream.label}_empty),")
             write(s".full(${stream.label}_full)")
             if (addrWidth > 0) {
-                for (s <- Seq("addr", "in", "out", "re", "we", "ready")) {
-                    write(s", .mem_${s}(${stream.label}_${s})")
-                }
+                write(s", .mem_addr(ram_${stream.label}_addr)")
+                write(s", .mem_in(ram_${stream.label}_out)")
+                write(s", .mem_out(ram_${stream.label}_in)")
+                write(s", .mem_re(ram_${stream.label}_re)")
+                write(s", .mem_we(ram_${stream.label}_we)")
+                write(s", .mem_ready(ram_${stream.label}_ready)")
             }
             leave
             write(s");")
             leave
             write(s"assign ${stream.label}_din = ${stream.label}_output;")
             write(s"assign output${destIndex}_avail = !${stream.label}_empty;")
+            if (addrWidth > 0 && sp.parameters.get[Boolean]('bram)) {
+                val mask = (width / 8) - 1
+                write(s"assign ram_${stream.label}_mask = $mask;")
+                emitBRAM(s"ram_${stream.label}", width,
+                         1 << addrWidth, addrWidth)
+            }
             write
 
             // Add edge instrumentation.
