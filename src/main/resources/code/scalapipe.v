@@ -1,5 +1,5 @@
 
-module sp_register(clk, rst, din, dout, re, we, avail, empty, full);
+module sp_register(clk, rst, din, dout, re, we, avail, full);
 
     parameter WIDTH = 8;
     parameter ADDR_WIDTH = 0;
@@ -11,7 +11,6 @@ module sp_register(clk, rst, din, dout, re, we, avail, empty, full);
     input wire re;
     input wire we;
     output wire avail;
-    output wire empty;
     output wire full;
 
     reg [WIDTH-1:0] mem;
@@ -21,9 +20,8 @@ module sp_register(clk, rst, din, dout, re, we, avail, empty, full);
 
     assign full = has_data;
     assign avail = has_data;
-    assign empty = !has_data;
     assign do_read = full & re;
-    assign do_write = empty & we;
+    assign do_write = !has_data & we;
 
     always @(posedge clk) begin
         if (rst) begin
@@ -82,7 +80,7 @@ module sp_ram(clk, rst, addr, din, dout, mask, re, we, ready);
 
 endmodule
 
-module sp_fifo(clk, rst, din, dout, re, we, avail, empty, full,
+module sp_fifo(clk, rst, din, dout, re, we, avail, full,
                mem_addr, mem_in, mem_out, mem_re, mem_we, mem_ready);
 
     parameter WIDTH = 8;
@@ -91,111 +89,71 @@ module sp_fifo(clk, rst, din, dout, re, we, avail, empty, full,
     input wire clk;
     input wire rst;
     input wire [WIDTH-1:0] din;
-    output reg [WIDTH-1:0] dout;
+    output wire [WIDTH-1:0] dout;
     input wire re;
     input wire we;
-    output wire avail;
-    output wire empty;
+    output reg avail;
     output wire full;
     output reg [ADDR_WIDTH-1:0] mem_addr;
     input wire [WIDTH-1:0] mem_in;
-    output wire [WIDTH-1:0] mem_out;
-    output wire mem_re;
-    output wire mem_we;
+    output reg [WIDTH-1:0] mem_out;
+    output reg mem_re;
+    output reg mem_we;
     input wire mem_ready;
 
-    parameter STATE_IDLE = 0;
-    parameter STATE_READ = 1;
-    parameter STATE_WRITE = 2;
-
-    reg [1:0] state;
     reg [ADDR_WIDTH-1:0] read_ptr;
     reg [ADDR_WIDTH-1:0] write_ptr;
     reg [ADDR_WIDTH:0] count;
+    reg read_pending;
+    reg write_pending;
 
-    wire busy = state != STATE_IDLE;
-    assign full = count[ADDR_WIDTH - 1] | busy;
-    assign avail = count != 0 | busy;
-    assign empty = count == 0 & !busy;
-    wire do_read = re & !empty;
-    wire do_write = we & !full;
-    wire write_empty = we & empty;
-    wire reading = do_read | (state == STATE_READ);
-    wire writing = do_write | (state == STATE_WRITE);
-
-    // State machine.
     always @(posedge clk) begin
-        if (rst) begin
-            state <= STATE_IDLE;
-        end else begin
-            if (state == STATE_IDLE) begin
-                if (do_read) state <= STATE_READ;
-                if (do_write) state <= STATE_WRITE;
-            end else if (mem_ready) begin
-                state <= STATE_IDLE;
-            end
-        end
-    end
-
-    // Drive the memory address.
-    always @(*) begin
-        if (do_read | reading) begin
-            mem_addr <= read_ptr;
-        end else begin
-            mem_addr <= write_ptr;
-        end
-    end
-
-    // Drive the memory control lines.
-    assign mem_re = do_read;
-    assign mem_we = do_write;
-
-    // Update the read pointer.
-    always @(posedge clk) begin
+        mem_re <= 0;
+        mem_we <= 0;
         if (rst) begin
             read_ptr <= 0;
-        end else begin
-            if (mem_ready & reading) begin
-                read_ptr <= read_ptr + 1;
-            end
-        end
-    end
-
-    // Update the write pointer.
-    always @(posedge clk) begin
-        if (rst) begin
             write_ptr <= 0;
-        end else begin
-            if (mem_ready & writing) begin
+            count <= 0;
+            read_pending <= 0;
+            write_pending <= 0;
+            avail <= 0;
+        end else if (mem_ready) begin
+            if (count != 0 && !avail && !read_pending) begin
+                mem_re <= 1;
+                mem_addr <= read_ptr;
+                count <= count - 1;
+                read_pending <= 1;
+                if (we && !write_pending && !count[ADDR_WIDTH]) begin
+                    mem_out <= din;
+                    write_pending <= 1;
+                end
+            end else if (write_pending) begin
+                mem_we <= 1;
+                write_pending <= 0;
+                mem_addr <= write_ptr;
                 write_ptr <= write_ptr + 1;
+                count <= count + 1;
+            end else if (we && !count[ADDR_WIDTH]) begin
+                mem_out <= din;
+                mem_we <= 1;
+                mem_addr <= write_ptr;
+                write_ptr <= write_ptr + 1;
+                count <= count + 1;
+            end
+            if (read_pending) begin
+                if (!re || count == 0) begin
+                    avail <= 1;
+                    read_pending <= 0;
+                end
+                read_ptr <= read_ptr + 1;
+            end else if (re && avail) begin
+                avail <= 0;
             end
         end
     end
 
-    // Update the data count.
-    always @(posedge clk) begin
-        if (rst) begin
-            count <= 0;
-        end else begin
-            case ({do_read, do_write})
-                2'b10:      count <= count - 1;
-                2'b01:      count <= count + 1;
-                default:    count <= count;
-            endcase
-        end
-    end
-
-    // Drive data from memory.
-    always @(posedge clk) begin
-        if (reading & mem_ready) begin
-            dout <= mem_in;
-        end else if (write_empty) begin
-            dout <= din;
-        end
-    end
-
-    // Drive data to memory.
-    assign mem_out = din;
+    assign full = count[ADDR_WIDTH - 1] | !mem_ready | write_pending;
+    assign dout = mem_in;
 
 endmodule
 

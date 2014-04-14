@@ -181,7 +181,6 @@ private[scalapipe] abstract class HDLResourceGenerator(
             write(s"wire [${width - 1}:0] ${i.label}_dout;")
             write(s"wire ${i.label}_avail;")
             write(s"wire ${i.label}_read;")
-            write(s"wire ${i.label}_empty;")
         }
         for (o <- outputStreams) {
             val width = o.valueType.bits
@@ -189,7 +188,7 @@ private[scalapipe] abstract class HDLResourceGenerator(
             write(s"wire [${width - 1}:0] ${o.label}_din;")
             write(s"wire ${o.label}_write;")
             write(s"wire ${o.label}_full;")
-            write(s"wire ${o.label}_empty;")
+            write(s"wire ${o.label}_avail;")
         }
         for (i <- internalStreams) {
             val width = i.valueType.bits
@@ -201,7 +200,6 @@ private[scalapipe] abstract class HDLResourceGenerator(
             write(s"wire ${i.label}_read;")
             write(s"wire ${i.label}_write;")
             write(s"wire ${i.label}_full;")
-            write(s"wire ${i.label}_empty;")
         }
         write
 
@@ -249,9 +247,6 @@ private[scalapipe] abstract class HDLResourceGenerator(
             leave
             write(");")
             leave
-            for (i <- kernel.getInputs) {
-                write(s"assign ${i.label}_avail = !${i.label}_empty;")
-            }
             if (ramDepth > 0 && sp.parameters.get[Boolean]('bram)) {
                 emitBRAM(s"ram_${label}", ramWidth, ramDepth, 32)
             }
@@ -284,7 +279,7 @@ private[scalapipe] abstract class HDLResourceGenerator(
             write(s".dout(${stream.label}_dout),")
             write(s".re(${stream.label}_read),")
             write(s".we(${stream.label}_write),")
-            write(s".empty(${stream.label}_empty),")
+            write(s".avail(${stream.label}_avail),")
             write(s".full(${stream.label}_full)")
             if (addrWidth > 0) {
                 write(s", .mem_addr(ram_${stream.label}_addr)")
@@ -300,8 +295,7 @@ private[scalapipe] abstract class HDLResourceGenerator(
             write(s"assign ${stream.label}_din = ${stream.label}_output;")
             write(s"assign ${stream.label}_input = ${stream.label}_dout;")
             if (addrWidth > 0 && sp.parameters.get[Boolean]('bram)) {
-                val mask = (width / 8) - 1
-                write(s"assign ram_${stream.label}_mask = $mask;")
+                write(s"assign ram_${stream.label}_mask = -1;")
                 emitBRAM(s"ram_${stream.label}", width,
                          1 << addrWidth, addrWidth)
             }
@@ -316,7 +310,7 @@ private[scalapipe] abstract class HDLResourceGenerator(
                     write(s"assign qRst[$qmIndex] = rst;")
                     write(s"assign qWr[$qmIndex] = ${stream.label}_write;")
                     write(s"assign qRd[$qmIndex] = ${stream.label}_read " +
-                          s" && !${stream.label}_empty;")
+                          s" && ${stream.label}_avail;")
                     qmIndex += 1
                 }
                 if (m.useInputActivity) {
@@ -325,7 +319,7 @@ private[scalapipe] abstract class HDLResourceGenerator(
                 }
                 if (m.useOutputActivity) {
                     write(s"assign amTap[$amIndex] = ${stream.label}_read" +
-                          s" && !${stream.label}_empty;")
+                          s" && ${stream.label}_avail;")
                     amIndex += 1
                 }
                 if (m.useFullActivity) {
@@ -338,9 +332,9 @@ private[scalapipe] abstract class HDLResourceGenerator(
                     imIndex += 1
                 }
                 if (m.useInterPop) {
-                    write(s"assign imAvail[$imIndex] = !${stream.label}_empty;")
+                    write(s"assign imAvail[$imIndex] = ${stream.label}_avail;")
                     write(s"assign imRead[$imIndex] = ${stream.label}_read" +
-                          s" && !${stream.label}_empty;")
+                          s" && ${stream.label}_avail;")
                     imIndex += 1
                 }
             }
@@ -370,7 +364,7 @@ private[scalapipe] abstract class HDLResourceGenerator(
             write(s".dout(${stream.label}_dout),")
             write(s".re(${stream.label}_read),")
             write(s".we(input${srcIndex}_write),")
-            write(s".empty(${stream.label}_empty),")
+            write(s".avail(${stream.label}_avail),")
             write(s".full(input${srcIndex}_full)")
             if (addrWidth > 0) {
                 write(s", .mem_addr(ram_${stream.label}_addr)")
@@ -385,8 +379,7 @@ private[scalapipe] abstract class HDLResourceGenerator(
             leave
             write(s"assign ${stream.label}_input = ${stream.label}_dout;")
             if (addrWidth > 0 && sp.parameters.get[Boolean]('bram)) {
-                val mask = (width / 8) - 1
-                write(s"assign ram_${stream.label}_mask = $mask;")
+                write(s"assign ram_${stream.label}_mask = -1;")
                 emitBRAM(s"ram_${stream.label}", width,
                          1 << addrWidth, addrWidth)
             }
@@ -401,7 +394,7 @@ private[scalapipe] abstract class HDLResourceGenerator(
                     write(s"assign qRst[$qmIndex] = rst;")
                     write(s"assign qWr[$qmIndex] = input${srcIndex}_write;")
                     write(s"assign qRd[$qmIndex] = ${stream.label}_read" +
-                          s" && !${stream.label}_empty;")
+                          s" && ${stream.label}_avail;")
                     qmIndex += 1
                 }
                 if (m.useInputActivity) {
@@ -410,7 +403,7 @@ private[scalapipe] abstract class HDLResourceGenerator(
                 }
                 if (m.useOutputActivity) {
                     write(s"assign amTap[$amIndex] = " +
-                          s"{stream.label}_read && !${stream.label}_empty;")
+                          s"{stream.label}_read && ${stream.label}_avail;")
                     amIndex += 1
                 }
                 if (m.useFullActivity) {
@@ -423,9 +416,9 @@ private[scalapipe] abstract class HDLResourceGenerator(
                     imIndex += 1
                 }
                 if (m.useInterPop) {
-                    write(s"assign imAvail[$imIndex] = !${stream.label}_empty;")
+                    write(s"assign imAvail[$imIndex] = ${stream.label}_avail;")
                     write(s"assign imRead[$imIndex] = " +
-                          s"${stream.label}_read && !${stream.label}_empty;")
+                          s"${stream.label}_read && ${stream.label}_avail;")
                     imIndex += 1
                 }
             }
@@ -455,7 +448,7 @@ private[scalapipe] abstract class HDLResourceGenerator(
             write(s".dout(output${destIndex}_data),")
             write(s".re(output${destIndex}_read),")
             write(s".we(${stream.label}_write),")
-            write(s".empty(${stream.label}_empty),")
+            write(s".avail(${stream.label}_avail),")
             write(s".full(${stream.label}_full)")
             if (addrWidth > 0) {
                 write(s", .mem_addr(ram_${stream.label}_addr)")
@@ -469,10 +462,9 @@ private[scalapipe] abstract class HDLResourceGenerator(
             write(s");")
             leave
             write(s"assign ${stream.label}_din = ${stream.label}_output;")
-            write(s"assign output${destIndex}_avail = !${stream.label}_empty;")
+            write(s"assign output${destIndex}_avail = ${stream.label}_avail;")
             if (addrWidth > 0 && sp.parameters.get[Boolean]('bram)) {
-                val mask = (width / 8) - 1
-                write(s"assign ram_${stream.label}_mask = $mask;")
+                write(s"assign ram_${stream.label}_mask = -1;")
                 emitBRAM(s"ram_${stream.label}", width,
                          1 << addrWidth, addrWidth)
             }
@@ -487,7 +479,7 @@ private[scalapipe] abstract class HDLResourceGenerator(
                     write(s"assign qRst[$qmIndex] = rst;")
                     write(s"assign qWr[$qmIndex] = ${stream.label}_write;")
                     write(s"assign qRd[$qmIndex] = output${destIndex}_read" +
-                          s" && !${stream.label}_empty;")
+                          s" && ${stream.label}_avail;")
                     qmIndex += 1
                 }
                 if (m.useInputActivity) {
@@ -496,7 +488,7 @@ private[scalapipe] abstract class HDLResourceGenerator(
                 }
                 if (m.useOutputActivity) {
                     write(s"assign amTap[$amIndex] = output" +
-                          s"${destIndex}_read && !${stream.label}_empty;")
+                          s"${destIndex}_read && ${stream.label}_avail;")
                     amIndex += 1
                 }
                 if (m.useFullActivity) {
@@ -509,9 +501,9 @@ private[scalapipe] abstract class HDLResourceGenerator(
                     imIndex += 1
                 }
                 if (m.useInterPop) {
-                    write(s"assign imAvail[$imIndex] = !${stream.label}_empty;")
+                    write(s"assign imAvail[$imIndex] = ${stream.label}_avail;")
                     write(s"assign imRead[$imIndex] = " +
-                          s"output${destIndex}_read && !${stream.label}_empty;")
+                          s"output${destIndex}_read && ${stream.label}_avail;")
                     imIndex += 1
                 }
             }
