@@ -394,6 +394,8 @@ object NBody {
 
         val app = new Application {
 
+            param('fpgaQueueDepth, 128)
+
             val cycle = Cycle()
             val source = Source()
             val buffer = Buffer(source(0), cycle)

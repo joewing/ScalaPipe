@@ -289,7 +289,7 @@ private[scalapipe] abstract class HDLResourceGenerator(
             write(s".full(${stream.label}_full)")
             if (addrWidth > 0) {
                 for (s <- Seq("addr", "in", "out", "re", "we", "ready")) {
-                    write(s", mem_${s}(${stream.label}_${s})")
+                    write(s", .mem_${s}(${stream.label}_${s})")
                 }
             }
             leave
@@ -373,7 +373,7 @@ private[scalapipe] abstract class HDLResourceGenerator(
             write(s".full(input${srcIndex}_full)")
             if (addrWidth > 0) {
                 for (s <- Seq("addr", "in", "out", "re", "we", "ready")) {
-                    write(s", mem_${s}(${stream.label}_${s})")
+                    write(s", .mem_${s}(${stream.label}_${s})")
                 }
             }
             leave
@@ -456,7 +456,7 @@ private[scalapipe] abstract class HDLResourceGenerator(
             write(s".full(${stream.label}_full)")
             if (addrWidth > 0) {
                 for (s <- Seq("addr", "in", "out", "re", "we", "ready")) {
-                    write(s", mem_${s}(${stream.label}_${s})")
+                    write(s", .mem_${s}(${stream.label}_${s})")
                 }
             }
             leave
