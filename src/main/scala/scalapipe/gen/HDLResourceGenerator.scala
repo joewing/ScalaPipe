@@ -25,6 +25,8 @@ private[scalapipe] abstract class HDLResourceGenerator(
 
     protected val kernels = sp.instances.filter { _.device == device }
 
+    private val ramWidth = sp.parameters.get[Int]('memoryWidth)
+
     protected class TimeTrial(val streams: Traversable[Stream]) {
 
         private def count(f : Measure => Boolean): Int = {
@@ -112,102 +114,24 @@ private[scalapipe] abstract class HDLResourceGenerator(
         leave
     }
 
-    private def emitInternal(dir: File) {
+    private def emitKernels {
 
-        val streams = sp.streams.filter { s =>
-            s.sourceKernel.device == device || s.destKernel.device == device
-        }
-        val tt = new TimeTrial(streams)
-
-        write(s"module fpga$id(")
-        enter
-        write(s"input wire clk,")
-        write(s"input wire rst,")
-        for (i <- inputStreams) {
-            val index = i.index
-            val width = i.valueType.bits
-            write(s"input wire [${width - 1}:0] input${index}_data,")
-            write(s"input wire input${index}_write,")
-            write(s"output wire input${index}_full,")
-        }
-        for (o <- outputStreams) {
-            val index = o.index
-            val width = o.valueType.bits
-            write(s"output wire [${width - 1}:0] output${index}_data,")
-            write(s"output wire output${index}_avail,")
-            write(s"input wire output${index}_read,")
-        }
-        write(s"output wire running")
-        if (tt.amCount > 0) {
-            write(s",")
-            write(s"output wire [${tt.amCount - 1}:0] amTap")
-        }
-        if (tt.lmCount > 0) {
-            write(s",")
-            write(s"output wire [${tt.lmCount - 1}:0] lmTap")
-        }
-        if (tt.qmCount > 0) {
-            write(s",")
-            write(s"output wire [${tt.qmCount - 1}:0] qRst,")
-            write(s"output wire [${tt.qmCount - 1}:0] qWr,")
-            write(s"output wire [${tt.qmCount - 1}:0] qRd")
-        }
-        if (tt.imCount > 0) {
-            write(s",")
-            write(s"output wire [${tt.imCount - 1}:0] imAvail,")
-            write(s"output wire [${tt.imCount - 1}:0] imRead")
-        }
-        leave
-        write(");")
-        enter
-        write
-
-        // Wires
-        val ramWidth = sp.parameters.get[Int]('memoryWidth)
-        val wordBytes = ramWidth / 8
-        for (m <- kernels if m.kernelType.ramDepth > 0) {
-            val name = s"ram_${m.label}"
-            write(s"wire [31:0] ${name}_addr;")
-            write(s"wire [${ramWidth - 1}:0] ${name}_in;")
-            write(s"wire [${ramWidth - 1}:0] ${name}_out;")
-            write(s"wire [${wordBytes - 1}:0] ${name}_mask;")
-            write(s"wire ${name}_re;")
-            write(s"wire ${name}_we;")
-            write(s"wire ${name}_ready;")
-        }
-        for (i <- inputStreams) {
-            val width = i.valueType.bits
-            write(s"wire [${width - 1}:0] ${i.label}_input;")
-            write(s"wire [${width - 1}:0] ${i.label}_dout;")
-            write(s"wire ${i.label}_avail;")
-            write(s"wire ${i.label}_read;")
-        }
-        for (o <- outputStreams) {
-            val width = o.valueType.bits
-            write(s"wire [${width - 1}:0] ${o.label}_output;")
-            write(s"wire [${width - 1}:0] ${o.label}_din;")
-            write(s"wire ${o.label}_write;")
-            write(s"wire ${o.label}_full;")
-            write(s"wire ${o.label}_avail;")
-        }
-        for (i <- internalStreams) {
-            val width = i.valueType.bits
-            write(s"wire [${width - 1}:0] ${i.label}_input;")
-            write(s"wire [${width - 1}:0] ${i.label}_output;")
-            write(s"wire [${width - 1}:0] ${i.label}_dout;")
-            write(s"wire [${width - 1}:0] ${i.label}_din;")
-            write(s"wire ${i.label}_avail;")
-            write(s"wire ${i.label}_read;")
-            write(s"wire ${i.label}_write;")
-            write(s"wire ${i.label}_full;")
-        }
-        write
-
-        // Instantiate kernels.
         for (kernel <- kernels) {
             val label = kernel.label
             val kernelName = s"kernel_${kernel.name}"
             val ramDepth = kernel.kernelType.ramDepth
+
+            if (ramDepth > 0) {
+                val wordBytes = ramWidth / 8
+                val name = s"ram_${label}"
+                write(s"wire [31:0] ${name}_addr;")
+                write(s"wire [${ramWidth - 1}:0] ${name}_in;")
+                write(s"wire [${ramWidth - 1}:0] ${name}_out;")
+                write(s"wire [${wordBytes - 1}:0] ${name}_mask;")
+                write(s"wire ${name}_re;")
+                write(s"wire ${name}_we;")
+                write(s"wire ${name}_ready;")
+            }
 
             write(s"wire ${kernel.label}_running;")
             write(kernelName)
@@ -257,16 +181,27 @@ private[scalapipe] abstract class HDLResourceGenerator(
         val running_signals = kernels.map { k => s"${k.label}_running" }
         write("assign running = " + running_signals.mkString("|") + ";")
 
-        // Connect internal streams.
+    }
+
+    private def emitInternalStreams {
         for (stream <- internalStreams) {
+
             val label = stream.label
             val width = stream.valueType.bits
             val addrWidth = getDepthBits(stream)
 
-            // Declare wires for connecting the memory.
+            // Declare wires.
             if (addrWidth > 0) {
                 emitRAMSignals(s"ram_${label}", width, addrWidth)
             }
+            write(s"wire [${width - 1}:0] ${label}_input;")
+            write(s"wire [${width - 1}:0] ${label}_output;")
+            write(s"wire [${width - 1}:0] ${label}_dout;")
+            write(s"wire [${width - 1}:0] ${label}_din;")
+            write(s"wire ${label}_avail;")
+            write(s"wire ${label}_read;")
+            write(s"wire ${label}_write;")
+            write(s"wire ${label}_full;")
 
             // Hook up the FIFO.
             val fifo = if (addrWidth == 0) "sp_register" else "sp_fifo"
@@ -340,18 +275,23 @@ private[scalapipe] abstract class HDLResourceGenerator(
             }
 
         }
+    }
 
-        // Connect input streams.
+    private def emitInputStreams {
         for (stream <- inputStreams) {
             val label = stream.label
             val width = stream.valueType.bits
             val addrWidth = getDepthBits(stream)
             val srcIndex = stream.index
 
-            // Declare wires for connecting the memory.
+            // Declare wires.
             if (addrWidth > 0) {
                 emitRAMSignals(s"ram_${label}", width, addrWidth)
             }
+            write(s"wire [${width - 1}:0] ${label}_input;")
+            write(s"wire [${width - 1}:0] ${label}_dout;")
+            write(s"wire ${label}_avail;")
+            write(s"wire ${label}_read;")
 
             // Hook up the FIFO.
             val fifo = if (addrWidth == 0) "sp_register" else "sp_fifo"
@@ -424,8 +364,9 @@ private[scalapipe] abstract class HDLResourceGenerator(
             }
 
         }
+    }
 
-        // Connect output streams.
+    private def emitOutputStreams {
         for (stream <- outputStreams) {
 
             val label = stream.label
@@ -433,9 +374,15 @@ private[scalapipe] abstract class HDLResourceGenerator(
             val addrWidth = getDepthBits(stream)
             val destIndex = stream.index
 
+            // Wires.
             if (addrWidth > 0) {
                 emitRAMSignals(s"ram_${label}", width, addrWidth)
             }
+            write(s"wire [${width - 1}:0] ${label}_output;")
+            write(s"wire [${width - 1}:0] ${label}_din;")
+            write(s"wire ${label}_write;")
+            write(s"wire ${label}_full;")
+            write(s"wire ${label}_avail;")
 
             // Hook up the FIFO.
             val fifo = if (addrWidth == 0) "sp_register" else "sp_fifo"
@@ -507,8 +454,59 @@ private[scalapipe] abstract class HDLResourceGenerator(
                     imIndex += 1
                 }
             }
-
         }
+    }
+
+    private def emitInternal(dir: File) {
+
+        val streams = sp.streams.filter { s =>
+            s.sourceKernel.device == device || s.destKernel.device == device
+        }
+        val tt = new TimeTrial(streams)
+
+        write(s"module fpga$id(")
+        enter
+        write(s"input wire clk,")
+        write(s"input wire rst,")
+        for (i <- inputStreams) {
+            val index = i.index
+            val width = i.valueType.bits
+            write(s"input wire [${width - 1}:0] input${index}_data,")
+            write(s"input wire input${index}_write,")
+            write(s"output wire input${index}_full,")
+        }
+        for (o <- outputStreams) {
+            val index = o.index
+            val width = o.valueType.bits
+            write(s"output wire [${width - 1}:0] output${index}_data,")
+            write(s"output wire output${index}_avail,")
+            write(s"input wire output${index}_read,")
+        }
+        write(s"output wire running")
+        if (tt.amCount > 0) {
+            write(s", output wire [${tt.amCount - 1}:0] amTap")
+        }
+        if (tt.lmCount > 0) {
+            write(s", output wire [${tt.lmCount - 1}:0] lmTap")
+        }
+        if (tt.qmCount > 0) {
+            write(s", output wire [${tt.qmCount - 1}:0] qRst")
+            write(s", output wire [${tt.qmCount - 1}:0] qWr")
+            write(s", output wire [${tt.qmCount - 1}:0] qRd")
+        }
+        if (tt.imCount > 0) {
+            write(s", output wire [${tt.imCount - 1}:0] imAvail")
+            write(s", output wire [${tt.imCount - 1}:0] imRead")
+        }
+        leave
+        write(");")
+        enter
+        write
+
+        emitInputStreams
+        emitOutputStreams
+        emitInternalStreams
+        emitKernels
 
         leave
         write("endmodule")
