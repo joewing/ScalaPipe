@@ -64,7 +64,7 @@ module sp_fifo(clk, rst, din, dout, re, we, avail, empty, full);
     reg [ADDR_WIDTH-1:0] write_ptr;
     reg [ADDR_WIDTH:0] count;
 
-    assign full = count[ADDR_WIDTH - 1];
+    assign full = count[ADDR_WIDTH];
     assign avail = count != 0;
     assign empty = count == 0;
     wire do_read = re & !empty;
