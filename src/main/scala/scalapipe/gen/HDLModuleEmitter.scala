@@ -173,6 +173,9 @@ private[gen] class HDLModuleEmitter(
         enter
 
         write(s"${instanceName}_start <= 0;")
+        for (i <- 0 until component.argCount) {
+            write(s"${instanceName}_$i <= 1'bx;")
+        }
         sortedParts.foreach { p =>
             val state = p.state
             write(s"if (state == $state) begin")
