@@ -69,7 +69,7 @@ private[scalapipe] class HDLKernelGenerator(
             write(s"input wire full_$name;")
         }
         val wordBytes = ramWidth / 8;
-        write(s"output reg [31:0] ram_addr;")
+        write(s"output reg [${ramAddrWidth - 1}:0] ram_addr;")
         write(s"input wire [${ramWidth - 1}:0] ram_in;")
         write(s"output reg [${ramWidth - 1}:0] ram_out;")
         write(s"output reg [${wordBytes - 1}:0] ram_mask;")

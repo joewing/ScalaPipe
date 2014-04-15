@@ -68,16 +68,16 @@ private[scalapipe] class SimulationResourceGenerator(
         for (i <- inputStreams) {
             val index = i.index
             val width = i.valueType.bits
-            write(s",input wire [${width - 1}:0] din$index")
-            write(s",input wire write$index")
-            write(s",output wire full$index")
+            write(s", input wire [${width - 1}:0] din$index")
+            write(s", input wire write$index")
+            write(s", output wire full$index")
         }
         for (o <- outputStreams) {
             val index = o.index
             val width = o.valueType.bits
-            write(s",output wire [${width - 1}:0] dout$index")
-            write(s",input wire read$index")
-            write(s",output wire avail$index")
+            write(s", output wire [${width - 1}:0] dout$index")
+            write(s", input wire read$index")
+            write(s", output wire avail$index")
         }
         leave
         write(s");")
@@ -114,9 +114,48 @@ private[scalapipe] class SimulationResourceGenerator(
         }
         write
 
+        // Instantiate a fake main memory.
+        val mainDataWidth = sp.parameters.get[Int]('dramDataWidth)
+        val mainAddrWidth = sp.parameters.get[Int]('dramAddrWidth)
+        val mainMaskBits = mainDataWidth / 8
+        val mainDepth = 1 << mainAddrWidth
+        write(s"wire [${mainAddrWidth - 1}:0] ram_addr;")
+        write(s"wire [${mainDataWidth - 1}:0] ram_in;")
+        write(s"wire [${mainDataWidth - 1}:0] ram_out;")
+        write(s"wire [${mainMaskBits - 1}:0] ram_mask;")
+        write(s"wire ram_re;")
+        write(s"wire ram_we;")
+        write(s"wire ram_ready;")
+        write(s"sp_ram #(")
+        enter
+        write(s".WIDTH($mainDataWidth),")
+        write(s".DEPTH($mainDepth),")
+        write(s".ADDR_WIDTH($mainAddrWidth)")
+        leave
+        write(") ram (")
+        enter
+        write(".clk(clk),")
+        write(".rst(rst),")
+        write(".addr(ram_addr),")
+        write(".din(ram_in),")
+        write(".dout(ram_out),")
+        write(".mask(ram_mask),")
+        write(".re(ram_re),")
+        write(".we(ram_we),")
+        write(".ready(ram_ready)")
+        leave
+        write(");")
+
         // Instantiate the ScalaPipe kernels.
         write(s"fpga$id sp(.clk(clk), .rst(rst), .running(running)")
         enter
+        write(s", .ram_addr(ram_addr)")
+        write(s", .ram_in(ram_out)")
+        write(s", .ram_out(ram_in)")
+        write(s", .ram_mask(ram_mask)")
+        write(s", .ram_re(ram_re)")
+        write(s", .ram_we(ram_we)")
+        write(s", .ram_ready(ram_ready)")
         for (i <- inputStreams) {
             val index = i.index
             write(s", .input${index}_data(data$index)")

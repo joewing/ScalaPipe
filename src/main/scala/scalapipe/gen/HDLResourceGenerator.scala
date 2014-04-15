@@ -11,21 +11,40 @@ private[scalapipe] abstract class HDLResourceGenerator(
     protected val host  = device.host
     protected val id    = device.index
 
-    protected val inputStreams = sp.streams.filter { s =>
+    protected val streams = sp.streams.filter { s =>
+        s.sourceKernel.device == device || s.destKernel.device == device
+    }
+
+    protected val inputStreams = streams.filter { s =>
         s.destKernel.device == device && s.sourceKernel.device != device
     }
 
-    protected val outputStreams = sp.streams.filter { s =>
+    protected val outputStreams = streams.filter { s =>
         s.sourceKernel.device == device && s.destKernel.device != device
     }
 
-    protected val internalStreams = sp.streams.filter { s =>
+    protected val internalStreams = streams.filter { s =>
         s.sourceKernel.device == device && s.destKernel.device == device
     }
 
     protected val kernels = sp.instances.filter { _.device == device }
 
     private val ramWidth = sp.parameters.get[Int]('memoryWidth)
+    private val ramAddrWidth = sp.parameters.get[Int]('memoryAddrWidth)
+
+    private def getAddrWidth(width: Int): Int = {
+        val bytes = round2(width) / 8
+        val baseBytes = ramWidth / 8
+        if (baseBytes > bytes) {
+            val delta = log2(baseBytes) - log2(bytes)
+            ramAddrWidth + delta
+        } else if (baseBytes < bytes) {
+            val delta = log2(bytes) - log2(baseBytes)
+            ramAddrWidth - delta
+        } else {
+            ramAddrWidth
+        }
+    }
 
     protected class TimeTrial(val streams: Traversable[Stream]) {
 
@@ -78,24 +97,23 @@ private[scalapipe] abstract class HDLResourceGenerator(
         math.ceil(math.log(depth) / math.log(2.0)).toInt
     }
 
-    private def emitRAMSignals(label: String,
-                                width: Int,
-                                addrWidth: Int) {
-        val maskWidth = width / 8
+    private def emitRAMSignals(label: String, width: Int) {
+        val rwidth = round2(width)
+        val maskWidth = rwidth / 8
+        val addrWidth = getAddrWidth(rwidth)
         write(s"wire [${addrWidth - 1}:0] ${label}_addr;")
-        write(s"wire [${width - 1}:0] ${label}_in;")
-        write(s"wire [${width - 1}:0] ${label}_out;")
+        write(s"wire [${rwidth - 1}:0] ${label}_in;")
+        write(s"wire [${rwidth - 1}:0] ${label}_out;")
         write(s"wire [${maskWidth - 1}:0] ${label}_mask;")
         write(s"wire ${label}_re;")
         write(s"wire ${label}_we;")
         write(s"wire ${label}_ready;")
     }
 
-    private def emitBRAM(label: String,
-                         width: Int,
-                         depth: Int,
-                         addrWidth: Int) {
-        write(s"sp_ram #(.WIDTH($width), .DEPTH($depth), "  +
+    private def emitBRAM(label: String, width: Int, depth: Int) {
+        val rwidth = round2(width)
+        val addrWidth = getAddrWidth(rwidth)
+        write(s"sp_ram #(.WIDTH($rwidth), .DEPTH($depth), "  +
               s".ADDR_WIDTH($addrWidth))")
         enter
         write(s"$label (")
@@ -124,7 +142,7 @@ private[scalapipe] abstract class HDLResourceGenerator(
             if (ramDepth > 0) {
                 val wordBytes = ramWidth / 8
                 val name = s"ram_${label}"
-                write(s"wire [31:0] ${name}_addr;")
+                write(s"wire [${ramAddrWidth - 1}:0] ${name}_addr;")
                 write(s"wire [${ramWidth - 1}:0] ${name}_in;")
                 write(s"wire [${ramWidth - 1}:0] ${name}_out;")
                 write(s"wire [${wordBytes - 1}:0] ${name}_mask;")
@@ -172,7 +190,7 @@ private[scalapipe] abstract class HDLResourceGenerator(
             write(");")
             leave
             if (ramDepth > 0 && sp.parameters.get[Boolean]('bram)) {
-                emitBRAM(s"ram_${label}", ramWidth, ramDepth, 32)
+                emitBRAM(s"ram_${label}", ramWidth, ramDepth)
             }
             write
         }
@@ -187,12 +205,12 @@ private[scalapipe] abstract class HDLResourceGenerator(
         for (stream <- internalStreams) {
 
             val label = stream.label
-            val width = stream.valueType.bits
+            val width = round2(stream.valueType.bits)
             val addrWidth = getDepthBits(stream)
 
             // Declare wires.
             if (addrWidth > 0) {
-                emitRAMSignals(s"ram_${label}", width, addrWidth)
+                emitRAMSignals(s"ram_${label}", width)
             }
             write(s"wire [${width - 1}:0] ${label}_input;")
             write(s"wire [${width - 1}:0] ${label}_output;")
@@ -231,8 +249,7 @@ private[scalapipe] abstract class HDLResourceGenerator(
             write(s"assign ${stream.label}_input = ${stream.label}_dout;")
             if (addrWidth > 0 && sp.parameters.get[Boolean]('bram)) {
                 write(s"assign ram_${stream.label}_mask = -1;")
-                emitBRAM(s"ram_${stream.label}", width,
-                         1 << addrWidth, addrWidth)
+                emitBRAM(s"ram_${stream.label}", width, 1 << addrWidth)
             }
             write
 
@@ -286,7 +303,7 @@ private[scalapipe] abstract class HDLResourceGenerator(
 
             // Declare wires.
             if (addrWidth > 0) {
-                emitRAMSignals(s"ram_${label}", width, addrWidth)
+                emitRAMSignals(s"ram_${label}", width)
             }
             write(s"wire [${width - 1}:0] ${label}_input;")
             write(s"wire [${width - 1}:0] ${label}_dout;")
@@ -320,8 +337,7 @@ private[scalapipe] abstract class HDLResourceGenerator(
             write(s"assign ${stream.label}_input = ${stream.label}_dout;")
             if (addrWidth > 0 && sp.parameters.get[Boolean]('bram)) {
                 write(s"assign ram_${stream.label}_mask = -1;")
-                emitBRAM(s"ram_${stream.label}", width,
-                         1 << addrWidth, addrWidth)
+                emitBRAM(s"ram_${stream.label}", width, 1 << addrWidth)
             }
             write
 
@@ -376,7 +392,7 @@ private[scalapipe] abstract class HDLResourceGenerator(
 
             // Wires.
             if (addrWidth > 0) {
-                emitRAMSignals(s"ram_${label}", width, addrWidth)
+                emitRAMSignals(s"ram_${label}", width)
             }
             write(s"wire [${width - 1}:0] ${label}_output;")
             write(s"wire [${width - 1}:0] ${label}_din;")
@@ -412,8 +428,7 @@ private[scalapipe] abstract class HDLResourceGenerator(
             write(s"assign output${destIndex}_avail = ${stream.label}_avail;")
             if (addrWidth > 0 && sp.parameters.get[Boolean]('bram)) {
                 write(s"assign ram_${stream.label}_mask = -1;")
-                emitBRAM(s"ram_${stream.label}", width,
-                         1 << addrWidth, addrWidth)
+                emitBRAM(s"ram_${stream.label}", width, 1 << addrWidth)
             }
             write
 
@@ -457,17 +472,78 @@ private[scalapipe] abstract class HDLResourceGenerator(
         }
     }
 
+    private def emitMemory {
+
+        if (sp.parameters.get[Boolean]('bram)) {
+            return
+        }
+
+        write(s"mem m(")
+        enter
+        write(s".port0_addr(ram_addr),")
+        write(s".port0_din(ram_out),")
+        write(s".port0_dout(ram_in),")
+        write(s".port0_re(ram_re),")
+        write(s".port0_we(ram_we),")
+        write(s".port0_mask(ram_mask),")
+        write(s".port0_ready(ram_ready)")
+        for (s <- streams) {
+            val port = s"fifo${s.index}"
+            if (getDepthBits(s) > 0) {
+                val label = s"ram_${s.label}"
+                write(s", .${port}_addr(${label}_addr)")
+                write(s", .${port}_in(${label}_out)")
+                write(s", .${port}_out(${label}_in)")
+                write(s", .${port}_re(${label}_re)")
+                write(s", .${port}_we(${label}_we)")
+                write(s", .${port}_ready(${label}_ready)")
+            } else {
+                write(s", .${port}_addr(${ramAddrWidth}'bx)")
+                write(s", .${port}_in(${ramWidth}'bx)")
+                write(s", .${port}_re(1'b0)")
+                write(s", .${port}_we(1'b0)")
+            }
+        }
+        for (k <- kernels) {
+            val port = s"subsystem${k.index}"
+            if (k.kernelType.ramDepth > 0) {
+                val label = s"ram_${k.label}"
+                write(s", .${port}_addr(${label}_addr)")
+                write(s", .${port}_in(${label}_out)")
+                write(s", .${port}_out(${label}_in)")
+                write(s", .${port}_re(${label}_re)")
+                write(s", .${port}_we(${label}_we)")
+                write(s", .${port}_ready(${label}_ready)")
+            } else {
+                write(s", .${port}_addr(${ramAddrWidth}'bx)")
+                write(s", .${port}_in(${ramWidth}'bx)")
+                write(s", .${port}_re(1'b0)")
+                write(s", .${port}_we(1'b0)")
+            }
+        }
+        leave
+        write(s");")
+
+    }
+
     private def emitInternal(dir: File) {
 
-        val streams = sp.streams.filter { s =>
-            s.sourceKernel.device == device || s.destKernel.device == device
-        }
         val tt = new TimeTrial(streams)
+        val mainDataWidth = sp.parameters.get[Int]('dramDataWidth)
+        val mainAddrWidth = sp.parameters.get[Int]('dramAddrWidth)
+        val mainMaskBits = mainDataWidth / 8
 
         write(s"module fpga$id(")
         enter
         write(s"input wire clk,")
         write(s"input wire rst,")
+        write(s"output wire [${mainAddrWidth - 1}:0] ram_addr,")
+        write(s"input wire [${mainDataWidth - 1}:0] ram_out,")
+        write(s"output wire [${mainDataWidth - 1}:0] ram_in,")
+        write(s"output wire [${mainMaskBits - 1}:0] ram_mask,")
+        write(s"output wire ram_re,")
+        write(s"output wire ram_we,")
+        write(s"input wire ram_ready,")
         for (i <- inputStreams) {
             val index = i.index
             val width = i.valueType.bits
@@ -507,6 +583,7 @@ private[scalapipe] abstract class HDLResourceGenerator(
         emitOutputStreams
         emitInternalStreams
         emitKernels
+        emitMemory
 
         leave
         write("endmodule")

@@ -11,6 +11,14 @@ private[gen] class Generator {
     private val result = new ListBuffer[String]
     private var level = 0
 
+    protected def log2(i: Int): Int = {
+        math.round(math.log(i) / math.log(2)).toInt
+    }
+
+    protected def round2(i: Int): Int = {
+        1 << math.ceil(math.log(i) / math.log(2)).toInt
+    }
+
     def enter() {
         level += 1
     }
