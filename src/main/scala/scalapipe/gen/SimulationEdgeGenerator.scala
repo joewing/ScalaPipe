@@ -96,6 +96,7 @@ private[scalapipe] class SimulationEdgeGenerator(
         for (s <- streams) {
             val label = s.label
             write(s"static char active$label = 1;")
+            write(s"static int stream$label = -1;")
         }
         for (s <- receiverStreams) {
             val label = s.label
@@ -103,7 +104,7 @@ private[scalapipe] class SimulationEdgeGenerator(
         }
 
         for (s <- senderStreams) {
-            writeSendFunctions(s)
+            writeSendFunctions(s, senderStreams)
         }
 
         for (s <- receiverStreams) {
@@ -201,7 +202,8 @@ private[scalapipe] class SimulationEdgeGenerator(
 
     }
 
-    private def writeSendFunctions(stream: Stream) {
+    private def writeSendFunctions(stream: Stream,
+                                   senders: Traversable[Stream]) {
 
         val label = stream.label
         val queue = "q_" + stream.label
@@ -219,7 +221,6 @@ private[scalapipe] class SimulationEdgeGenerator(
         }
 
         // Globals.
-        write(s"static int stream$label = -1;")
         write(s"static SPQ *$queue = NULL;")
 
         // "get_free"
@@ -247,6 +248,14 @@ private[scalapipe] class SimulationEdgeGenerator(
         write(s"const uint32_t c = spq_start_read($queue, &data);")
         write(s"sim_write($fd, data, sizeof($vtype), c);")
         write(s"spq_finish_read($queue, c);")
+        for (s <- senders if s != stream) {
+            val sfd = s"stream${s.label}"
+            write(s"if(active${s.label}) {")
+            enter
+            write(s"sim_write($sfd, NULL, 0, 0);")
+            leave
+            write(s"}")
+        }
         leave
         write(s"}")
 
@@ -274,7 +283,6 @@ private[scalapipe] class SimulationEdgeGenerator(
         val destName = stream.destKernel.kernelType.name
 
         // Globals.
-        write(s"static int stream$label = -1;")
         write(s"static SPQ *$queue = NULL;")
 
         // "get_available"
