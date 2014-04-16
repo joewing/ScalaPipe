@@ -39,13 +39,15 @@ private[scalapipe] class HDLKernelGenerator(
             write(s"write_$o,")
             write(s"full_$o,")
         }
-        write("ram_addr,")
-        write("ram_in,")
-        write("ram_out,")
-        write("ram_mask,")
-        write("ram_we,")
-        write("ram_re,")
-        write("ram_ready,")
+        if (kt.ramDepth > 0) {
+            write("ram_addr,")
+            write("ram_in,")
+            write("ram_out,")
+            write("ram_mask,")
+            write("ram_we,")
+            write("ram_re,")
+            write("ram_ready,")
+        }
         write("running,")
         write("rst,")
         write("clk")
@@ -68,14 +70,16 @@ private[scalapipe] class HDLKernelGenerator(
             write(s"output wire write_$name;")
             write(s"input wire full_$name;")
         }
-        val wordBytes = ramWidth / 8;
-        write(s"output reg [${ramAddrWidth - 1}:0] ram_addr;")
-        write(s"input wire [${ramWidth - 1}:0] ram_in;")
-        write(s"output reg [${ramWidth - 1}:0] ram_out;")
-        write(s"output reg [${wordBytes - 1}:0] ram_mask;")
-        write(s"output reg ram_re;")
-        write(s"output reg ram_we;")
-        write(s"input wire ram_ready;")
+        if (kt.ramDepth > 0) {
+            val wordBytes = ramWidth / 8;
+            write(s"output reg [${ramAddrWidth - 1}:0] ram_addr;")
+            write(s"input wire [${ramWidth - 1}:0] ram_in;")
+            write(s"output reg [${ramWidth - 1}:0] ram_out;")
+            write(s"output reg [${wordBytes - 1}:0] ram_mask;")
+            write(s"output reg ram_re;")
+            write(s"output reg ram_we;")
+            write(s"input wire ram_ready;")
+        }
         write("output reg running;")
         write("input wire rst;")
         write("input wire clk;")
