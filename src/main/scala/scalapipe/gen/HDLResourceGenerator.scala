@@ -247,8 +247,10 @@ private[scalapipe] abstract class HDLResourceGenerator(
             leave
             write(s"assign ${stream.label}_din = ${stream.label}_output;")
             write(s"assign ${stream.label}_input = ${stream.label}_dout;")
-            if (addrWidth > 0 && sp.parameters.get[Boolean]('bram)) {
+            if (addrWidth > 0) {
                 write(s"assign ram_${stream.label}_mask = -1;")
+            }
+            if (addrWidth > 0 && sp.parameters.get[Boolean]('bram)) {
                 emitBRAM(s"ram_${stream.label}", width, 1 << addrWidth)
             }
             write
@@ -335,8 +337,10 @@ private[scalapipe] abstract class HDLResourceGenerator(
             write(s");")
             leave
             write(s"assign ${stream.label}_input = ${stream.label}_dout;")
-            if (addrWidth > 0 && sp.parameters.get[Boolean]('bram)) {
+            if (addrWidth > 0) {
                 write(s"assign ram_${stream.label}_mask = -1;")
+            }
+            if (addrWidth > 0 && sp.parameters.get[Boolean]('bram)) {
                 emitBRAM(s"ram_${stream.label}", width, 1 << addrWidth)
             }
             write
@@ -426,8 +430,10 @@ private[scalapipe] abstract class HDLResourceGenerator(
             leave
             write(s"assign ${stream.label}_din = ${stream.label}_output;")
             write(s"assign output${destIndex}_avail = ${stream.label}_avail;")
-            if (addrWidth > 0 && sp.parameters.get[Boolean]('bram)) {
+            if (addrWidth > 0) {
                 write(s"assign ram_${stream.label}_mask = -1;")
+            }
+            if (addrWidth > 0 && sp.parameters.get[Boolean]('bram)) {
                 emitBRAM(s"ram_${stream.label}", width, 1 << addrWidth)
             }
             write
@@ -480,6 +486,8 @@ private[scalapipe] abstract class HDLResourceGenerator(
 
         write(s"mem m(")
         enter
+        write(s".clk(clk),")
+        write(s".rst(rst),")
         write(s".port0_addr(ram_addr),")
         write(s".port0_din(ram_in),")
         write(s".port0_dout(ram_out),")
@@ -492,34 +500,65 @@ private[scalapipe] abstract class HDLResourceGenerator(
             if (getDepthBits(s) > 0) {
                 val label = s"ram_${s.label}"
                 write(s", .${port}_addr(${label}_addr)")
-                write(s", .${port}_in(${label}_out)")
-                write(s", .${port}_out(${label}_in)")
+                write(s", .${port}_in(${label}_in)")
+                write(s", .${port}_out(${label}_out)")
+                write(s", .${port}_mask(${label}_mask)")
                 write(s", .${port}_re(${label}_re)")
                 write(s", .${port}_we(${label}_we)")
                 write(s", .${port}_ready(${label}_ready)")
             } else {
-                write(s", .${port}_addr(${ramAddrWidth}'bx)")
-                write(s", .${port}_in(${ramWidth}'bx)")
+                write(s", .${port}_addr(1'bx)")
+                write(s", .${port}_mask(1'bx)")
+                write(s", .${port}_in(1'bx)")
+                write(s", .${port}_out()")
                 write(s", .${port}_re(1'b0)")
                 write(s", .${port}_we(1'b0)")
+                write(s", .${port}_ready()")
             }
+        }
+        val externalStreams = sp.streams.filter { s =>
+            s.sourceKernel.device != device && s.destKernel.device != device
+        }
+        for (s <- externalStreams) {
+            val port = s"fifo${s.index}"
+            write(s", .${port}_addr(1'bx)")
+            write(s", .${port}_mask(1'bx)")
+            write(s", .${port}_in(1'bx)")
+            write(s", .${port}_out()")
+            write(s", .${port}_re(1'b0)")
+            write(s", .${port}_we(1'b0)")
+            write(s", .${port}_ready()")
         }
         for (k <- kernels) {
             val port = s"subsystem${k.index}"
             if (k.kernelType.ramDepth > 0) {
                 val label = s"ram_${k.label}"
                 write(s", .${port}_addr(${label}_addr)")
-                write(s", .${port}_in(${label}_out)")
-                write(s", .${port}_out(${label}_in)")
+                write(s", .${port}_out(${label}_out)")
+                write(s", .${port}_in(${label}_in)")
+                write(s", .${port}_mask(${label}_mask)")
                 write(s", .${port}_re(${label}_re)")
                 write(s", .${port}_we(${label}_we)")
                 write(s", .${port}_ready(${label}_ready)")
             } else {
-                write(s", .${port}_addr(${ramAddrWidth}'bx)")
-                write(s", .${port}_in(${ramWidth}'bx)")
+                write(s", .${port}_addr(1'bx)")
+                write(s", .${port}_mask(1'bx)")
+                write(s", .${port}_in(1'bx)")
+                write(s", .${port}_out()")
                 write(s", .${port}_re(1'b0)")
                 write(s", .${port}_we(1'b0)")
+                write(s", .${port}_ready()")
             }
+        }
+        for (k <- sp.instances.filter(_.device != device)) {
+            val port = s"subsystem${k.index}"
+            write(s", .${port}_addr(1'bx)")
+            write(s", .${port}_mask(1'bx)")
+            write(s", .${port}_in(1'bx)")
+            write(s", .${port}_out()")
+            write(s", .${port}_re(1'b0)")
+            write(s", .${port}_we(1'b0)")
+            write(s", .${port}_ready()")
         }
         leave
         write(s");")
