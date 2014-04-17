@@ -22,6 +22,6 @@ private[scalapipe] class ApplicationParameters extends Parameters {
     add('memoryWidth, 32)       // FPGA memory port width.
     add('bram, true)            // Set to use block RAM for memories.
     add('dramAddrWidth, 27)     // DRAM address width.
-    add('dramDataWidth, 256)    // DRAM data width.
+    add('dramDataWidth, 128)    // DRAM data width.
 
 }
