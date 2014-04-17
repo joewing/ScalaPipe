@@ -394,6 +394,7 @@ object NBody {
 
         val app = new Application {
 
+            param('fpga, "Saturn")
             param('fpgaQueueDepth, 128)
             param('bram, false)
 

@@ -20,14 +20,16 @@ private[scalapipe] class CPUResourceGenerator(
     private lazy val openCLEdgeGenerator = new OpenCLEdgeGenerator(sp)
     private lazy val smartFusionEdgeGenerator = new SmartFusionEdgeGenerator(sp)
     private lazy val simulationEdgeGenerator = new SimulationEdgeGenerator(sp)
+    private lazy val saturnEdgeGenerator = new SaturnEdgeGenerator(sp)
     private lazy val sockEdgeGenerator = new SockEdgeGenerator(sp, host)
     private lazy val cEdgeGenerator = new CEdgeGenerator
 
     private def getHDLEdgeGenerator: EdgeGenerator = {
         val fpga = sp.parameters.get[String]('fpga)
         fpga match {
-            case "SmartFusion"    => smartFusionEdgeGenerator
-            case "Simulation"     => simulationEdgeGenerator
+            case "SmartFusion"      => smartFusionEdgeGenerator
+            case "Simulation"       => simulationEdgeGenerator
+            case "Saturn"           => saturnEdgeGenerator
             case _ =>
                 Error.raise(s"unknown FPGA type: $fpga")
                 simulationEdgeGenerator

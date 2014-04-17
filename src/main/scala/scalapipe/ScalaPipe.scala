@@ -484,6 +484,8 @@ private[scalapipe] class ScalaPipe {
                 RawFileGenerator.emitFile(dir, "smartfusion.v", "platform.v")
             case "Simulation" =>
                 RawFileGenerator.emitFile(dir, "simulation.v", "platform.v")
+            case "Saturn" =>
+                RawFileGenerator.emitFile(dir, "saturn.v", "platform.v")
             case _ => Error.raise(s"Unknown FPGA type: $fpga")
         }
 
