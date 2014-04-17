@@ -57,11 +57,32 @@ module sp_ram(clk, rst, addr, din, dout, mask, re, we, ready);
     input wire we;
     output wire ready;
 
+    reg rre;
+    reg rwe;
+    reg [WIDTH/8-1:0] rmask;
+    reg [WIDTH-1:0] rin;
+    reg [ADDR_WIDTH-1:0] raddr;
     reg [WIDTH-1:0] data [0:DEPTH-1];
+    reg busy;
 
     always @(posedge clk) begin
-        if (re) begin
-            dout <= data[addr];
+        if (rst) begin
+            rre <= 0;
+            rwe <= 0;
+            busy <= 0;
+        end else begin
+            raddr <= addr;
+            rin <= din;
+            rmask <= mask;
+            rre <= re;
+            rwe <= we;
+            busy <= re | we;
+        end
+    end
+
+    always @(posedge clk) begin
+        if (rre) begin
+            dout <= data[raddr];
         end
     end
 
@@ -69,14 +90,14 @@ module sp_ram(clk, rst, addr, din, dout, mask, re, we, ready);
     generate
         for (i = 0; i < WIDTH / 8; i = i + 1) begin : select_bytes
             always @(posedge clk) begin
-                if (we & mask[i]) begin
-                    data[addr][i*8+7:i*8] <= din[i*8+7:i*8];
+                if (rwe & rmask[i]) begin
+                    data[raddr][i*8+7:i*8] <= rin[i*8+7:i*8];
                 end
             end
         end
     endgenerate
 
-    assign ready = 1;
+    assign ready = ~busy;
 
 endmodule
 
@@ -117,13 +138,13 @@ module sp_fifo(clk, rst, din, dout, re, we, avail, full,
             read_pending <= 0;
             write_pending <= 0;
             avail <= 0;
-        end else if (mem_ready) begin
+        end else if (mem_ready && !mem_re && !mem_we) begin
             if (count != 0 && !avail && !read_pending) begin
                 mem_re <= 1;
                 mem_addr <= read_ptr;
                 count <= count - 1;
                 read_pending <= 1;
-                if (we && !write_pending && !count[ADDR_WIDTH]) begin
+                if (we) begin
                     mem_out <= din;
                     write_pending <= 1;
                 end
@@ -133,7 +154,7 @@ module sp_fifo(clk, rst, din, dout, re, we, avail, full,
                 mem_addr <= write_ptr;
                 write_ptr <= write_ptr + 1;
                 count <= count + 1;
-            end else if (we && !count[ADDR_WIDTH]) begin
+            end else if (we) begin
                 mem_out <= din;
                 mem_we <= 1;
                 mem_addr <= write_ptr;
@@ -146,13 +167,17 @@ module sp_fifo(clk, rst, din, dout, re, we, avail, full,
                     read_pending <= 0;
                 end
                 read_ptr <= read_ptr + 1;
-            end else if (re && avail) begin
-                avail <= 0;
             end
+        end else if (we) begin
+            mem_out <= din;
+            write_pending <= 1;
+        end
+        if (re) begin
+            avail <= 0;
         end
     end
 
-    assign full = count[ADDR_WIDTH - 1] | !mem_ready | write_pending;
+    assign full = count[ADDR_WIDTH] | !mem_ready | mem_we;
     assign dout = mem_in;
 
 endmodule
