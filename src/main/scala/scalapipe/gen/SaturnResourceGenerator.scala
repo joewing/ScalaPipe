@@ -28,7 +28,7 @@ private[scalapipe] class SaturnResourceGenerator(
         write(s"input wire usb_txe_n,")
         write(s"output reg usb_rd_n,")
         write(s"output reg usb_wr_n,")
-        write(s"output wire siwu,")
+        write(s"output wire siwu")
         leave
         write(s");")
         enter
@@ -37,10 +37,10 @@ private[scalapipe] class SaturnResourceGenerator(
 
         // Synchronize the USB interface.
         write(s"wire [7:0] usb_input;")
-        write(s"wire usb_read;")
+        write(s"reg usb_read;")
         write(s"wire usb_avail;")
         write(s"reg [7:0] usb_output;")
-        write(s"wire usb_write;")
+        write(s"reg usb_write;")
         write(s"wire usb_full;")
         write(s"sp_usb_sync usb(")
         enter
@@ -79,16 +79,16 @@ private[scalapipe] class SaturnResourceGenerator(
             val width = i.valueType.bits
             write(s"reg write$index;")
             write(s"wire full$index;")
-            write(s"reg [${width - 1}:0] data$index")
+            write(s"reg [${width - 1}:0] data$index;")
         }
 
         // Signals from the ScalaPipe kernels.
         for (o <- outputStreams) {
             val index = o.index
             val width = o.valueType.bits
-            write(s"wire [${width - 1}:0] data$index")
-            write(s"reg read$index")
-            write(s"wire avail$index")
+            write(s"wire [${width - 1}:0] data$index;")
+            write(s"reg read$index;")
+            write(s"wire avail$index;")
         }
 
         // State machine for USB communication.
@@ -154,6 +154,15 @@ private[scalapipe] class SaturnResourceGenerator(
             write(s"if (avail$index) begin")
             enter
 
+            write(s"case (offset)")
+            enter
+            for (byte <- 0 until bytes) {
+                val bottom = byte * 8
+                val top = bottom + 7
+                write(s"${byte}: usb_output <= data${index}[$top:$bottom];")
+            }
+            leave
+            write(s"endcase")
             write(s"usb_write <= 1;")
             write(s"if (offset != ${bytes - 1}) begin")
             enter
@@ -252,7 +261,7 @@ private[scalapipe] class SaturnResourceGenerator(
         enter
         write(s".clk(clk),")
         write(s".rst(rst),")
-        write(s".running(),")
+        write(s".running()")
         write(s", .ram_addr(ram_addr)")
         write(s", .ram_in(ram_out)")
         write(s", .ram_out(ram_in)")
