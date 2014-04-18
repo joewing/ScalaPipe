@@ -21,19 +21,65 @@ private[scalapipe] class SaturnResourceGenerator(
 
         write(s"module top$id(")
         enter
-        write(s"input wire clk,")
-        write(s"input wire rst,")
+        write(s"input wire sysclk,")
+
         write(s"inout wire [7:0] usb_data,")
         write(s"input wire usb_rxf_n,")
         write(s"input wire usb_txe_n,")
         write(s"output reg usb_rd_n,")
         write(s"output reg usb_wr_n,")
-        write(s"output wire siwu")
+        write(s"output wire siwu,")
+
+        write(s"inout wire [15:0] dram_dq,")
+        write(s"output wire dram_a,")
+        write(s"output wire [1:0] dram_ba,")
+        write(s"output wire dram_cke,")
+        write(s"output wire dram_ras_n,")
+        write(s"output wire dram_cas_n,")
+        write(s"output wire dram_we_n,")
+        write(s"output wire dram_dm,")
+        write(s"inout wire dram_udqs,")
+        write(s"inout wire dram_rzq,")
+        write(s"output wire dram_udm,")
+        write(s"inout wire dram_dqs,")
+        write(s"output wire dram_ck,")
+        write(s"output wire dram_ck_n")
+
         leave
         write(s");")
         enter
 
         write(s"assign siwu = 1; // Not used")
+
+        // Clock generation.
+        write(s"wire clk;")
+        write(s"wire sys_clk_p;")
+        write(s"wire sys_clk_n;")
+        enter
+        write(s"clk_gen clknetwork(")
+        write(s".sysclk(sysclk),")
+        write(s".clk(clk),")
+        write(s".sys_clk_p(sys_clk_p),")
+        write(s".sys_clk_n(sys_clk_n)")
+        leave
+        write(s");")
+
+        // Reset signal.
+        write(s"reg rst;")
+        write(s"reg [3:0] reset_counter = 0;")
+        write(s"always @(posedge clk) begin")
+        enter
+        write(s"if (reset_counter[3]) begin")
+        enter
+        write(s"rst <= 0;")
+        leave
+        write(s"end else begin")
+        enter
+        write(s"reset_counter <= reset_counter + 1;")
+        leave
+        write(s"end")
+        leave
+        write(s"end")
 
         // Synchronize the USB interface.
         write(s"wire [7:0] usb_input;")
@@ -255,20 +301,56 @@ private[scalapipe] class SaturnResourceGenerator(
         write(s"end")   // always
 
         // Connect the DRAM controller.
+        write(s"wire [25:0] ram_addr;")
+        write(s"wire [127:0] ram_in;")
+        write(s"wire [127:0] ram_out;")
+        write(s"wire [15:0] ram_mask;")
+        write(s"wire ram_we;")
+        write(s"wire ram_re;")
+        write(s"wire ram_ready;")
+        write(s"sp_dram(")
+        enter
+        write(s".dram_dq(dram_dq),")
+        write(s".dram_a(dram_a),")
+        write(s".dram_ba(dram_ba),")
+        write(s".dram_cke(dram_cke),")
+        write(s".dram_ras_n(dram_ras_n),")
+        write(s".dram_cas_n(dram_cas_n),")
+        write(s".dram_we_n(dram_we_n),")
+        write(s".dram_dm(dram_dm),")
+        write(s".dram_udqs(dram_udqs),")
+        write(s".dram_rzq(dram_rzq),")
+        write(s".dram_udm(dram_udm),")
+        write(s".dram_dqs(dram_dqs),")
+        write(s".dram_ck(dram_ck),")
+        write(s".dram_ck_n(dram_ck_n),")
+        write(s".sys_clk_p(sys_clk_p),")
+        write(s".sys_clk_n(sys_clk_n),")
+        write(s".clk(clk),")
+        write(s".rst(rst),")
+        write(s".addr(ram_addr),")
+        write(s".din(ram_in),")
+        write(s".dout(ram_out),")
+        write(s".mask(ram_mask),")
+        write(s".we(ram_we),")
+        write(s".re(ram_re),")
+        write(s".ready(ram_ready)")
+        leave
+        write(s");")
 
         // Instantiate the ScalaPipe kernels.
         write(s"fpga$id sp(")
         enter
         write(s".clk(clk),")
         write(s".rst(rst),")
-        write(s".running()")
-        write(s", .ram_addr(ram_addr)")
-        write(s", .ram_in(ram_out)")
-        write(s", .ram_out(ram_in)")
-        write(s", .ram_mask(ram_mask)")
-        write(s", .ram_re(ram_re)")
-        write(s", .ram_we(ram_we)")
-        write(s", .ram_ready(ram_ready)")
+        write(s".running(),")
+        write(s".ram_addr(ram_addr),")
+        write(s".ram_in(ram_out),")
+        write(s".ram_out(ram_in),")
+        write(s".ram_mask(ram_mask),")
+        write(s".ram_re(ram_re),")
+        write(s".ram_we(ram_we),")
+        write(s".ram_ready(ram_ready)")
         for (i <- inputStreams) {
             val index = i.index
             write(s", .input${index}_data(data$index)")
