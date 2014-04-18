@@ -184,58 +184,59 @@ module sp_dram(
     wire [6:0] rd_count;
     wire rc_overflow;
     wire rd_error;
-    reg read_buffer[127:0];
+    wire [127:0] rd_data;
+    reg [127:0] read_buffer;
 
     mig_lpddr mem(
 
-        mcb3_dram_dq(dram_dq),
-        mcb3_dram_a(dram_a),
-        mcb3_dram_ba(dram_ba),
-        mcb3_dram_cke(dram_cke),
-        mcb3_dram_ras_n(dram_ras_n),
-        mcb3_dram_cas_n(dram_cas_n),
-        mcb3_dram_we_n(dram_we_n),
-        mcb3_dram_dm(dram_dm),
-        mcb3_dram_udqs(dram_udqs),
-        mcb3_dram_rzq(dram_rzq),
-        mcb3_dram_udm(dram_udm),
-        mcb3_dram_dqs(dram_dqs),
-        mcb3_dram_ck(dram_ck),
-        mcb3_dram_ck_n(dram_ck_n),
+        .mcb3_dram_dq(dram_dq),
+        .mcb3_dram_a(dram_a),
+        .mcb3_dram_ba(dram_ba),
+        .mcb3_dram_cke(dram_cke),
+        .mcb3_dram_ras_n(dram_ras_n),
+        .mcb3_dram_cas_n(dram_cas_n),
+        .mcb3_dram_we_n(dram_we_n),
+        .mcb3_dram_dm(dram_dm),
+        .mcb3_dram_udqs(dram_udqs),
+        .mcb3_rzq(dram_rzq),
+        .mcb3_dram_udm(dram_udm),
+        .mcb3_dram_dqs(dram_dqs),
+        .mcb3_dram_ck(dram_ck),
+        .mcb3_dram_ck_n(dram_ck_n),
 
-        c3_sys_clk_p(sys_clk_p),
-        c3_sys_clk_n(sys_clk_n),
-        c3_sys_rst_n(~rst),
-        c3_calib_done(calib_done),
-        c3_clk0(),
-        c3_rst0(),
+        .c3_sys_clk_p(sys_clk_p),
+        .c3_sys_clk_n(sys_clk_n),
+        .c3_sys_rst_n(~rst),
+        .c3_calib_done(calib_done),
+        .c3_clk0(),
+        .c3_rst0(),
 
-        c3_p0_cmd_clk(clk),
-        c3_p0_cmd_en(cmd_en),
-        c3_p0_cmd_instr(cmd_instr),
-        c3_p0_cmd_bl(cmd_bl),
-        c3_p0_cmd_byte_addr(cmd_byte_addr),
-        c3_p0_cmd_empty(cmd_empty),
-        c3_p0_cmd_full(cmd_full),
+        .c3_p0_cmd_clk(clk),
+        .c3_p0_cmd_en(cmd_en),
+        .c3_p0_cmd_instr(cmd_instr),
+        .c3_p0_cmd_bl(cmd_bl),
+        .c3_p0_cmd_byte_addr(cmd_byte_addr),
+        .c3_p0_cmd_empty(cmd_empty),
+        .c3_p0_cmd_full(cmd_full),
 
-        c3_p0_wr_clk(clk),
-        c3_p0_wr_en(we_en),
-        c3_p0_wr_mask(~mask),
-        c3_p0_wr_data(din),
-        c3_p0_wr_full(wr_full),
-        c3_p0_wr_empty(wr_empty),
-        c3_p0_wr_count(wr_count),
-        c3_p0_wr_underrun(wr_underrun),
-        c3_p0_wr_error(wr_error),
+        .c3_p0_wr_clk(clk),
+        .c3_p0_wr_en(we_en),
+        .c3_p0_wr_mask(~mask),
+        .c3_p0_wr_data(din),
+        .c3_p0_wr_full(wr_full),
+        .c3_p0_wr_empty(wr_empty),
+        .c3_p0_wr_count(wr_count),
+        .c3_p0_wr_underrun(wr_underrun),
+        .c3_p0_wr_error(wr_error),
 
-        c3_p0_rd_clk(clk),
-        c3_p0_rd_en(rd_en),
-        c3_p0_rd_data(dout),
-        c3_p0_rd_full(rd_full),
-        c3_p0_rd_empty(rd_empty),
-        c3_p0_rd_count(rd_count),
-        c3_p0_rd_overflow(rd_overflow),
-        c3_p0_rd_error(rd_error)
+        .c3_p0_rd_clk(clk),
+        .c3_p0_rd_en(rd_en),
+        .c3_p0_rd_data(rd_data),
+        .c3_p0_rd_full(rd_full),
+        .c3_p0_rd_empty(rd_empty),
+        .c3_p0_rd_count(rd_count),
+        .c3_p0_rd_overflow(rd_overflow),
+        .c3_p0_rd_error(rd_error)
 
     );
 
@@ -246,7 +247,7 @@ module sp_dram(
             if (re) begin
                 waiting <= 1;
             end else if (!rd_empty) begin
-                waitig <= 0;
+                waiting <= 0;
                 read_buffer <= rd_data;
             end
         end
