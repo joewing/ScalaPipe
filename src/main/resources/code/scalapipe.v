@@ -567,9 +567,15 @@ module sp_subF(clk, start, a_in, b_in, c_out, ready_out);
 
     wire [WIDTH-1:0] b;
 
-    sp_negF #(.WIDTH(WIDTH)) neg(b_in, b);
+    sp_negF #(.WIDTH(WIDTH)) neg(.a_in(b_in), .b_out(b));
     sp_addF #(.WIDTH(WIDTH), .EXPONENT(EXPONENT), .FRACTION(FRACTION))
-        add(clk, start, a_in, b, c_out, ready_out);
+        add(
+            .clk(clk),
+            .start(start),
+            .a_in(a_in),
+            .b_in(b),
+            .c_out(c_out),
+            .ready_out(ready_out));
 
 endmodule
 
@@ -744,8 +750,6 @@ module sp_sqrtF(clk, start, a_in, b_out, ready_out);
     output wire [WIDTH-1:0] b_out;
     output wire ready_out;
 
-    reg [WIDTH-1:0] a;
-
     reg [7:0] count;
 
     wire [EXPONENT-1:0] expa = a_in[WIDTH-2:WIDTH-1-EXPONENT];
@@ -780,7 +784,6 @@ module sp_sqrtF(clk, start, a_in, b_out, ready_out);
 
     always @(posedge clk) begin
         if (start) begin
-            a <= a_in;
             q <= 1 << (FRACTION + 1);
             s <= 1 << FRACTION;
             r <= (fraca << (c + 1)) - (1 << 24);
@@ -926,7 +929,7 @@ module sp_negF64(a_in, b_out);
     parameter WIDTH = 64;
     input wire [WIDTH-1:0] a_in;
     output wire [WIDTH-1:0] b_out;
-    sp_negF #(.WIDTH(WIDTH)) neg(a_in, b_out);
+    sp_negF #(.WIDTH(WIDTH)) neg(.a_in(a_in), .b_out(b_out));
 endmodule
 
 module sp_subF64(clk, start, a_in, b_in, c_out, ready_out);
@@ -962,7 +965,13 @@ module sp_divF64(clk, start, a_in, b_in, c_out, ready_out);
     output wire [WIDTH-1:0] c_out;
     output wire ready_out;
     sp_divF #(.WIDTH(WIDTH), .EXPONENT(11), .FRACTION(52))
-        div(clk, start, a_in, b_in, c_out, ready_out);
+        div(
+            .clk(clk),
+            .start(start),
+            .a_in(a_in),
+            .b_in(b_in),
+            .c_out(c_out),
+            .ready_out(ready_out));
 endmodule
 
 module sp_sqrtF64(clk, start, a_in, b_out, ready_out);
@@ -973,5 +982,10 @@ module sp_sqrtF64(clk, start, a_in, b_out, ready_out);
     output wire [WIDTH-1:0] b_out;
     output wire ready_out;
     sp_sqrtF #(.WIDTH(WIDTH), .EXPONENT(11), .FRACTION(52))
-        sqrt(clk, start, a_in, b_out, ready_out);
+        sqrt(
+            .clk(clk),
+            .start(start),
+            .a_in(a_in),
+            .b_out(b_out),
+            .ready_out(ready_out));
 endmodule

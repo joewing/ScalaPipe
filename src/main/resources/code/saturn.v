@@ -34,7 +34,13 @@ module sp_mul_plat(clk, start_in, a_in, b_in, c_out, ready_out);
     output wire ready_out;
 
     sp_mul_impl #(.SHIFT(SHIFT), .WIDTH(WIDTH), .OUTPUT_WIDTH(OUTPUT_WIDTH))
-        impl(clk, start_in, a_in, b_in, c_out, ready_out);
+        impl(
+            .clk(clk),
+            .start_in(start_in),
+            .a_in(a_in),
+            .b_in(b_in),
+            .c_out(c_out),
+            .ready_out(ready_out));
 
 endmodule
 
@@ -146,8 +152,7 @@ module sp_dram(
     inout wire dram_dqs,
     output wire dram_ck,
     output wire dram_ck_n,
-    input wire sys_clk_p,
-    input wire sys_clk_n,
+    input wire sys_clk,
 
     input wire clk,
     input wire rst,
@@ -168,22 +173,11 @@ module sp_dram(
     wire [2:0] cmd_instr = re ? 3'b001 : 3'b000;
     wire [5:0] cmd_bl = 0;
     wire [29:0] cmd_byte_addr = {addr, 4'b0000};
-    wire cmd_empty;
     wire cmd_full;
 
     wire wr_en = we;
-    wire wr_full;
-    wire wr_empty;
-    wire [6:0] wr_count;
-    wire wr_underrun;
-    wire wr_error;
-
     wire rd_en;
-    wire rd_full;
     wire rd_empty;
-    wire [6:0] rd_count;
-    wire rc_overflow;
-    wire rd_error;
     wire [127:0] rd_data;
     reg [127:0] read_buffer;
 
@@ -204,8 +198,7 @@ module sp_dram(
         .mcb3_dram_ck(dram_ck),
         .mcb3_dram_ck_n(dram_ck_n),
 
-        .c3_sys_clk_p(sys_clk_p),
-        .c3_sys_clk_n(sys_clk_n),
+        .c3_sys_clk(sys_clk),
         .c3_sys_rst_n(~rst),
         .c3_calib_done(calib_done),
         .c3_clk0(),
@@ -216,27 +209,27 @@ module sp_dram(
         .c3_p0_cmd_instr(cmd_instr),
         .c3_p0_cmd_bl(cmd_bl),
         .c3_p0_cmd_byte_addr(cmd_byte_addr),
-        .c3_p0_cmd_empty(cmd_empty),
+        .c3_p0_cmd_empty(),
         .c3_p0_cmd_full(cmd_full),
 
         .c3_p0_wr_clk(clk),
-        .c3_p0_wr_en(we_en),
+        .c3_p0_wr_en(wr_en),
         .c3_p0_wr_mask(~mask),
         .c3_p0_wr_data(din),
-        .c3_p0_wr_full(wr_full),
-        .c3_p0_wr_empty(wr_empty),
-        .c3_p0_wr_count(wr_count),
-        .c3_p0_wr_underrun(wr_underrun),
-        .c3_p0_wr_error(wr_error),
+        .c3_p0_wr_full(),
+        .c3_p0_wr_empty(),
+        .c3_p0_wr_count(),
+        .c3_p0_wr_underrun(),
+        .c3_p0_wr_error(),
 
         .c3_p0_rd_clk(clk),
         .c3_p0_rd_en(rd_en),
         .c3_p0_rd_data(rd_data),
-        .c3_p0_rd_full(rd_full),
+        .c3_p0_rd_full(),
         .c3_p0_rd_empty(rd_empty),
-        .c3_p0_rd_count(rd_count),
-        .c3_p0_rd_overflow(rd_overflow),
-        .c3_p0_rd_error(rd_error)
+        .c3_p0_rd_count(),
+        .c3_p0_rd_overflow(),
+        .c3_p0_rd_error()
 
     );
 
@@ -253,7 +246,7 @@ module sp_dram(
         end
     end
 
-    assign re_en = !rd_empty;
+    assign rd_en = !rd_empty;
     assign dout = read_buffer;
     assign ready = !waiting & !cmd_full & calib_done;
 

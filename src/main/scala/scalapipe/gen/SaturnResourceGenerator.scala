@@ -26,12 +26,12 @@ private[scalapipe] class SaturnResourceGenerator(
         write(s"inout wire [7:0] usb_data,")
         write(s"input wire usb_rxf_n,")
         write(s"input wire usb_txe_n,")
-        write(s"output reg usb_rd_n,")
-        write(s"output reg usb_wr_n,")
-        write(s"output wire siwu,")
+        write(s"output wire usb_rd_n,")
+        write(s"output wire usb_wr_n,")
+        write(s"output wire usb_siwu,")
 
         write(s"inout wire [15:0] dram_dq,")
-        write(s"output wire dram_a,")
+        write(s"output wire [12:0] dram_a,")
         write(s"output wire [1:0] dram_ba,")
         write(s"output wire dram_cke,")
         write(s"output wire dram_ras_n,")
@@ -49,18 +49,16 @@ private[scalapipe] class SaturnResourceGenerator(
         write(s");")
         enter
 
-        write(s"assign siwu = 1; // Not used")
+        write(s"assign usb_siwu = 1; // Not used")
 
         // Clock generation.
         write(s"wire clk;")
-        write(s"wire sys_clk_p;")
-        write(s"wire sys_clk_n;")
-        enter
+        write(s"wire dram_clk;")
         write(s"clk_gen clknetwork(")
+        enter
         write(s".sysclk(sysclk),")
         write(s".clk(clk),")
-        write(s".sys_clk_p(sys_clk_p),")
-        write(s".sys_clk_n(sys_clk_n)")
+        write(s".dram_clk(dram_clk)")
         leave
         write(s");")
 
@@ -75,6 +73,7 @@ private[scalapipe] class SaturnResourceGenerator(
         leave
         write(s"end else begin")
         enter
+        write(s"rst <= 1;")
         write(s"reset_counter <= reset_counter + 1;")
         leave
         write(s"end")
@@ -93,10 +92,10 @@ private[scalapipe] class SaturnResourceGenerator(
         write(s".clk(clk),")
         write(s".rst(rst),")
         write(s".usb_data(usb_data),")
-        write(s".rxf_n(rxf_n),")
-        write(s".txe_n(txe_n),")
-        write(s".rd_n(~usb_read),")
-        write(s".wr_n(~usb_write),")
+        write(s".rxf_n(usb_rxf_n),")
+        write(s".txe_n(usb_txe_n),")
+        write(s".rd_n(usb_rd_n),")
+        write(s".wr_n(usb_wr_n),")
         write(s".din(usb_output),")
         write(s".write(usb_write),")
         write(s".full(usb_full),")
@@ -308,7 +307,7 @@ private[scalapipe] class SaturnResourceGenerator(
         write(s"wire ram_we;")
         write(s"wire ram_re;")
         write(s"wire ram_ready;")
-        write(s"sp_dram(")
+        write(s"sp_dram dram(")
         enter
         write(s".dram_dq(dram_dq),")
         write(s".dram_a(dram_a),")
@@ -324,8 +323,7 @@ private[scalapipe] class SaturnResourceGenerator(
         write(s".dram_dqs(dram_dqs),")
         write(s".dram_ck(dram_ck),")
         write(s".dram_ck_n(dram_ck_n),")
-        write(s".sys_clk_p(sys_clk_p),")
-        write(s".sys_clk_n(sys_clk_n),")
+        write(s".sys_clk(dram_clk),")
         write(s".clk(clk),")
         write(s".rst(rst),")
         write(s".addr(ram_addr),")
