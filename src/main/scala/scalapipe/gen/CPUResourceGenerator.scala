@@ -664,7 +664,9 @@ private[scalapipe] class CPUResourceGenerator(
             for (k <- cpuInstances) {
                 val id = k.index
                 val wordSize = sp.parameters.get[Int]('memoryWidth) / 8
+                val depth = k.kernelType.ramDepth
                 write(s"""fprintf(fd, "  (subsystem (id $id)""" +
+                      s"""(depth $depth)""" +
                       s"""(word_size $wordSize)""" +
                       s"""(memory (main)))\\n");""")
             }
