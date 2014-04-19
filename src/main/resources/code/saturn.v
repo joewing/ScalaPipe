@@ -50,8 +50,8 @@ module sp_usb_sync(
     inout wire [7:0] usb_data,
     input wire rxf_n,
     input wire txe_n,
-    output reg rd_n,
-    output reg wr_n,
+    output wire rd_n,
+    output wire wr_n,
     input wire [7:0] din,
     input wire write,
     output wire full,
@@ -99,14 +99,14 @@ module sp_usb_sync(
     end
 
     // Determine the next state.
-    reg [3:0] state;
-    reg [3:0] next_state;
+    reg [1:0] state;
+    reg [1:0] next_state;
     always @(*) begin
         next_state <= STATE_IDLE;
         if (state == STATE_IDLE) begin
-            if (write_pending & !rxf_n) begin
+            if (write_pending & !txe_n) begin
                 next_state <= STATE_WRITE;
-            end else if (!read_pending & !txe_n) begin
+            end else if (!read_pending & !rxf_n) begin
                 next_state <= STATE_READ;
             end
         end
@@ -114,21 +114,15 @@ module sp_usb_sync(
 
     // Manage the USB FIFO.
     always @(posedge clk) begin
-        rd_n <= 1;
-        wr_n <= 1;
         if (rst) begin
             state <= STATE_IDLE;
         end else begin
             state <= next_state;
-            if (state == STATE_READ) begin
-                rd_n <= 0;
-            end
-            if (state == STATE_WRITE) begin
-                wr_n <= 0;
-            end
         end
     end
 
+    assign rd_n = state == STATE_READ ? 1'b0 : 1'b1;
+    assign wr_n = state == STATE_WRITE ? 1'b0 : 1'b1;
     assign usb_data = next_state == STATE_WRITE ? write_buffer : 8'bz;
     assign full = !write_pending;
     assign avail = read_pending;
@@ -199,7 +193,7 @@ module sp_dram(
         .mcb3_dram_ck_n(dram_ck_n),
 
         .c3_sys_clk(sys_clk),
-        .c3_sys_rst_n(~rst),
+        .c3_sys_rst_i(rst),
         .c3_calib_done(calib_done),
         .c3_clk0(),
         .c3_rst0(),

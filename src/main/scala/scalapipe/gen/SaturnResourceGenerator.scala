@@ -54,11 +54,11 @@ private[scalapipe] class SaturnResourceGenerator(
         // Clock generation.
         write(s"wire clk;")
         write(s"wire dram_clk;")
-        write(s"clk_gen clknetwork(")
+        write(s"IBUFG clk_buf(.I(sysclk), .O(dram_clk));")
+        write(s"clk_gen clk_network(")
         enter
-        write(s".sysclk(sysclk),")
-        write(s".clk(clk),")
-        write(s".dram_clk(dram_clk)")
+        write(s".sysclk(dram_clk),")
+        write(s".clk(clk)")
         leave
         write(s");")
 
