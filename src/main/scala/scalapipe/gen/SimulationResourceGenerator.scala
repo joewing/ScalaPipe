@@ -120,8 +120,8 @@ private[scalapipe] class SimulationResourceGenerator(
         val mainMaskBits = mainDataWidth / 8
         val mainDepth = 1 << mainAddrWidth
         write(s"wire [${mainAddrWidth - 1}:0] ram_addr;")
-        write(s"wire [${mainDataWidth - 1}:0] ram_in;")
-        write(s"wire [${mainDataWidth - 1}:0] ram_out;")
+        write(s"wire [${mainDataWidth - 1}:0] ram_data_to_main;")
+        write(s"wire [${mainDataWidth - 1}:0] ram_data_from_main;")
         write(s"wire [${mainMaskBits - 1}:0] ram_mask;")
         write(s"wire ram_re;")
         write(s"wire ram_we;")
@@ -137,8 +137,8 @@ private[scalapipe] class SimulationResourceGenerator(
         write(".clk(clk),")
         write(".rst(rst),")
         write(".addr(ram_addr),")
-        write(".din(ram_in),")
-        write(".dout(ram_out),")
+        write(".din(ram_data_to_main),")
+        write(".dout(ram_data_from_main),")
         write(".mask(ram_mask),")
         write(".re(ram_re),")
         write(".we(ram_we),")
@@ -150,8 +150,8 @@ private[scalapipe] class SimulationResourceGenerator(
         write(s"fpga$id sp(.clk(clk), .rst(rst), .running(running)")
         enter
         write(s", .ram_addr(ram_addr)")
-        write(s", .ram_in(ram_out)")
-        write(s", .ram_out(ram_in)")
+        write(s", .ram_data_from_main(ram_data_from_main)")
+        write(s", .ram_data_to_main(ram_data_to_main)")
         write(s", .ram_mask(ram_mask)")
         write(s", .ram_re(ram_re)")
         write(s", .ram_we(ram_we)")

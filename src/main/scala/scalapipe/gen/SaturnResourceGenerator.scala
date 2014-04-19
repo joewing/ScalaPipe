@@ -63,17 +63,12 @@ private[scalapipe] class SaturnResourceGenerator(
         write(s");")
 
         // Reset signal.
-        write(s"reg rst;")
         write(s"reg [3:0] reset_counter = 0;")
+        write(s"wire rst = reset_counter[3];")
         write(s"always @(posedge clk) begin")
         enter
-        write(s"if (reset_counter[3]) begin")
+        write(s"if (!reset_counter[3]) begin")
         enter
-        write(s"rst <= 0;")
-        leave
-        write(s"end else begin")
-        enter
-        write(s"rst <= 1;")
         write(s"reset_counter <= reset_counter + 1;")
         leave
         write(s"end")
@@ -301,8 +296,8 @@ private[scalapipe] class SaturnResourceGenerator(
 
         // Connect the DRAM controller.
         write(s"wire [25:0] ram_addr;")
-        write(s"wire [127:0] ram_in;")
-        write(s"wire [127:0] ram_out;")
+        write(s"wire [127:0] ram_data_to_main;")
+        write(s"wire [127:0] ram_data_from_main;")
         write(s"wire [15:0] ram_mask;")
         write(s"wire ram_we;")
         write(s"wire ram_re;")
@@ -327,8 +322,8 @@ private[scalapipe] class SaturnResourceGenerator(
         write(s".clk(clk),")
         write(s".rst(rst),")
         write(s".addr(ram_addr),")
-        write(s".din(ram_in),")
-        write(s".dout(ram_out),")
+        write(s".din(ram_data_to_main),")
+        write(s".dout(ram_data_from_main),")
         write(s".mask(ram_mask),")
         write(s".we(ram_we),")
         write(s".re(ram_re),")
@@ -343,8 +338,8 @@ private[scalapipe] class SaturnResourceGenerator(
         write(s".rst(rst),")
         write(s".running(),")
         write(s".ram_addr(ram_addr),")
-        write(s".ram_in(ram_out),")
-        write(s".ram_out(ram_in),")
+        write(s".ram_data_to_main(ram_data_to_main),")
+        write(s".ram_data_from_main(ram_data_from_main),")
         write(s".ram_mask(ram_mask),")
         write(s".ram_re(ram_re),")
         write(s".ram_we(ram_we),")

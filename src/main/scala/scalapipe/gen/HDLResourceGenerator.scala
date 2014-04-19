@@ -489,8 +489,8 @@ private[scalapipe] abstract class HDLResourceGenerator(
         write(s".clk(clk),")
         write(s".rst(rst),")
         write(s".port0_addr(ram_addr),")
-        write(s".port0_din(ram_in),")
-        write(s".port0_dout(ram_out),")
+        write(s".port0_din(ram_data_from_main),")
+        write(s".port0_dout(ram_data_to_main),")
         write(s".port0_re(ram_re),")
         write(s".port0_we(ram_we),")
         write(s".port0_mask(ram_mask),")
@@ -506,14 +506,6 @@ private[scalapipe] abstract class HDLResourceGenerator(
                 write(s", .${port}_re(${label}_re)")
                 write(s", .${port}_we(${label}_we)")
                 write(s", .${port}_ready(${label}_ready)")
-            } else {
-                write(s", .${port}_addr(1'bx)")
-                write(s", .${port}_mask(1'bx)")
-                write(s", .${port}_in(1'bx)")
-                write(s", .${port}_out()")
-                write(s", .${port}_re(1'b0)")
-                write(s", .${port}_we(1'b0)")
-                write(s", .${port}_ready()")
             }
         }
         val externalStreams = sp.streams.filter { s =>
@@ -540,25 +532,7 @@ private[scalapipe] abstract class HDLResourceGenerator(
                 write(s", .${port}_re(${label}_re)")
                 write(s", .${port}_we(${label}_we)")
                 write(s", .${port}_ready(${label}_ready)")
-            } else {
-                write(s", .${port}_addr(1'bx)")
-                write(s", .${port}_mask(1'bx)")
-                write(s", .${port}_in(1'bx)")
-                write(s", .${port}_out()")
-                write(s", .${port}_re(1'b0)")
-                write(s", .${port}_we(1'b0)")
-                write(s", .${port}_ready()")
             }
-        }
-        for (k <- sp.instances.filter(_.device != device)) {
-            val port = s"subsystem${k.index}"
-            write(s", .${port}_addr(1'bx)")
-            write(s", .${port}_mask(1'bx)")
-            write(s", .${port}_in(1'bx)")
-            write(s", .${port}_out()")
-            write(s", .${port}_re(1'b0)")
-            write(s", .${port}_we(1'b0)")
-            write(s", .${port}_ready()")
         }
         leave
         write(s");")
@@ -577,8 +551,8 @@ private[scalapipe] abstract class HDLResourceGenerator(
         write(s"input wire clk,")
         write(s"input wire rst,")
         write(s"output wire [${mainAddrWidth - 1}:0] ram_addr,")
-        write(s"input wire [${mainDataWidth - 1}:0] ram_in,")
-        write(s"output wire [${mainDataWidth - 1}:0] ram_out,")
+        write(s"input wire [${mainDataWidth - 1}:0] ram_data_from_main,")
+        write(s"output wire [${mainDataWidth - 1}:0] ram_data_to_main,")
         write(s"output wire [${mainMaskBits - 1}:0] ram_mask,")
         write(s"output wire ram_re,")
         write(s"output wire ram_we,")
