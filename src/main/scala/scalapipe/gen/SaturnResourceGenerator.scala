@@ -17,6 +17,43 @@ private[scalapipe] class SaturnResourceGenerator(
         emitTopFile(dir)
     }
 
+    private def swapOutput(byte: Int, bit: Int, name: String) {
+        val bottom = bit
+        val top = bottom + 7
+        write(s"${byte}: usb_output <= $name[$top:$bottom];")
+    }
+
+    private def swapInput(byte: Int, bit: Int, name: String) {
+        val bottom = bit
+        val top = bottom + 7
+        write(s"${byte}: ${name}[$top:$bottom] <= usb_input;")
+    }
+
+    private def swapBus(name: String,
+                        func: (Int, Int, String) => Unit,
+                        vtype: ValueType,
+                        offset: Int = 0) {
+        vtype match {
+            case at: ArrayValueType =>
+                for (i <- 0 until at.length) {
+                    val nextOffset = offset + i * ((at.itemType.bits + 7) / 8)
+                    swapBus(name, func, at.itemType, nextOffset)
+                }
+            case st: StructValueType =>
+                var nextOffset = offset
+                for ((ft, i) <- st.fieldTypes.zipWithIndex) {
+                    swapBus(name, func, ft, nextOffset)
+                    nextOffset += (ft.bits + 7) / 8
+                }
+            case _ =>
+                val bytes = (vtype.bits + 7) / 8
+                val bitOffset = offset * 8
+                for (i <- 0 until bytes) {
+                    func(offset + i, bitOffset + (bytes - i - 1) * 8, name)
+                }
+        }
+    }
+
     private def emitTopFile(dir: File) {
 
         write(s"module top$id(")
@@ -100,18 +137,17 @@ private[scalapipe] class SaturnResourceGenerator(
         leave
         write(s");")
 
-        // Host->FPGA protocol:
-        // command (hit bit is type)
-        //  input port number (1 byte)
-        //  data (n-bytes)
-
-        // FPGA->Host protocol:
-        //  command (high bit is type)
-        //  type 0:
-        //      available input port number (remaining byte)
-        //  type 1:
-        //      output port number (remaining byte)
-        //      data (n-bytes)
+        // Protocol:
+        //  FPGA->host:
+        //      1 byte for each host->device stream; high bit is "full"
+        //          indicator and lower 7 bits are the stream ID.
+        //      1 byte device->host stream indicator for transfer.
+        //          0 if no data, 255 if no kernels running.
+        //      device->host data (little endian).
+        // host->FPGA:
+        //      1 byte stream indicator for host->device transfer.
+        //          0 if no stream.
+        //      host->device data (little endian).
 
         // Signals to the ScalaPipe kernels.
         for (i <- inputStreams) {
@@ -132,10 +168,6 @@ private[scalapipe] class SaturnResourceGenerator(
         }
 
         // State machine for USB communication.
-        // The first n states inform the host which ports
-        // are accepting input.  The next states send data to
-        // the host (if there is data available).  Finally, the
-        // last states read data from the host.
         val acceptStateOffset = 0
         val sendStateOffset = acceptStateOffset + inputStreams.size
         val readState = sendStateOffset + outputStreams.size
@@ -169,12 +201,9 @@ private[scalapipe] class SaturnResourceGenerator(
             enter
             write(s"if (!usb_full & !usb_write) begin")
             enter
-            write(s"if (!full$index) begin")
-            enter
             write(s"usb_write <= 1;")
-            write(s"usb_output <= ${index};")
-            leave
-            write(s"end")
+            write(s"usb_output[7] <= full$index;")
+            write(s"usb_output[6:0] <= ${index};")
             write(s"offset <= 0;")
             write(s"state <= ${state + 1};")
             leave
@@ -196,11 +225,7 @@ private[scalapipe] class SaturnResourceGenerator(
 
             write(s"case (offset)")
             enter
-            for (byte <- 0 until bytes) {
-                val bottom = byte * 8
-                val top = bottom + 7
-                write(s"${byte}: usb_output <= data${index}[$top:$bottom];")
-            }
+            swapBus(s"data${index}", swapOutput, o.valueType)
             leave
             write(s"endcase")
             write(s"usb_write <= 1;")
@@ -211,7 +236,7 @@ private[scalapipe] class SaturnResourceGenerator(
             write(s"end else begin")
             enter
             write(s"offset <= 0;")
-            write(s"state <= ${state + 1};")
+            write(s"state <= ${readState};")
             write(s"read$index <= 1;")
             leave
             write(s"end") // offset
@@ -229,15 +254,13 @@ private[scalapipe] class SaturnResourceGenerator(
         // Select a read state if there is data from the host.
         write(s"${readState}: // Check for input")
         enter
-        write(s"if (usb_avail) begin")
-        enter
-        write(s"if (!usb_read) begin")
+        write(s"if (usb_avail & !usb_read) begin")
         enter
         write(s"usb_read <= 1;")
-        write(s"state <= usb_input + ${readStateOffset};")
         write(s"offset <= 0;")
-        leave
-        write(s"end")
+        write(s"if (usb_input != 0) begin")
+        enter
+        write(s"state <= usb_input + ${readStateOffset};")
         leave
         write(s"end else begin")
         enter
@@ -245,25 +268,21 @@ private[scalapipe] class SaturnResourceGenerator(
         leave
         write(s"end")
         leave
+        write(s"end")
+        leave
 
         // Read data from the host.
-        for ((i, offset) <- inputStreams.zipWithIndex) {
-            val state = readStateOffset + offset
+        for (i <- inputStreams) {
             val index = i.index
+            val state = readStateOffset + index
             val bytes = (i.valueType.bits + 7) / 8
             write(s"${state}: // Read input ${index}")
             enter
-            write(s"if (usb_avail) begin")
-            enter
-            write(s"if (usb_read) begin")
+            write(s"if (usb_avail & !usb_read) begin")
             enter
             write(s"case (offset)")
             enter
-            for (byte <- 0 until bytes) {
-                val bottom = byte * 8
-                val top = bottom + 7
-                write(s"${byte}: data${index}[$top:$bottom] <= usb_input;")
-            }
+            swapBus(s"data${index}", swapInput, i.valueType)
             leave
             write(s"endcase")
             write(s"if (offset != ${bytes - 1}) begin")
@@ -280,8 +299,6 @@ private[scalapipe] class SaturnResourceGenerator(
             write(s"end else begin") // usb_read
             enter
             write(s"usb_read <= 1;")
-            leave
-            write(s"end") // usb_read
             leave
             write(s"end") // avail
             leave
