@@ -166,11 +166,13 @@ private[scalapipe] class SaturnResourceGenerator(
             write(s"reg read$index;")
             write(s"wire avail$index;")
         }
+        write(s"wire running;")
 
         // State machine for USB communication.
         val acceptStateOffset = 0
         val sendStateOffset = acceptStateOffset + inputStreams.size
-        val readState = sendStateOffset + outputStreams.size
+        val sentinelState = sendStateOffset + outputStreams.size
+        val readState = sentinelState + 1
         val readStateOffset = readState + 1
         write(s"reg [31:0] state;")
         write(s"reg [31:0] offset;")
@@ -235,7 +237,6 @@ private[scalapipe] class SaturnResourceGenerator(
             leave
             write(s"end else begin")
             enter
-            write(s"offset <= 0;")
             write(s"state <= ${readState};")
             write(s"read$index <= 1;")
             leave
@@ -250,6 +251,18 @@ private[scalapipe] class SaturnResourceGenerator(
             write(s"end") // full
             leave
         }
+
+        // Send a sentinel if there's no data for the host.
+        write(s"${sentinelState}: // No data for the host.")
+        enter
+        write(s"if (!usb_full & !usb_write) begin")
+        enter
+        write(s"usb_write <= 1;")
+        write(s"usb_data <= running ? 0 : 255;")
+        write(s"state <= ${readState};")
+        leave
+        write(s"end")
+        leave
 
         // Select a read state if there is data from the host.
         write(s"${readState}: // Check for input")
@@ -353,7 +366,7 @@ private[scalapipe] class SaturnResourceGenerator(
         enter
         write(s".clk(clk),")
         write(s".rst(rst),")
-        write(s".running(),")
+        write(s".running(running),")
         write(s".ram_addr(ram_addr),")
         write(s".ram_data_to_main(ram_data_to_main),")
         write(s".ram_data_from_main(ram_data_from_main),")
