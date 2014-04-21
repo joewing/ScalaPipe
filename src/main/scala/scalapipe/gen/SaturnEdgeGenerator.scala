@@ -106,6 +106,7 @@ private[scalapipe] class SaturnEdgeGenerator(
         }
 
         // If we got here, there's no data to send.
+        write(s"ch = usb_active_inputs == 0 ? 255 : 0;")
         write(s"fwrite(&ch, 1, 1, usb_fd);")
 
         writeLeft("data_sent:")
