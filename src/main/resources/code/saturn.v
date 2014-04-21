@@ -123,7 +123,7 @@ module sp_usb_sync(
 
     assign rd_n = state == STATE_READ ? 1'b0 : 1'b1;
     assign wr_n = state == STATE_WRITE ? 1'b0 : 1'b1;
-    assign usb_data = next_state == STATE_WRITE ? write_buffer : 8'bz;
+    assign usb_data = state == STATE_WRITE ? write_buffer : 8'bz;
     assign full = write_pending;
     assign avail = read_pending;
     assign dout = read_buffer;
