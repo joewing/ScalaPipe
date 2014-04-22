@@ -261,7 +261,7 @@ private[scalapipe] class SaturnResourceGenerator(
         write(s"if (!usb_full & !usb_write) begin")
         enter
         write(s"usb_write <= 1;")
-        write(s"usb_data <= (running | !got_stop) ? 0 : 255;")
+        write(s"usb_output <= (running | !got_stop) ? 0 : 255;")
         write(s"state <= ${readState};")
         leave
         write(s"end")
