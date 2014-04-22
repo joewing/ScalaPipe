@@ -88,29 +88,8 @@ private[scalapipe] class SaturnResourceGenerator(
 
         write(s"assign usb_siwu = 1; // Not used")
 
-        // Clock generation.
-        write(s"wire clk;")
-        write(s"wire dram_clk;")
-        write(s"IBUFG clk_buf(.I(sysclk), .O(dram_clk));")
-        write(s"clk_gen clk_network(")
-        enter
-        write(s".sysclk(dram_clk),")
-        write(s".clk(clk)")
-        leave
-        write(s");")
-
-        // Reset signal.
-        write(s"reg [3:0] reset_counter = 0;")
-        write(s"wire rst = reset_counter[3];")
-        write(s"always @(posedge clk) begin")
-        enter
-        write(s"if (!reset_counter[3]) begin")
-        enter
-        write(s"reset_counter <= reset_counter + 1;")
-        leave
-        write(s"end")
-        leave
-        write(s"end")
+        write(s"wire clk;           // 100 MHz")
+        write(s"wire rst;")
 
         // Synchronize the USB interface.
         write(s"wire [7:0] usb_input;")
@@ -333,7 +312,7 @@ private[scalapipe] class SaturnResourceGenerator(
         write(s"end")   // always
 
         // Connect the DRAM controller.
-        write(s"wire [25:0] ram_addr;")
+        write(s"wire [24:0] ram_addr;")
         write(s"wire [127:0] ram_data_to_main;")
         write(s"wire [127:0] ram_data_from_main;")
         write(s"wire [15:0] ram_mask;")
@@ -356,7 +335,7 @@ private[scalapipe] class SaturnResourceGenerator(
         write(s".dram_dqs(dram_dqs),")
         write(s".dram_ck(dram_ck),")
         write(s".dram_ck_n(dram_ck_n),")
-        write(s".sys_clk(dram_clk),")
+        write(s".sys_clk(sysclk),")
         write(s".clk(clk),")
         write(s".rst(rst),")
         write(s".addr(ram_addr),")

@@ -148,9 +148,9 @@ module sp_dram(
     output wire dram_ck_n,
     input wire sys_clk,
 
-    input wire clk,
-    input wire rst,
-    input wire [25:0] addr,
+    output wire clk,
+    output wire rst,
+    input wire [24:0] addr,
     input wire [127:0] din,
     output wire [127:0] dout,
     input wire [15:0] mask,
@@ -195,8 +195,8 @@ module sp_dram(
         .c3_sys_clk(sys_clk),
         .c3_sys_rst_i(rst),
         .c3_calib_done(calib_done),
-        .c3_clk0(),
-        .c3_rst0(),
+        .c3_clk0(clk),
+        .c3_rst0(rst),
 
         .c3_p0_cmd_clk(clk),
         .c3_p0_cmd_en(cmd_en),
