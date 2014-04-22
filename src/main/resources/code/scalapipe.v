@@ -177,7 +177,7 @@ module sp_fifo(clk, rst, din, dout, re, we, avail, full,
         end
     end
 
-    assign full = count[ADDR_WIDTH] | !mem_ready | mem_we;
+    assign full = count[ADDR_WIDTH] | write_pending;
     assign dout = mem_in;
 
 endmodule
