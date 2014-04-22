@@ -1,7 +1,10 @@
 CONFIG VCCAUX = "3.3" ;
 
 NET "sysclk" LOC = V10;
-TIMESPEC TS_CLK = PERIOD "sysclk" 100 MHz HIGH 50%;
+NET "sysclk" TNM_NET = "sysclk";
+NET "clk" TNM_NET = "clk";
+TIMESPEC "ts_sysclk" = PERIOD "sysclk" 100 MHz HIGH 50%;
+TIMESPEC "ts_clk" = PERIOD "clk" 100 MHz HIGH 50%;
 
 ############################################################################
 # FTDI FT2232H-Channel B used as USB Asynchronnous FIFO
@@ -20,7 +23,6 @@ NET "usb_txe_n"   LOC = "K17" | IOSTANDARD = LVTTL;
 NET "usb_rd_n"    LOC = "J18" | IOSTANDARD = LVTTL | SLEW = FAST | DRIVE = 8;
 NET "usb_wr_n"    LOC = "J16" | IOSTANDARD = LVTTL | SLEW = FAST | DRIVE = 8;
 NET "usb_siwu"    LOC = "H18" | IOSTANDARD = LVTTL | SLEW = FAST | DRIVE = 8;
-
 
 ############################################################################
 # LPDDR
@@ -82,9 +84,7 @@ NET "dram_rzq"        LOC = "N4"  | IOSTANDARD = MOBILE_DDR;
 ############################################################################
 # GPIOs
 ############################################################################
-
 #Header P3
-
 #NET "gpio<5>" 	LOC = G13 | IOSTANDARD = LVTTL | DRIVE = 8 | SLEW = FAST | PULLUP ;
 #NET "gpio<6>" 	LOC = H12 | IOSTANDARD = LVTTL | DRIVE = 8 | SLEW = FAST | PULLUP ;
 #NET "gpio<9>" 	LOC = H16 | IOSTANDARD = LVTTL | DRIVE = 8 | SLEW = FAST | PULLUP ;
@@ -109,7 +109,6 @@ NET "dram_rzq"        LOC = "N4"  | IOSTANDARD = MOBILE_DDR;
 #NET "gpio<46>" 	LOC = F11 | IOSTANDARD = LVTTL | DRIVE = 8 | SLEW = FAST | PULLUP ;
 
 #Header P2
-
 #NET "gpio<7>" 	LOC = K14 | IOSTANDARD = LVTTL | DRIVE = 8 | SLEW = FAST | PULLUP ;
 #NET "gpio<8>" 	LOC = J13 | IOSTANDARD = LVTTL | DRIVE = 8 | SLEW = FAST | PULLUP ;
 #NET "gpio<11>" 	LOC = H14 | IOSTANDARD = LVTTL | DRIVE = 8 | SLEW = FAST | PULLUP ;
@@ -134,7 +133,6 @@ NET "dram_rzq"        LOC = "N4"  | IOSTANDARD = MOBILE_DDR;
 #NET "gpio<48>" 	LOC = D11 | IOSTANDARD = LVTTL | DRIVE = 8 | SLEW = FAST | PULLUP ;
 
 #Header P5
-
 #NET "gpio<53>" 	LOC = F10 | IOSTANDARD = LVTTL | DRIVE = 8 | SLEW = FAST | PULLUP ;
 #NET "gpio<54>" 	LOC = G11 | IOSTANDARD = LVTTL | DRIVE = 8 | SLEW = FAST | PULLUP ;
 #NET "gpio<57>" 	LOC = A10 | IOSTANDARD = LVTTL | DRIVE = 8 | SLEW = FAST | PULLUP ;
@@ -155,7 +153,6 @@ NET "dram_rzq"        LOC = "N4"  | IOSTANDARD = MOBILE_DDR;
 #NET "gpio<86>" 	LOC = B3 | IOSTANDARD = LVTTL | DRIVE = 8 | SLEW = FAST | PULLUP ;
 
 #Header P4
-
 #NET "gpio<55>" 	LOC = A11 | IOSTANDARD = LVTTL | DRIVE = 8 | SLEW = FAST | PULLUP ;
 #NET "gpio<56>" 	LOC = B11 | IOSTANDARD = LVTTL | DRIVE = 8 | SLEW = FAST | PULLUP ;
 #NET "gpio<59>" 	LOC = F9 | IOSTANDARD = LVTTL | DRIVE = 8 | SLEW = FAST | PULLUP ;
@@ -176,7 +173,6 @@ NET "dram_rzq"        LOC = "N4"  | IOSTANDARD = MOBILE_DDR;
 #NET "gpio<88>" 	LOC = B2 | IOSTANDARD = LVTTL | DRIVE = 8 | SLEW = FAST | PULLUP ;
 
 #Header P9
-
 #NET "gpio<105>" 	LOC = R3 | IOSTANDARD = LVTTL | DRIVE = 8 | SLEW = FAST | PULLUP ;
 #NET "gpio<106>" 	LOC = T3 | IOSTANDARD = LVTTL | DRIVE = 8 | SLEW = FAST | PULLUP ;
 #NET "gpio<109>" 	LOC = R5 | IOSTANDARD = LVTTL | DRIVE = 8 | SLEW = FAST | PULLUP ;
@@ -197,7 +193,6 @@ NET "dram_rzq"        LOC = "N4"  | IOSTANDARD = MOBILE_DDR;
 #NET "gpio<138>" 	LOC = P11 | IOSTANDARD = LVTTL | DRIVE = 8 | SLEW = FAST | PULLUP ;
 
 #Header P8
-
 #NET "gpio<107>" 	LOC = T4 | IOSTANDARD = LVTTL | DRIVE = 8 | SLEW = FAST | PULLUP ;
 #NET "gpio<108>" 	LOC = V4 | IOSTANDARD = LVTTL | DRIVE = 8 | SLEW = FAST | PULLUP ;
 #NET "gpio<111>" 	LOC = U5 | IOSTANDARD = LVTTL | DRIVE = 8 | SLEW = FAST | PULLUP ;
@@ -218,7 +213,6 @@ NET "dram_rzq"        LOC = "N4"  | IOSTANDARD = MOBILE_DDR;
 #NET "gpio<140>" 	LOC = V11 | IOSTANDARD = LVTTL | DRIVE = 8 | SLEW = FAST | PULLUP ;
 
 #Header P6
-
 #NET "gpio<149>" 	LOC = R11 | IOSTANDARD = LVTTL | DRIVE = 8 | SLEW = FAST | PULLUP ;
 #NET "gpio<150>" 	LOC = T11 | IOSTANDARD = LVTTL | DRIVE = 8 | SLEW = FAST | PULLUP ;
 #NET "gpio<153>" 	LOC = T12 | IOSTANDARD = LVTTL | DRIVE = 8 | SLEW = FAST | PULLUP ;
@@ -236,7 +230,6 @@ NET "dram_rzq"        LOC = "N4"  | IOSTANDARD = MOBILE_DDR;
  
 
 #Header P7
-
 #NET "gpio<151>" 	LOC = M11 | IOSTANDARD = LVTTL | DRIVE = 8 | SLEW = FAST | PULLUP ;
 #NET "gpio<152>" 	LOC = N11 | IOSTANDARD = LVTTL | DRIVE = 8 | SLEW = FAST | PULLUP ;
 #NET "gpio<155>" 	LOC = U13 | IOSTANDARD = LVTTL | DRIVE = 8 | SLEW = FAST | PULLUP ;
