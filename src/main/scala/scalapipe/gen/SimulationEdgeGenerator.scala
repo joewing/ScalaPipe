@@ -265,6 +265,14 @@ private[scalapipe] class SimulationEdgeGenerator(
         enter
         write(s"active$label = 0;")
         write(s"sim_write(stream$label, NULL, 0, -1);")
+        for (s <- senders if s != stream) {
+            val sfd = s"stream${s.label}"
+            write(s"if(active${s.label}) {")
+            enter
+            write(s"sim_write($sfd, NULL, 0, 0);")
+            leave
+            write(s"}")
+        }
         leave
         write(s"}")
 

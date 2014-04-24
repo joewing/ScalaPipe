@@ -156,6 +156,64 @@ private[scalapipe] class SimulationResourceGenerator(
             s.sourceKernel.device == device && s.destKernel.device != device
         }
 
+        write(s"module sim_fifo(")
+        enter
+        write(s"clk, rst, din, dout, re, we, avail, full);")
+
+        write(s"parameter WIDTH = 8;")
+        write(s"parameter ADDR_WIDTH = 8;")
+        write(s"input wire clk;")
+        write(s"input wire rst;")
+        write(s"input wire [WIDTH-1:0] din;")
+        write(s"output wire [WIDTH-1:0] dout;")
+        write(s"input wire re;")
+        write(s"input wire we;")
+        write(s"output wire avail;")
+        write(s"output wire full;")
+        write(s"reg [WIDTH-1:0] mem [0:(1 << ADDR_WIDTH) - 1];")
+        write(s"reg [ADDR_WIDTH-1:0] read_ptr;")
+        write(s"reg [ADDR_WIDTH-1:0] write_ptr;")
+        write(s"reg [ADDR_WIDTH:0] count;")
+        write(s"assign full = count[ADDR_WIDTH];")
+        write(s"assign avail = count != 0;")
+        write(s"wire do_read = re & avail;")
+        write(s"wire do_write = we & !full;")
+        write(s"always @(posedge clk) begin")
+        enter
+        write(s"if (rst) begin")
+        enter
+        write(s"read_ptr <= 0;")
+        write(s"write_ptr <= 0;")
+        write(s"count <= 0;")
+        leave
+        write(s"end else begin")
+        enter
+        write(s"if (do_write) begin")
+        enter
+        write(s"mem[write_ptr] <= din;")
+        write(s"write_ptr <= write_ptr + 1;")
+        leave
+        write(s"end")
+        write(s"if (do_read) begin")
+        enter
+        write(s"read_ptr <= read_ptr + 1;")
+        leave
+        write(s"end")
+        write(s"case ({do_read, do_write})")
+        enter
+        write(s"2'b10: count <= count - 1;")
+        write(s"2'b01: count <= count + 1;")
+        write(s"default: count <= count;")
+        leave
+        write(s"endcase")
+        leave
+        write(s"end")
+        leave
+        write(s"end")
+        write(s"assign dout = mem[read_ptr];")
+        leave
+        write(s"endmodule")
+
         write(s"module sim_${device.label};")
         enter
         write
@@ -179,8 +237,8 @@ private[scalapipe] class SimulationResourceGenerator(
             val width = s.valueType.bits
             write(s"reg active$index;")
             write(s"reg signed [31:0] count$index;")
-            write(s"reg [${width - 1}:0] din$index;")
-            write(s"reg write$index;")
+            write(s"wire [${width - 1}:0] din$index;")
+            write(s"wire write$index;")
             write(s"wire full$index;")
         }
         for (s <- outputStreams) {
@@ -283,42 +341,73 @@ private[scalapipe] class SimulationResourceGenerator(
         leave
         write("end")
 
+        if (!inputStreams.isEmpty) {
+            write(s"wire can_read;")
+        }
         for (s <- inputStreams) {
             val index = s.index
             val fd = s"stream${s.label}"
+            val width = s.valueType.bits
+            write(s"reg [${width - 1}:0] fifo_in$index;")
+            write(s"wire fifo_avail$index;")
+            write(s"wire fifo_full$index;")
+            write(s"reg fifo_we$index;")
+            write(s"sim_fifo #(.WIDTH($width))")
+            enter
+            write(s"input${index}_fifo(")
+            enter
+            write(s".clk(clk),")
+            write(s".rst(rst),")
+            write(s".din(fifo_in$index),")
+            write(s".dout(din$index),")
+            write(s".re(write$index),")
+            write(s".we(fifo_we$index),")
+            write(s".avail(fifo_avail$index),")
+            write(s".full(fifo_full$index)")
+            leave
+            write(s");")
+            leave
+            write(s"assign write$index = fifo_avail$index & !full$index;")
+
             write(s"always @(posedge clk) begin")
             enter
-            write(s"write$index <= 0;")
+            write(s"fifo_we$index <= 0;")
             write(s"if (rst) begin")
             enter
             write(s"count$index <= 0;")
             write(s"active$index <= 1;")
             leave
-            write(s"end else if (!full$index && count$index > 0) begin")
+            write(s"end else if (!fifo_full$index && count$index > 0) begin")
             enter
-            for (i <- (s.valueType.bits + 7) / 8 until 0 by -1) {
+            for (i <- (width + 7) / 8 until 0 by -1) {
                 val top = i * 8 - 1
                 val bottom = i * 8 - 8
-                write(s"din$index[$top:$bottom] <= $$fgetc($fd);")
+                write(s"fifo_in$index[$top:$bottom] <= $$fgetc($fd);")
             }
-            write(s"write$index <= 1;")
+            write(s"fifo_we$index <= 1;")
             write(s"count$index <= count$index - 1;")
             leave
-            write(s"end else if (!full$index && count$index == 0) begin")
+            write(s"end else if (count$index < 0) begin")
+            enter
+            write(s"active$index <= fifo_avail$index;")
+            leave
+            write(s"end else if (can_read && active$index) begin")
             enter
             write(s"count$index[7:0] <= $$fgetc($fd);")
             write(s"count$index[15:8] <= $$fgetc($fd);")
             write(s"count$index[23:16] <= $$fgetc($fd);")
             write(s"count$index[31:24] <= $$fgetc($fd);")
             leave
-            write(s"end else if (count$index < 0) begin")
-            enter
-            write(s"active$index <= 0;")
-            leave
             write(s"end")
             leave
             write(s"end")
             write
+        }
+        if (!inputStreams.isEmpty) {
+            val canReadStr = inputStreams.map { s =>
+                s"count${s.index} <= 0"
+            }.mkString("&")
+            write(s"assign can_read = $canReadStr;")
         }
 
         for (s <- outputStreams) {
