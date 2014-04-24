@@ -50,8 +50,8 @@ module sp_usb_sync(
     inout wire [7:0] usb_data,
     input wire rxf_n,
     input wire txe_n,
-    output wire rd_n,
-    output wire wr_n,
+    output reg rd_n,
+    output reg wr_n,
     input wire [7:0] din,
     input wire write,
     output wire full,
@@ -61,10 +61,15 @@ module sp_usb_sync(
 );
 
     parameter STATE_IDLE = 0;
-    parameter STATE_WRITE = 1;
-    parameter STATE_READ = 2;
+    parameter STATE_WRITE1 = 1;
+    parameter STATE_WRITE2 = 2;
+    parameter STATE_WRITE3 = 3;
+    parameter STATE_READ1 = 4;
+    parameter STATE_READ2 = 5;
+    parameter STATE_READ3 = 6;
 
     // Handle USB writes to the internal buffer.
+    reg write_reset;
     reg write_pending;
     reg [7:0] write_buffer;
     always @(posedge clk) begin
@@ -75,13 +80,14 @@ module sp_usb_sync(
                 write_buffer <= din;
                 write_pending <= 1;
             end
-            if (!wr_n) begin
+            if (write_reset) begin
                 write_pending <= 0;
             end
         end
     end
 
     // Handle reads from the internal buffer.
+    reg read_reset;
     reg read_pending;
     reg [7:0] read_buffer;
     always @(posedge clk) begin
@@ -91,28 +97,44 @@ module sp_usb_sync(
             if (read) begin
                 read_pending <= 0;
             end
-            if (!rd_n) begin
-                read_buffer <= usb_data;
+            if (read_reset) begin
                 read_pending <= 1;
             end
         end
     end
 
-    // Determine the next state.
-    reg [1:0] state;
-    reg [1:0] next_state;
+    // 100 MHz means each clock tick is 10ns.
+    // Write-path requirements:
+    //      5ns from do_write to !wr_n      (1 clock)
+    //      5ns from !wr_n to !do_write     (1 clock)
+    //      30ns from !wr_n to wr_n         (3 clocks)
+    // Read-path requirements:
+    //      14ns from !rd_n to data valid   (2 clocks)
+    //      30ns from !rd_n to rd_n         (3 clocks)
+
+    reg [2:0] state;
+    reg [2:0] next_state;
     always @(*) begin
-        next_state <= STATE_IDLE;
-        if (state == STATE_IDLE) begin
-            if (write_pending & !txe_n) begin
-                next_state <= STATE_WRITE;
-            end else if (!read_pending & !rxf_n) begin
-                next_state <= STATE_READ;
-            end
-        end
+        case (state)
+            STATE_IDLE:
+                if (write_pending && !txe_n) begin
+                    next_state <= STATE_WRITE1;
+                end else if (!read_pending && !rxf_n) begin
+                    next_state <= STATE_READ1;
+                end else begin
+                    next_state <= STATE_IDLE;
+                end
+            STATE_WRITE1: next_state <= STATE_WRITE2;
+            STATE_WRITE2: next_state <= STATE_WRITE3;
+            STATE_WRITE3: next_state <= STATE_IDLE;
+            STATE_READ1: next_state <= STATE_READ2;
+            STATE_READ2: next_state <= STATE_READ3;
+            STATE_READ3: next_state <= STATE_IDLE;
+            default: next_state <= STATE_IDLE;
+        endcase
     end
 
-    // Manage the USB FIFO.
+    // State machine.
     always @(posedge clk) begin
         if (rst) begin
             state <= STATE_IDLE;
@@ -121,9 +143,50 @@ module sp_usb_sync(
         end
     end
 
-    assign rd_n = state == STATE_READ ? 1'b0 : 1'b1;
-    assign wr_n = state == STATE_WRITE ? 1'b0 : 1'b1;
-    assign usb_data = next_state == STATE_WRITE ? write_buffer : 8'bz;
+    // Manage the USB FIFO control signals.
+    reg do_write;
+    always @(posedge clk) begin
+        if (rst) begin
+            read_reset <= 0;
+            write_reset <= 0;
+            rd_n <= 1;
+            wr_n <= 1;
+            do_write <= 0;
+        end else begin
+            case (next_state)
+                STATE_WRITE1:   wr_n <= 0;
+                STATE_WRITE2:   wr_n <= 0;
+                STATE_WRITE3:   wr_n <= 0;
+                default:        wr_n <= 1;
+            endcase
+            case (next_state)
+                STATE_READ1:    do_write <= 0;
+                STATE_READ2:    do_write <= 0;
+                STATE_READ3:    do_write <= 0;
+                default:        do_write <= 1;
+            endcase
+            case (next_state)
+                STATE_WRITE3:   write_reset <= 1;
+                default:        write_reset <= 0;
+            endcase
+            case (next_state)
+                STATE_READ1:    rd_n <= 0;
+                STATE_READ2:    rd_n <= 0;
+                STATE_READ3:    rd_n <= 0;
+                default:        rd_n <= 1;
+            endcase
+            case (next_state)
+                STATE_READ3:    read_buffer <= usb_data;
+                default:        read_buffer <= read_buffer;
+            endcase
+            case (next_state)
+                STATE_READ3:    read_reset <= 1;
+                default:        read_reset <= 0;
+            endcase
+        end
+    end
+
+    assign usb_data = do_write ? write_buffer : 8'bz;
     assign full = write_pending;
     assign avail = read_pending;
     assign dout = read_buffer;
