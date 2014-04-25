@@ -81,7 +81,7 @@ private[scalapipe] class SaturnResourceGenerator(
         write(s"inout wire dram_dqs,")
         write(s"output wire dram_ck,")
         write(s"output wire dram_ck_n,")
-        write(s"output wire led")
+        write(s"output reg led")
 
         leave
         write(s");")
