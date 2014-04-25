@@ -108,6 +108,20 @@ private[gen] trait HDLGenerator extends Generator {
         leave
         write("end")
         write
+
+        // Initialize to prevent simulation from getting stuck
+        // if there are uninitialized values.
+        write(s"initial begin")
+        enter
+        write(s"for(ram_addr = 0; ram_addr <= $lastIndex; " +
+              s"ram_addr = ram_addr + 1) begin")
+        enter
+        write(s"ram_data[ram_addr] <= 32'hAAAAAAAA;")
+        leave
+        write(s"end")
+        leave
+        write(s"end")
+
     }
 
     private def emitLocal(name: String, s: BaseSymbol) {
