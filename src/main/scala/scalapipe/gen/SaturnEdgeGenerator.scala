@@ -7,6 +7,7 @@ private[scalapipe] class SaturnEdgeGenerator(
     ) extends EdgeGenerator(Platforms.HDL) {
 
     override def emitCommon() {
+        write("#include <termios.h>")
     }
 
     private def emitProcessFunction(senderStreams: Traversable[Stream],
@@ -153,7 +154,16 @@ private[scalapipe] class SaturnEdgeGenerator(
         write(s"""perror("could not open device");""")
         write(s"exit(-1);")
         leave
-        write("}")
+        write(s"}")
+        write(s"{")
+        enter
+        write(s"struct termios ios;")
+        write(s"tcgetattr(fileno(usb_fd), &ios);")
+        write(s"cfmakeraw(&ios);")
+        write(s"tcsetattr(fileno(usb_fd), 0, &ios);")
+        leave
+        write(s"}")
+        write(s"fputc(0, usb_fd);")
 
         // Create the FIFOs.
         for (s <- streams) {

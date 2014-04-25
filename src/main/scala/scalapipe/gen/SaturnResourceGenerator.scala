@@ -80,7 +80,8 @@ private[scalapipe] class SaturnResourceGenerator(
         write(s"output wire dram_udm,")
         write(s"inout wire dram_dqs,")
         write(s"output wire dram_ck,")
-        write(s"output wire dram_ck_n")
+        write(s"output wire dram_ck_n,")
+        write(s"output reg led")
 
         leave
         write(s");")
@@ -149,7 +150,7 @@ private[scalapipe] class SaturnResourceGenerator(
         write(s"reg got_stop;")
 
         // State machine for USB communication.
-        val acceptStateOffset = 0
+        val acceptStateOffset = 1
         val sendStateOffset = acceptStateOffset + inputStreams.size
         val sentinelState = sendStateOffset + outputStreams.size
         val readState = sentinelState + 1
@@ -171,11 +172,22 @@ private[scalapipe] class SaturnResourceGenerator(
         enter
         write(s"got_stop <= 0;")
         write(s"state <= 0;")
+        write(s"led <= 1;")
         leave
         write(s"end else begin")
         enter
         write(s"case (state)")
         enter
+        write(s"0: // Wait for signal from software.")
+        enter
+        write(s"if (usb_avail) begin")
+        enter
+        write(s"usb_read <= 1;")
+        write(s"state <= 1;")
+        write(s"led <= 0;")
+        leave
+        write(s"end")
+        leave
 
         // Inform the host which ports are accepting input.
         for ((i, offset) <- inputStreams.zipWithIndex) {
@@ -183,7 +195,7 @@ private[scalapipe] class SaturnResourceGenerator(
             val index = i.index
             write(s"${state}: // Update input $index")
             enter
-            write(s"if (!usb_full & !usb_write) begin")
+            write(s"if (!usb_full) begin")
             enter
             write(s"usb_write <= 1;")
             write(s"usb_output[7] <= full$index;")
@@ -202,7 +214,7 @@ private[scalapipe] class SaturnResourceGenerator(
             val index = o.index
             write(s"${state}: // Send output $index")
             enter
-            write(s"if (!usb_full & !usb_write) begin")
+            write(s"if (!usb_full) begin")
             enter
             write(s"if (avail$index) begin")
             enter
@@ -237,7 +249,7 @@ private[scalapipe] class SaturnResourceGenerator(
         // Send a sentinel if there's no data for the host.
         write(s"${sentinelState}: // No data for the host.")
         enter
-        write(s"if (!usb_full & !usb_write) begin")
+        write(s"if (!usb_full) begin")
         enter
         write(s"usb_write <= 1;")
         write(s"usb_output <= (running | !got_stop) ? 0 : 255;")
@@ -249,7 +261,7 @@ private[scalapipe] class SaturnResourceGenerator(
         // Select a read state if there is data from the host.
         write(s"${readState}: // Check for input")
         enter
-        write(s"if (usb_avail & !usb_read) begin")
+        write(s"if (usb_avail) begin")
         enter
         write(s"usb_read <= 1;")
         write(s"offset <= 0;")
@@ -259,7 +271,7 @@ private[scalapipe] class SaturnResourceGenerator(
         leave
         write(s"end else begin")
         enter
-        write(s"state <= 0;")
+        write(s"state <= 1;")
         leave
         write(s"end")
         leave
@@ -273,7 +285,7 @@ private[scalapipe] class SaturnResourceGenerator(
             val bytes = (i.valueType.bits + 7) / 8
             write(s"${state}: // Read input ${index}")
             enter
-            write(s"if (usb_avail & !usb_read) begin")
+            write(s"if (usb_avail) begin")
             enter
             write(s"case (offset)")
             enter
@@ -286,7 +298,7 @@ private[scalapipe] class SaturnResourceGenerator(
             leave
             write(s"end else begin")
             enter
-            write(s"state <= 0;")
+            write(s"state <= 1;")
             write(s"write$index <= 1;")
             leave
             write(s"end") // offset
@@ -302,6 +314,7 @@ private[scalapipe] class SaturnResourceGenerator(
         write(s"${stopState}: // Stop")
         enter
         write(s"got_stop <= 1;")
+        write(s"led <= 1;")
         leave
 
         leave

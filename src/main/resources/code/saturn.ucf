@@ -6,6 +6,8 @@ NET "clk" TNM_NET = "clk";
 TIMESPEC "ts_sysclk" = PERIOD "sysclk" 100 MHz HIGH 50%;
 TIMESPEC "ts_clk" = PERIOD "clk" 100 MHz HIGH 50%;
 
+NET "led" LOC = H12 | IOSTANDARD = LVTTL | DRIVE = 8 | SLEW = FAST;
+
 ############################################################################
 # FTDI FT2232H-Channel B used as USB Asynchronnous FIFO
 ############################################################################

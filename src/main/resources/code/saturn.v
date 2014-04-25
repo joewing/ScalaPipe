@@ -272,7 +272,7 @@ module sp_dram(
         .mcb3_dram_ck_n(dram_ck_n),
 
         .c3_sys_clk(sys_clk),
-        .c3_sys_rst_i(rst),
+        .c3_sys_rst_i(0),
         .c3_calib_done(calib_done),
         .c3_clk0(clk),
         .c3_rst0(rst),
