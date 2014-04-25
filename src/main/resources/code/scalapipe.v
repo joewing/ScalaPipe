@@ -51,7 +51,7 @@ module sp_fifo(clk, rst, din, dout, re, we, avail, empty, full);
     input wire clk;
     input wire rst;
     input wire [WIDTH-1:0] din;
-    output reg [WIDTH-1:0] dout;
+    output wire [WIDTH-1:0] dout;
     input wire re;
     input wire we;
     output wire avail;
@@ -69,7 +69,6 @@ module sp_fifo(clk, rst, din, dout, re, we, avail, empty, full);
     assign empty = count == 0;
     wire do_read = re & !empty;
     wire do_write = we & !full;
-    wire write_empty = we & empty;
 
     always @(posedge clk) begin
         if (rst) begin
@@ -83,10 +82,6 @@ module sp_fifo(clk, rst, din, dout, re, we, avail, empty, full);
             end
             if (do_read) begin
                 read_ptr <= read_ptr + 1;
-                next_dout <= mem[read_ptr];
-                dout <= count == 1 ? din : next_dout;
-            end else if (write_empty) begin
-                dout <= din;
             end
             case ({do_read, do_write})
                 2'b10:      count <= count - 1;
@@ -95,6 +90,8 @@ module sp_fifo(clk, rst, din, dout, re, we, avail, empty, full);
             endcase
         end
     end
+
+    assign dout = mem[read_ptr];
 
 endmodule
 
