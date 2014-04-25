@@ -100,6 +100,7 @@ private[scalapipe] class SaturnEdgeGenerator(
             write(s"ch = $index;")
             write(s"fwrite(&ch, 1, 1, usb_fd);")
             write(s"fwrite(ptr, sizeof($vtype), 1, usb_fd);")
+            write(s"fflush(usb_fd);")
             write(s"spq_finish_read($queue, 1);")
             write(s"goto data_sent;")
             leave
@@ -109,6 +110,7 @@ private[scalapipe] class SaturnEdgeGenerator(
         // If we got here, there's no data to send.
         write(s"ch = usb_active_inputs == 0 ? 255 : 0;")
         write(s"fwrite(&ch, 1, 1, usb_fd);")
+        write(s"fflush(usb_fd);")
 
         writeLeft("data_sent:")
         write("pthread_mutex_unlock(&usb_mutex);")
@@ -163,7 +165,9 @@ private[scalapipe] class SaturnEdgeGenerator(
         write(s"tcsetattr(fileno(usb_fd), 0, &ios);")
         leave
         write(s"}")
+        write(s"fflush(usb_fd);")
         write(s"fputc(0, usb_fd);")
+        write(s"fflush(usb_fd);")
 
         // Create the FIFOs.
         for (s <- streams) {

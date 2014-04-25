@@ -81,7 +81,7 @@ private[scalapipe] class SaturnResourceGenerator(
         write(s"inout wire dram_dqs,")
         write(s"output wire dram_ck,")
         write(s"output wire dram_ck_n,")
-        write(s"output reg led")
+        write(s"output wire led")
 
         leave
         write(s");")
@@ -91,6 +91,15 @@ private[scalapipe] class SaturnResourceGenerator(
 
         write(s"wire clk;           // 100 MHz")
         write(s"wire rst;")
+
+        // Blink the LED when running.
+        write(s"reg [24:0] blink;")
+        write(s"always @(posedge clk) begin")
+        enter
+        write(s"if (rst) blink <= 0;")
+        write(s"else blink <= blink + 1;")
+        leave
+        write(s"end")
 
         // Synchronize the USB interface.
         write(s"wire [7:0] usb_input;")
@@ -172,7 +181,6 @@ private[scalapipe] class SaturnResourceGenerator(
         enter
         write(s"got_stop <= 0;")
         write(s"state <= 0;")
-        write(s"led <= 1;")
         leave
         write(s"end else begin")
         enter
@@ -184,7 +192,6 @@ private[scalapipe] class SaturnResourceGenerator(
         enter
         write(s"usb_read <= 1;")
         write(s"state <= 1;")
-        write(s"led <= 0;")
         leave
         write(s"end")
         leave
@@ -313,12 +320,7 @@ private[scalapipe] class SaturnResourceGenerator(
 
         write(s"${stopState}: // Stop")
         enter
-        write(s"begin")
-        enter
         write(s"got_stop <= 1;")
-        write(s"led <= 1;")
-        leave
-        write(s"end")
         leave
 
         leave
@@ -327,6 +329,18 @@ private[scalapipe] class SaturnResourceGenerator(
         write(s"end")
         leave
         write(s"end")   // always
+
+        write(s"always @(*) begin")
+        enter
+        write(s"case (state)")
+        enter
+        write(s"0: led <= 0;")
+        write(s"${stopState}: led <= 1;")
+        write(s"default: led <= blink[24];")
+        leave
+        write(s"endcase")
+        leave
+        write(s"end")
 
         // Connect the DRAM controller.
         write(s"wire [24:0] ram_addr;")
