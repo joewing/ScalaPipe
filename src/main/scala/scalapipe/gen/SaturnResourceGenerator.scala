@@ -313,8 +313,12 @@ private[scalapipe] class SaturnResourceGenerator(
 
         write(s"${stopState}: // Stop")
         enter
+        write(s"begin")
+        enter
         write(s"got_stop <= 1;")
         write(s"led <= 1;")
+        leave
+        write(s"end")
         leave
 
         leave
