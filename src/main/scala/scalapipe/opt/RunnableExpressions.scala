@@ -54,6 +54,14 @@ object RunnableExpressions extends DataFlowProblem {
             sb.src == la.dest || sb.offset == la.dest
         case (sa: IRStore, sb: IRStore) if sa.flat && sb.flat =>
             sa.dest == sb.dest && !disjoint(sa.offset, sb.offset)
+        case (sa: IRStore, _) =>
+            !sa.flat || !sa.symbols.intersect(b.symbols).isEmpty
+        case (la: IRLoad, _) =>
+            !la.flat || !la.symbols.intersect(b.symbols).isEmpty
+        case (_, sb: IRStore) =>
+            !sb.flat || !sb.symbols.intersect(b.symbols).isEmpty
+        case (_, lb: IRLoad) =>
+            !lb.flat || !lb.symbols.intersect(b.symbols).isEmpty
         case _ =>
             hasSymbolConflict(a, b) || hasPortConflict(a, b)
     }
