@@ -8,6 +8,7 @@ private[scalapipe] class SaturnEdgeGenerator(
 
     override def emitCommon() {
         write("#include <termios.h>")
+        write("#include <unistd.h>")
     }
 
     private def emitProcessFunction(senderStreams: Traversable[Stream],
@@ -16,7 +17,14 @@ private[scalapipe] class SaturnEdgeGenerator(
         write("static void process_usb()")
         write("{")
         enter
+        write("usleep(100);")
         write("pthread_mutex_lock(&usb_mutex);")
+        write(s"if(usb_stopped) {")
+        enter
+        write("pthread_mutex_unlock(&usb_mutex);")
+        write(s"return;")
+        leave
+        write(s"}")
 
         // Read the status.
         // The first bytes are "full" indicators for each
@@ -46,16 +54,17 @@ private[scalapipe] class SaturnEdgeGenerator(
         leave
         write(s"case 255: // Stopped")
         enter
-        write(s"if(usb_active_inputs == 0 && !usb_stopped) {")
+        write(s"{")
         enter
         for (s <- receiverStreams) {
             val destLabel = s.destKernel.label
             write(s"sp_decrement(&${destLabel}.active_inputs);")
         }
         write(s"usb_stopped = true;")
+        write("pthread_mutex_unlock(&usb_mutex);")
+        write(s"return;")
         leave
         write(s"}")
-        write(s"break;")
         leave
         for (s <- receiverStreams) {
             val index = s.index
@@ -246,9 +255,13 @@ private[scalapipe] class SaturnEdgeGenerator(
         write(s"{")
         enter
         write(s"process_usb();")
-        write(s"void *ptr = NULL;")
-        write(s"spq_start_write($queue, 1);")
+        write(s"char *ptr = NULL;")
+        write(s"if(spq_start_read($queue, &ptr) > 0) {")
+        enter
         write(s"return ptr;")
+        leave
+        write(s"}")
+        write(s"return NULL;")
         leave
         write(s"}")
 

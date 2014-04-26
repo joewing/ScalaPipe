@@ -49,7 +49,7 @@ private[scalapipe] class SaturnResourceGenerator(
                 val bytes = (vtype.bits + 7) / 8
                 val bitOffset = offset * 8
                 for (i <- 0 until bytes) {
-                    func(offset + i, bitOffset + (bytes - i - 1) * 8, name)
+                    func(offset + i, bitOffset + i * 8, name)
                 }
         }
     }
@@ -190,6 +190,7 @@ private[scalapipe] class SaturnResourceGenerator(
         enter
         write(s"if (usb_avail) begin")
         enter
+        write(s"got_stop <= 0;")
         write(s"usb_read <= 1;")
         write(s"state <= 1;")
         leave
@@ -207,7 +208,7 @@ private[scalapipe] class SaturnResourceGenerator(
             write(s"usb_write <= 1;")
             write(s"usb_output[7] <= full$index;")
             write(s"usb_output[6:0] <= ${index};")
-            write(s"offset <= 0;")
+            write(s"offset <= ~0;")
             write(s"state <= ${state + 1};")
             leave
             write(s"end")
@@ -229,6 +230,7 @@ private[scalapipe] class SaturnResourceGenerator(
             write(s"case (offset)")
             enter
             swapBus(s"data${index}", swapOutput, o.valueType)
+            write(s"default: usb_output <= $index;")
             leave
             write(s"endcase")
             write(s"usb_write <= 1;")
@@ -259,8 +261,17 @@ private[scalapipe] class SaturnResourceGenerator(
         write(s"if (!usb_full) begin")
         enter
         write(s"usb_write <= 1;")
-        write(s"usb_output <= (running | !got_stop) ? 0 : 255;")
+        write(s"if (running | !got_stop) begin")
+        enter
+        write(s"usb_output <= 0;")
         write(s"state <= ${readState};")
+        leave
+        write(s"end else begin")
+        enter
+        write(s"usb_output <= 255;")
+        write(s"state <= 0;")
+        leave
+        write(s"end")
         leave
         write(s"end")
         leave
@@ -309,9 +320,6 @@ private[scalapipe] class SaturnResourceGenerator(
             write(s"write$index <= 1;")
             leave
             write(s"end") // offset
-            leave
-            write(s"end else begin") // usb_read
-            enter
             write(s"usb_read <= 1;")
             leave
             write(s"end") // avail
@@ -320,7 +328,12 @@ private[scalapipe] class SaturnResourceGenerator(
 
         write(s"${stopState}: // Stop")
         enter
+        write(s"begin")
+        enter
         write(s"got_stop <= 1;")
+        write(s"state <= 1;")
+        leave
+        write(s"end")
         leave
 
         leave
@@ -335,7 +348,6 @@ private[scalapipe] class SaturnResourceGenerator(
         write(s"case (state)")
         enter
         write(s"0: led <= 0;")
-        write(s"${stopState}: led <= 1;")
         write(s"default: led <= blink[24];")
         leave
         write(s"endcase")
