@@ -69,7 +69,9 @@ module sp_usb_sync(
     parameter STATE_READ2 = 6;
     parameter STATE_READ3 = 7;
     parameter STATE_READ4 = 8;
-    parameter STATE_WAIT = 9;
+    parameter STATE_READ5 = 9;
+    parameter STATE_READ6 = 10;
+    parameter STATE_WAIT = 11;
 
     // Synchronize rxf and txe.
     reg rxf1, rxf2;
@@ -126,9 +128,11 @@ module sp_usb_sync(
     //      5ns from do_write to !wr_n      (1 clock)
     //      5ns from !wr_n to !do_write     (1 clock)
     //      30ns from !wr_n to wr_n         (3 clocks)
+    //      14ns from wr_n to txe valid     (2 + 1 clocks)
     // Read-path requirements:
     //      14ns from !rd_n to data valid   (2 clocks)
     //      30ns from !rd_n to rd_n         (3 clocks)
+    //      14ns from rd_n to rxf valid     (2 + 1 clocks)
 
     reg [3:0] state;
     reg [3:0] next_state;
@@ -149,7 +153,9 @@ module sp_usb_sync(
             STATE_READ1: next_state <= STATE_READ2;
             STATE_READ2: next_state <= STATE_READ3;
             STATE_READ3: next_state <= STATE_READ4;
-            STATE_READ4: next_state <= STATE_WAIT;
+            STATE_READ4: next_state <= STATE_READ5;
+            STATE_READ5: next_state <= STATE_READ6;
+            STATE_READ6: next_state <= STATE_WAIT;
             STATE_WAIT: next_state <= STATE_IDLE;
             default: next_state <= STATE_IDLE;
         endcase
@@ -183,24 +189,26 @@ module sp_usb_sync(
                 STATE_WRITE1:   do_write <= 1;
                 STATE_WRITE2:   do_write <= 1;
                 STATE_WRITE3:   do_write <= 1;
-                STATE_WRITE4:   do_write <= 1;
+                STATE_WRITE4:   do_write <= 0;
                 default:        do_write <= 0;
             endcase
             case (next_state)
                 STATE_READ1:    rd_n <= 0;
                 STATE_READ2:    rd_n <= 0;
                 STATE_READ3:    rd_n <= 0;
-                STATE_READ4:    rd_n <= 0;
+                STATE_READ4:    rd_n <= 1;
+                STATE_READ5:    rd_n <= 1;
+                STATE_READ6:    rd_n <= 1;
                 default:        rd_n <= 1;
             endcase
             case (next_state)
-                STATE_READ4:    read_buffer <= usb_data;
+                STATE_READ3:    read_buffer <= usb_data;
                 default:        read_buffer <= read_buffer;
             endcase
         end
     end
 
-    assign read_reset = state == STATE_READ4;
+    assign read_reset = state == STATE_READ6;
     assign write_reset = state == STATE_WRITE4;
     assign usb_data = do_write ? write_buffer : 8'bz;
     assign full = write_pending | write;
@@ -228,7 +236,7 @@ module sp_dram(
     input wire sys_clk,
 
     output wire clk,
-    output wire rst,
+    output reg rst,
     input wire [24:0] addr,
     input wire [127:0] din,
     output wire [127:0] dout,
@@ -247,7 +255,7 @@ module sp_dram(
     wire [5:0] cmd_bl = 0;
     wire [29:0] cmd_byte_addr = {addr, 4'b0000};
     wire cmd_full;
-
+    wire dram_rst;
     wire wr_en = we;
     wire rd_en;
     wire rd_empty;
@@ -275,7 +283,7 @@ module sp_dram(
         .c3_sys_rst_i(0),
         .c3_calib_done(calib_done),
         .c3_clk0(clk),
-        .c3_rst0(rst),
+        .c3_rst0(dram_rst),
 
         .c3_p0_cmd_clk(clk),
         .c3_p0_cmd_en(cmd_en),
@@ -316,6 +324,16 @@ module sp_dram(
                 waiting <= 0;
                 read_buffer <= rd_data;
             end
+        end
+    end
+
+    reg [4:0] reset_counter;
+    always @(posedge clk) begin
+        if (reset_counter[4]) begin
+            rst <= dram_rst;
+        end else begin
+            reset_counter <= reset_counter + 1;
+            rst <= 1;
         end
     end
 

@@ -87,7 +87,7 @@ private[scalapipe] class SaturnResourceGenerator(
         write(s");")
         enter
 
-        write(s"assign usb_siwu = 1; // Not used")
+        write(s"assign usb_siwu = 0; // Not used")
 
         write(s"wire clk;           // 100 MHz")
         write(s"wire rst;")
@@ -190,9 +190,13 @@ private[scalapipe] class SaturnResourceGenerator(
         enter
         write(s"if (usb_avail) begin")
         enter
+        write(s"if (usb_input == 0) begin")
+        enter
+        write(s"state <= 1;")
+        leave
+        write(s"end")
         write(s"got_stop <= 0;")
         write(s"usb_read <= 1;")
-        write(s"state <= 1;")
         leave
         write(s"end")
         leave
@@ -335,7 +339,7 @@ private[scalapipe] class SaturnResourceGenerator(
         leave
         write(s"end")
         leave
-
+        write(s"default: state <= 0;")
         leave
         write(s"endcase")
         leave

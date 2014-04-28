@@ -9,6 +9,9 @@ private[scalapipe] class SaturnEdgeGenerator(
     override def emitCommon() {
         write("#include <termios.h>")
         write("#include <unistd.h>")
+        write("#include <sys/types.h>")
+        write("#include <sys/stat.h>")
+        write("#include <fcntl.h>")
     }
 
     private def emitProcessFunction(senderStreams: Traversable[Stream],
@@ -17,12 +20,30 @@ private[scalapipe] class SaturnEdgeGenerator(
         write("static void process_usb()")
         write("{")
         enter
-        write("usleep(100);")
-        write("pthread_mutex_lock(&usb_mutex);")
+        write(s"static char first = 1;")
+        write(s"usleep(100);");
+        write(s"pthread_mutex_lock(&usb_mutex);")
         write(s"if(usb_stopped) {")
         enter
         write("pthread_mutex_unlock(&usb_mutex);")
         write(s"return;")
+        leave
+        write(s"}")
+        write(s"if(first) {")
+        enter
+        write(s"struct termios ios;")
+        write(s"char buffer[256];")
+        write(s"tcgetattr(usb_fd, &ios);")
+        write(s"cfmakeraw(&ios);")
+        write(s"tcsetattr(usb_fd, 0, &ios);")
+        write(s"tcflush(usb_fd, TCIOFLUSH);")
+        write(s"memset(buffer, 254, sizeof(buffer));")
+        write(s"write(usb_fd, buffer, sizeof(buffer));")
+        write(s"tcdrain(usb_fd);")
+        write(s"tcflush(usb_fd, TCIFLUSH);")
+        write(s"buffer[0] = 0;")
+        write(s"write(usb_fd, buffer, 1);")
+        write(s"first = 0;")
         leave
         write(s"}")
 
@@ -37,8 +58,8 @@ private[scalapipe] class SaturnEdgeGenerator(
         // transfer.  This byte is 0 to indicate no stream.
         val senderCount = senderStreams.size
         write(s"unsigned char status[$senderCount + 1];")
-        write(s"size_t rc = fread(status, sizeof(status), 1, usb_fd);")
-        write(s"if(rc != 1) {")
+        write(s"ssize_t rc = read(usb_fd, status, sizeof(status));")
+        write(s"if(rc != sizeof(status)) {")
         enter
         write(s"""perror("device read failed");""")
         write(s"exit(-1);")
@@ -74,8 +95,8 @@ private[scalapipe] class SaturnEdgeGenerator(
             write(s"case $index:")
             enter
             write(s"ptr = spq_start_blocking_write($queue, 1);")
-            write(s"rc = fread(ptr, sizeof($vtype), 1, usb_fd);")
-            write(s"if(rc != 1) {")
+            write(s"rc = read(usb_fd, ptr, sizeof($vtype));")
+            write(s"if(rc != sizeof($vtype)) {")
             enter
             write(s"""perror("device read failed");""")
             write(s"exit(-1);")
@@ -107,9 +128,8 @@ private[scalapipe] class SaturnEdgeGenerator(
             write(s"if(count > 0 && memchr(status, $index, $senderCount)) {")
             enter
             write(s"ch = $index;")
-            write(s"fwrite(&ch, 1, 1, usb_fd);")
-            write(s"fwrite(ptr, sizeof($vtype), 1, usb_fd);")
-            write(s"fflush(usb_fd);")
+            write(s"write(usb_fd, &ch, 1);");
+            write(s"write(usb_fd, ptr, sizeof($vtype));")
             write(s"spq_finish_read($queue, 1);")
             write(s"goto data_sent;")
             leave
@@ -118,10 +138,10 @@ private[scalapipe] class SaturnEdgeGenerator(
 
         // If we got here, there's no data to send.
         write(s"ch = usb_active_inputs == 0 ? 255 : 0;")
-        write(s"fwrite(&ch, 1, 1, usb_fd);")
-        write(s"fflush(usb_fd);")
+        write(s"write(usb_fd, &ch, 1);")
 
         writeLeft("data_sent:")
+        write(s"tcdrain(usb_fd);")
         write("pthread_mutex_unlock(&usb_mutex);")
         leave
         write("}")
@@ -137,7 +157,7 @@ private[scalapipe] class SaturnEdgeGenerator(
         val senderCount = senderStreams.size
 
         write(s"static pthread_mutex_t usb_mutex = PTHREAD_MUTEX_INITIALIZER;")
-        write(s"static FILE *usb_fd = NULL;")
+        write(s"static int usb_fd = -1;")
         write(s"static volatile uint32_t usb_active_inputs = $senderCount;")
         write(s"static bool usb_stopped = false;")
 
@@ -159,24 +179,13 @@ private[scalapipe] class SaturnEdgeGenerator(
         val usb_file = "/dev/serial/by-id/usb-FTDI_" +
                        "Saturn_Spartan_6_FPGA_Module_" +
                        "FTXLRCAZ-if01-port0"
-        write(s"""usb_fd = fopen("$usb_file", "r+");""")
-        write(s"if(usb_fd == NULL) {")
+        write(s"""usb_fd = open("$usb_file", O_RDWR | O_SYNC);""")
+        write(s"if(usb_fd < 0) {")
         enter
         write(s"""perror("could not open device");""")
         write(s"exit(-1);")
         leave
         write(s"}")
-        write(s"{")
-        enter
-        write(s"struct termios ios;")
-        write(s"tcgetattr(fileno(usb_fd), &ios);")
-        write(s"cfmakeraw(&ios);")
-        write(s"tcsetattr(fileno(usb_fd), 0, &ios);")
-        leave
-        write(s"}")
-        write(s"fflush(usb_fd);")
-        write(s"fputc(0, usb_fd);")
-        write(s"fflush(usb_fd);")
 
         // Create the FIFOs.
         for (s <- streams) {
@@ -210,8 +219,13 @@ private[scalapipe] class SaturnEdgeGenerator(
         write(s"static void *${label}_allocate()")
         write(s"{")
         enter
+        write(s"void *ptr = spq_start_write($queue, 1);")
+        write(s"if(!ptr) {")
+        enter
         write(s"process_usb();")
-        write(s"return spq_start_write($queue, 1);")
+        leave
+        write(s"}")
+        write(s"return ptr;")
         leave
         write(s"}")
 
@@ -254,13 +268,13 @@ private[scalapipe] class SaturnEdgeGenerator(
         write(s"static void *${label}_read_value()")
         write(s"{")
         enter
-        write(s"process_usb();")
         write(s"char *ptr = NULL;")
         write(s"if(spq_start_read($queue, &ptr) > 0) {")
         enter
         write(s"return ptr;")
         leave
         write(s"}")
+        write(s"process_usb();")
         write(s"return NULL;")
         leave
         write(s"}")
@@ -276,6 +290,13 @@ private[scalapipe] class SaturnEdgeGenerator(
     }
 
     override def emitDestroy(streams: Traversable[Stream]) {
+        for (s <- streams) {
+            val label = s.label
+            val queue = s"q_$label"
+            write(s"free($queue);")
+        }
+        write(s"tcflush(usb_fd, TCIOFLUSH);")
+        write(s"close(usb_fd);")
     }
 
 }
