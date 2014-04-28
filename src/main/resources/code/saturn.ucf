@@ -1,10 +1,13 @@
-CONFIG VCCAUX = "3.3" ;
+CONFIG VCCAUX = "3.3";
+CONFIG MCB_PERFORMANCE = STANDARD;
+CONFIG PROHIBIT = P1, L3;
 
-NET "sysclk" LOC = V10;
+NET "*/memc?_wrapper_inst/mcb_ui_top_inst/mcb_raw_wrapper_inst/selfrefresh_mcb_mode" TIG;
+NET "*/c?_pll_lock" TIG;
+
+NET "sysclk" LOC = V10 | IOSTANDARD = LVCMOS33;
 NET "sysclk" TNM_NET = "sysclk";
-NET "clk" TNM_NET = "clk";
 TIMESPEC "ts_sysclk" = PERIOD "sysclk" 100 MHz HIGH 50%;
-TIMESPEC "ts_clk" = PERIOD "clk" 100 MHz HIGH 50%;
 
 NET "led" LOC = H12 | IOSTANDARD = LVTTL | DRIVE = 8 | SLEW = FAST;
 
@@ -77,11 +80,6 @@ NET "dram_udm"        LOC = "K4"  | IOSTANDARD = MOBILE_DDR;
 NET "dram_udqs"       LOC = "P2"  | IOSTANDARD = MOBILE_DDR;
 
 NET "dram_rzq"        LOC = "N4"  | IOSTANDARD = MOBILE_DDR;
-
-#NET "dram_ck"         LOC = "V10" | IOSTANDARD = LVCMOS33;
-#NET "dram_rst_n"      LOC = "M13" | IOSTANDARD = LVCMOS33 | PULLUP;
-#NET "dram_calib_done" LOC = "K13"  | IOSTANDARD = LVCMOS33;
-#NET "dram_error"      LOC = "K12"  | IOSTANDARD = LVCMOS33;
 
 ############################################################################
 # GPIOs

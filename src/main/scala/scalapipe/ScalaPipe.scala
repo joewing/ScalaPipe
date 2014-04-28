@@ -487,6 +487,7 @@ private[scalapipe] class ScalaPipe {
             case "Saturn" =>
                 RawFileGenerator.emitFile(dir, "saturn.v", "platform.v")
                 RawFileGenerator.emitFile(dir, "saturn.ucf")
+                RawFileGenerator.emitFile(dir, "saturn-lpddr.v")
             case _ => Error.raise(s"Unknown FPGA type: $fpga")
         }
 
