@@ -157,6 +157,7 @@ private[scalapipe] class SaturnResourceGenerator(
         }
         write(s"wire running;")
         write(s"reg got_stop;")
+        write(s"reg sp_rst;")
 
         // State machine for USB communication.
         val acceptStateOffset = 1
@@ -177,6 +178,7 @@ private[scalapipe] class SaturnResourceGenerator(
         }
         write(s"usb_read <= 0;")
         write(s"usb_write <= 0;")
+        write(s"sp_rst <= 0;")
         write(s"if (rst) begin")
         enter
         write(s"got_stop <= 0;")
@@ -197,6 +199,7 @@ private[scalapipe] class SaturnResourceGenerator(
         write(s"end")
         write(s"got_stop <= 0;")
         write(s"usb_read <= 1;")
+        write(s"sp_rst <= 1;")
         leave
         write(s"end")
         leave
@@ -399,7 +402,7 @@ private[scalapipe] class SaturnResourceGenerator(
         write(s"fpga$id sp(")
         enter
         write(s".clk(clk),")
-        write(s".rst(rst),")
+        write(s".rst(rst | sp_rst),")
         write(s".running(running),")
         write(s".ram_addr(ram_addr),")
         write(s".ram_data_to_main(ram_data_to_main),")
