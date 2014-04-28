@@ -41,6 +41,44 @@ module sp_register(clk, rst, din, dout, re, we, avail, full);
 
 endmodule
 
+module sp_byteram(clk, rst, addr, din, dout, re, we, ready);
+
+    parameter DEPTH = 2;
+    parameter ADDR_WIDTH = 32;
+
+    input wire clk;
+    input wire rst;
+    input wire [ADDR_WIDTH-1:0] addr;
+    input wire [7:0] din;
+    output reg [7:0] dout;
+    input wire re;
+    input wire we;
+    output reg ready;
+
+    reg rre;
+    reg rwe;
+    reg [7:0] rin;
+    reg [ADDR_WIDTH-1:0] raddr;
+    reg [7:0] data [0:DEPTH-1];
+
+    always @(posedge clk) begin
+        {rre, rwe} <= 2'b00;
+        ready <= 1;
+        if (rwe) begin
+            data[raddr] <= rin;
+        end else if (rre) begin
+            dout <= data[raddr];
+        end else begin
+            raddr <= addr;
+            rin <= din;
+            ready <= ~re & ~we;
+            rre <= re;
+            rwe <= we;
+        end
+    end
+
+endmodule
+
 module sp_ram(clk, rst, addr, din, dout, mask, re, we, ready);
 
     parameter WIDTH = 8;
@@ -51,53 +89,30 @@ module sp_ram(clk, rst, addr, din, dout, mask, re, we, ready);
     input wire rst;
     input wire [ADDR_WIDTH-1:0] addr;
     input wire [WIDTH-1:0] din;
-    output reg [WIDTH-1:0] dout;
+    output wire [WIDTH-1:0] dout;
     input wire [WIDTH/8-1:0] mask;
     input wire re;
     input wire we;
     output wire ready;
 
-    reg rre;
-    reg rwe;
-    reg [WIDTH/8-1:0] rmask;
-    reg [WIDTH-1:0] rin;
-    reg [ADDR_WIDTH-1:0] raddr;
-    reg [WIDTH-1:0] data [0:DEPTH-1];
-    reg busy;
-
-    always @(posedge clk) begin
-        if (rst) begin
-            rre <= 0;
-            rwe <= 0;
-            busy <= 0;
-        end else begin
-            raddr <= addr;
-            rin <= din;
-            rmask <= mask;
-            rre <= re;
-            rwe <= we;
-            busy <= re | we;
-        end
-    end
-
-    always @(posedge clk) begin
-        if (rre) begin
-            dout <= data[raddr];
-        end
-    end
+    wire [WIDTH/8-1:0] byte_ready;
 
     genvar i;
     generate
-        for (i = 0; i < WIDTH / 8; i = i + 1) begin : select_bytes
-            always @(posedge clk) begin
-                if (rwe & rmask[i]) begin
-                    data[raddr][i*8+7:i*8] <= rin[i*8+7:i*8];
-                end
-            end
+        for (i = 0; i < WIDTH  / 8; i = i + 1) begin : bytes
+            sp_byteram #(.DEPTH(DEPTH), .ADDR_WIDTH(ADDR_WIDTH)) br(
+                .clk(clk),
+                .rst(rst),
+                .addr(addr),
+                .din(din[i*8+7:i*8]),
+                .dout(dout[i*8+7:i*8]),
+                .re(re),
+                .we(we & mask[i]),
+                .ready(byte_ready[i]));
         end
     endgenerate
 
-    assign ready = ~busy;
+    assign ready = |byte_ready;
 
 endmodule
 
