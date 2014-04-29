@@ -118,7 +118,7 @@ private[scalapipe] class SimulationResourceGenerator(
         val mainDataWidth = sp.parameters.get[Int]('dramDataWidth)
         val mainAddrWidth = sp.parameters.get[Int]('dramAddrWidth)
         val mainMaskBits = mainDataWidth / 8
-        val mainDepth = 1 << mainAddrWidth
+        val mainDepth = ramDepth
         write(s"wire [${mainAddrWidth - 1}:0] ram_addr;")
         write(s"wire [${mainDataWidth - 1}:0] ram_data_to_main;")
         write(s"wire [${mainDataWidth - 1}:0] ram_data_from_main;")

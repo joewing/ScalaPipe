@@ -29,8 +29,10 @@ private[scalapipe] abstract class HDLResourceGenerator(
 
     protected val kernels = sp.instances.filter { _.device == device }
 
-    private val ramWidth = sp.parameters.get[Int]('memoryWidth)
-    private val ramAddrWidth = sp.parameters.get[Int]('memoryAddrWidth)
+    protected val ramWidth = sp.parameters.get[Int]('memoryWidth)
+    protected val ramAddrWidth = sp.parameters.get[Int]('memoryAddrWidth)
+
+    protected def ramDepth = kernels.map(_.kernelType.ramDepth).sum
 
     private def getAddrWidth(width: Int): Int = {
         val bytes = round2(width) / 8
