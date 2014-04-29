@@ -37,10 +37,13 @@ object RunnableExpressions extends DataFlowProblem {
     }
 
     private def hasPortConflict(a: IRNode, b: IRNode) = {
-        (a.dests.exists(_.isInstanceOf[OutputSymbol]) &&
-         b.srcs.exists(_.isInstanceOf[InputSymbol])) ||
-        (b.dests.exists(_.isInstanceOf[OutputSymbol]) &&
-         a.srcs.exists(_.isInstanceOf[InputSymbol]))
+        val aInputs = a.srcs.collect { case is: InputSymbol => is }
+        val bInputs = b.srcs.collect { case is: InputSymbol => is }
+        val aOutputs = a.dests.collect { case os: OutputSymbol => os }
+        val bOutputs = b.dests.collect { case os: OutputSymbol => os }
+        (!aInputs.isEmpty && !bOutputs.isEmpty) ||
+        (!bInputs.isEmpty && !aOutputs.isEmpty) ||
+        !aInputs.intersect(bInputs).isEmpty
     }
 
     private def hasConflict(a: IRNode, b: IRNode): Boolean = (a, b) match {

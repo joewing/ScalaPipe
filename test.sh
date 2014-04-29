@@ -23,6 +23,17 @@ function run_test {
 # Run unit tests.
 sbt test
 
+# Test reading an input multiple times in the same statement.
+echo "OUTPUT 00000001"  >  test.expected
+echo "OUTPUT 00020003"  >> test.expected
+echo "OUTPUT 00040005"  >> test.expected
+echo "OUTPUT 00060007"  >> test.expected
+echo "OUTPUT 00080009"  >> test.expected
+rm -rf ReadTest
+run_test ReadTest 0
+run_test ReadTest 1
+
+
 # Test configuration parameters.
 echo "OUTPUT 0"     >  test.expected
 echo "OUTPUT 1"     >> test.expected
