@@ -43,7 +43,8 @@ object RunnableExpressions extends DataFlowProblem {
         val bOutputs = b.dests.collect { case os: OutputSymbol => os }
         (!aInputs.isEmpty && !bOutputs.isEmpty) ||
         (!bInputs.isEmpty && !aOutputs.isEmpty) ||
-        !aInputs.intersect(bInputs).isEmpty
+        !aInputs.intersect(bInputs).isEmpty ||
+        !aOutputs.intersect(bOutputs).isEmpty
     }
 
     private def hasConflict(a: IRNode, b: IRNode): Boolean = (a, b) match {

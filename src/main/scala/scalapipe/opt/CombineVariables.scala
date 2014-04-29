@@ -33,7 +33,7 @@ private[opt] object CombineVariables extends Pass {
             }
 
             // Check types.
-            if (a.valueType != b.valueType) {
+            if (a.valueType != b.valueType || !a.valueType.flat) {
                 return false
             }
 
