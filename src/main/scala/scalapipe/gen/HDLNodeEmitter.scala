@@ -90,6 +90,18 @@ private[gen] abstract class HDLNodeEmitter(
         }
     }
 
+    private def emitConstMult(srca: ImmediateSymbol,
+                              srcb: String): String = {
+        val value = math.abs(srca.value.long)
+        val bcount = srca.valueType.bits
+        val bits = for (i <- 0 until bcount if (((value >> i) & 1) != 0))
+            yield i
+        val op = if (srca.value.long < 0) "-" else "+"
+        bits.foldLeft("0") { (acc, bit) =>
+            s"$acc $op ($srcb << $bit)"
+        }
+    }
+
     private def emitIntOp(block: StateBlock,
                           vt: IntegerValueType,
                           node: IRInstruction) {
@@ -116,7 +128,7 @@ private[gen] abstract class HDLNodeEmitter(
             case NodeType.sub   =>
                 moduleEmitter.createSimple("sp_subI", width, Seq(srca, srcb))
             case NodeType.mul if node.srca.isInstanceOf[ImmediateSymbol] =>
-                s"$srca * $srcb"
+                emitConstMult(node.srca.asInstanceOf[ImmediateSymbol], srcb)
             case NodeType.mul if !node.srca.isInstanceOf[ImmediateSymbol] =>
                 moduleEmitter.create("sp_mulI", width, state, Seq(srca, srcb))
             case NodeType.div if vt.signed =>
