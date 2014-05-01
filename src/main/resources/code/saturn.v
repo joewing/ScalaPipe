@@ -280,7 +280,7 @@ module sp_dram(
         .mcb3_dram_ck_n(dram_ck_n),
 
         .c3_sys_clk(sys_clk),
-        .c3_sys_rst_i(0),
+        .c3_sys_rst_i(1'b0),
         .c3_calib_done(calib_done),
         .c3_clk0(clk),
         .c3_rst0(dram_rst),
@@ -327,7 +327,7 @@ module sp_dram(
         end
     end
 
-    reg [4:0] reset_counter;
+    reg [4:0] reset_counter = 0;
     always @(posedge clk) begin
         if (reset_counter[4]) begin
             rst <= dram_rst;
