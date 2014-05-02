@@ -305,25 +305,9 @@ module sp_mul_impl(clk, start_in, a_in, b_in, c_out, ready_out);
     parameter OUTPUT_WIDTH  = WIDTH * 2;
     parameter SHIFT         = 18;
 
-    // We can't use constant functions in iverilog, so we
-    // expand the computation of the bits to process per cycle.
-    parameter MAX_SHIFT = SHIFT < WIDTH ? SHIFT : WIDTH;
-    parameter BITS0 = MAX_SHIFT;
-    parameter BITS1 = WIDTH % BITS0 != 0 ? BITS0 - 1 : BITS0;
-    parameter BITS2 = WIDTH % BITS1 != 0 ? BITS1 - 1 : BITS1;
-    parameter BITS3 = WIDTH % BITS2 != 0 ? BITS2 - 1 : BITS2;
-    parameter BITS4 = WIDTH % BITS3 != 0 ? BITS3 - 1 : BITS3;
-    parameter BITS5 = WIDTH % BITS4 != 0 ? BITS4 - 1 : BITS4;
-    parameter BITS6 = WIDTH % BITS5 != 0 ? BITS5 - 1 : BITS5;
-    parameter BITS7 = WIDTH % BITS6 != 0 ? BITS6 - 1 : BITS6;
-    parameter BITS8 = WIDTH % BITS7 != 0 ? BITS7 - 1 : BITS7;
-    parameter BITS9 = WIDTH % BITS8 != 0 ? BITS8 - 1 : BITS8;
-    parameter BITSA = WIDTH % BITS9 != 0 ? BITS9 - 1 : BITS9;
-    parameter BITSB = WIDTH % BITSA != 0 ? BITSA - 1 : BITSA;
-    parameter BITSC = WIDTH % BITSB != 0 ? BITSB - 1 : BITSB;
-
-    parameter BITS = BITSC;
-    parameter STATE_COUNT = WIDTH / BITS;
+    parameter BITS = (SHIFT > WIDTH) ? WIDTH : SHIFT;
+    parameter DIGITS = (WIDTH + BITS - 1) / BITS;
+    parameter SRC_WIDTH = DIGITS * BITS;
 
     input wire clk;
     input wire start_in;
@@ -332,30 +316,65 @@ module sp_mul_impl(clk, start_in, a_in, b_in, c_out, ready_out);
     output wire [OUTPUT_WIDTH-1:0] c_out;
     output wire ready_out;
 
-    reg [WIDTH-1:0] a;
-    reg [WIDTH-1:0] b;
+    reg [SRC_WIDTH-1:0] a;
+    reg [SRC_WIDTH-1:0] b;
     reg [OUTPUT_WIDTH-1:0] result;
-    reg [31:0] state;
+    reg [31:0] apos = DIGITS - 1;
+    reg [31:0] bpos = DIGITS - 1;
+    reg [31:0] dest;
 
-    wire [OUTPUT_WIDTH-1:0] add_sa = b * a[WIDTH-1:WIDTH-BITS];
-    wire [OUTPUT_WIDTH-1:0] add_sb = result << BITS;
+    wire [SRC_WIDTH-1:0] arot;
+    wire [SRC_WIDTH-1:0] brot;
+    generate
+        if (BITS == WIDTH) begin : rotate_digits
+            assign arot = a;
+            assign brot = b;
+        end else begin
+            assign arot = {a[BITS-1:0], a[SRC_WIDTH-1:BITS]};
+            assign brot = {b[BITS-1:0], b[SRC_WIDTH-1:BITS]};
+        end
+    endgenerate
+
+    wire [OUTPUT_WIDTH-1:0] add_sa = shifted;
+    wire [OUTPUT_WIDTH-1:0] add_sb = result;
     wire [OUTPUT_WIDTH-1:0] add_result;
     sp_addI #(.WIDTH(OUTPUT_WIDTH)) add(add_sa, add_sb, add_result);
 
+    // Shifted product (shifted by dest).
+    wire [OUTPUT_WIDTH-1:0] prod = b[BITS-1:0] * a[BITS-1:0];
+    wire [OUTPUT_WIDTH-1:0] parts [0:DIGITS];
+    wire [OUTPUT_WIDTH-1:0] shifted;
+    genvar i;
+    generate
+        for (i = 0; i <= DIGITS; i = i + 1) begin : shift_digits
+            assign parts[i] = prod << (i * BITS);
+        end
+    endgenerate
+    assign shifted = parts[dest];
+
     always @(posedge clk) begin
         if (start_in) begin
-            state <= STATE_COUNT;
+            apos <= 0;
+            bpos <= 0;
+            dest <= 0;
             result <= 0;
             a <= a_in;
             b <= b_in;
         end else if (!ready_out) begin
+            if (apos == DIGITS - 1) begin
+                apos <= 0;
+                bpos <= bpos + 1;
+                b <= brot;
+            end else begin
+                apos <= apos + 1;
+                dest <= dest + 1;
+            end
+            a <= arot;
             result <= add_result;
-            a <= a << BITS;
-            state <= state - 1;
         end
     end
 
-    assign ready_out = state == 0;
+    assign ready_out = bpos == DIGITS;
     assign c_out = result;
 
 endmodule

@@ -170,6 +170,4 @@ module tb;
     sp_mulI #(.WIDTH(32)) imul(clk, rst, a, b, imul_result, imul_ready);
     sp_divS #(.WIDTH(32)) sdiv(clk, rst, a, b, sdiv_result, sdiv_ready);
 
-
 endmodule
-
