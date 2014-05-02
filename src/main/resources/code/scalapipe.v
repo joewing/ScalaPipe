@@ -342,11 +342,11 @@ module sp_mul_impl(clk, start_in, a_in, b_in, c_out, ready_out);
 
     // Shifted product (shifted by dest).
     wire [OUTPUT_WIDTH-1:0] prod = b[BITS-1:0] * a[BITS-1:0];
-    wire [OUTPUT_WIDTH-1:0] parts [0:DIGITS];
+    wire [OUTPUT_WIDTH-1:0] parts [0:2*DIGITS-1];
     wire [OUTPUT_WIDTH-1:0] shifted;
     genvar i;
     generate
-        for (i = 0; i <= DIGITS; i = i + 1) begin : shift_digits
+        for (i = 0; i < 2*DIGITS; i = i + 1) begin : shift_digits
             assign parts[i] = prod << (i * BITS);
         end
     endgenerate
@@ -365,6 +365,7 @@ module sp_mul_impl(clk, start_in, a_in, b_in, c_out, ready_out);
                 apos <= 0;
                 bpos <= bpos + 1;
                 b <= brot;
+                dest <= dest - DIGITS + 2;
             end else begin
                 apos <= apos + 1;
                 dest <= dest + 1;
