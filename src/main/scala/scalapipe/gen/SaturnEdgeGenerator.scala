@@ -12,16 +12,96 @@ private[scalapipe] class SaturnEdgeGenerator(
         write("#include <sys/types.h>")
         write("#include <sys/stat.h>")
         write("#include <fcntl.h>")
+        write("#include <errno.h>")
     }
 
     private def emitProcessFunction(senderStreams: Traversable[Stream],
                                     receiverStreams: Traversable[Stream]) {
 
+        write("static void usb_write(const char *buffer, size_t count)")
+        write("{")
+        enter
+        write("size_t offset = 0;")
+        write("while(offset < count) {")
+        enter
+        write("ssize_t rc = write(usb_fd, &buffer[offset], count - offset);")
+        write("if(rc < 0) {")
+        enter
+        write("if(errno != EAGAIN) {")
+        enter
+        write("perror(\"device write failed\");")
+        write("exit(-1);")
+        leave
+        write("}")
+        leave
+        write("} else {")
+        enter
+        write("offset += rc;")
+        leave
+        write("}")
+        leave
+        write("}")
+        leave
+        write("}")
+        write
+
+        write("static char usb_try_read(char *buffer, size_t count)")
+        write("{")
+        enter
+        write("size_t offset;")
+        write("ssize_t rc = read(usb_fd, buffer, count);")
+        write("if(rc < 0) {")
+        enter
+        write("if(errno != EAGAIN) {")
+        enter
+        write("perror(\"device read failed\");")
+        write("exit(-1);")
+        leave
+        write("}")
+        write("return 0;")
+        leave
+        write("}")
+        write("offset = rc;")
+        write("while(offset < count) {")
+        enter
+        write("rc = read(usb_fd, &buffer[offset], count - offset);")
+        write("if(rc < 0) {")
+        enter
+        write("if(errno != EAGAIN) {")
+        enter
+        write("perror(\"device read failed\");")
+        write("exit(-1);")
+        leave
+        write("}")
+        leave
+        write("} else {")
+        enter
+        write("offset += rc;")
+        leave
+        write("}")
+        leave
+        write("}")
+        write("return 1;")
+        leave
+        write("}")
+        write
+
+        write("static void usb_read(char *buffer, size_t count)")
+        write("{")
+        enter
+        write("while(!usb_try_read(buffer, count)) {")
+        enter
+        write("usleep(100);")
+        leave
+        write("}")
+        leave
+        write("}")
+        write
+
         write("static void process_usb()")
         write("{")
         enter
         write(s"static char first = 1;")
-        write(s"usleep(100);");
         write(s"pthread_mutex_lock(&usb_mutex);")
         write(s"if(usb_stopped) {")
         enter
@@ -38,11 +118,11 @@ private[scalapipe] class SaturnEdgeGenerator(
         write(s"tcsetattr(usb_fd, 0, &ios);")
         write(s"tcflush(usb_fd, TCIOFLUSH);")
         write(s"memset(buffer, 254, sizeof(buffer));")
-        write(s"write(usb_fd, buffer, sizeof(buffer));")
+        write(s"usb_write(buffer, sizeof(buffer));")
         write(s"tcdrain(usb_fd);")
         write(s"tcflush(usb_fd, TCIFLUSH);")
         write(s"buffer[0] = 0;")
-        write(s"write(usb_fd, buffer, 1);")
+        write(s"usb_write(buffer, 1);")
         write(s"first = 0;")
         leave
         write(s"}")
@@ -58,11 +138,10 @@ private[scalapipe] class SaturnEdgeGenerator(
         // transfer.  This byte is 0 to indicate no stream.
         val senderCount = senderStreams.size
         write(s"unsigned char status[$senderCount + 1];")
-        write(s"ssize_t rc = read(usb_fd, status, sizeof(status));")
-        write(s"if(rc != sizeof(status)) {")
+        write(s"if(!usb_try_read((char*)status, sizeof(status))) {")
         enter
-        write(s"""perror("device read failed");""")
-        write(s"exit(-1);")
+        write(s"pthread_mutex_unlock(&usb_mutex);")
+        write(s"return;")
         leave
         write(s"}")
 
@@ -95,13 +174,7 @@ private[scalapipe] class SaturnEdgeGenerator(
             write(s"case $index:")
             enter
             write(s"ptr = spq_start_blocking_write($queue, 1);")
-            write(s"rc = read(usb_fd, ptr, sizeof($vtype));")
-            write(s"if(rc != sizeof($vtype)) {")
-            enter
-            write(s"""perror("device read failed");""")
-            write(s"exit(-1);")
-            leave
-            write(s"}")
+            write(s"usb_read(ptr, sizeof($vtype));")
             write(s"spq_finish_write($queue, 1);")
             write(s"break;")
             leave
@@ -128,8 +201,8 @@ private[scalapipe] class SaturnEdgeGenerator(
             write(s"if(count > 0 && memchr(status, $index, $senderCount)) {")
             enter
             write(s"ch = $index;")
-            write(s"write(usb_fd, &ch, 1);");
-            write(s"write(usb_fd, ptr, sizeof($vtype));")
+            write(s"usb_write((char*)&ch, 1);")
+            write(s"usb_write(ptr, sizeof($vtype));")
             write(s"spq_finish_read($queue, 1);")
             write(s"goto data_sent;")
             leave
@@ -138,7 +211,7 @@ private[scalapipe] class SaturnEdgeGenerator(
 
         // If we got here, there's no data to send.
         write(s"ch = usb_active_inputs == 0 ? 255 : 0;")
-        write(s"write(usb_fd, &ch, 1);")
+        write(s"usb_write((char*)&ch, 1);")
 
         writeLeft("data_sent:")
         write(s"tcdrain(usb_fd);")
@@ -179,7 +252,7 @@ private[scalapipe] class SaturnEdgeGenerator(
         val usb_file = "/dev/serial/by-id/usb-FTDI_" +
                        "Saturn_Spartan_6_FPGA_Module_" +
                        "FTXLRCAZ-if01-port0"
-        write(s"""usb_fd = open("$usb_file", O_RDWR | O_SYNC);""")
+        write(s"""usb_fd = open("$usb_file", O_RDWR | O_SYNC | O_NONBLOCK);""")
         write(s"if(usb_fd < 0) {")
         enter
         write(s"""perror("could not open device");""")
