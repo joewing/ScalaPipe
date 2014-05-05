@@ -37,6 +37,8 @@ private[scalapipe] abstract class KernelType(
         dependencies.add(kernel.dependencies)
     }
 
+    def pure: Boolean
+
     private[scalapipe] def ramDepth(vt: ValueType): Int = {
         val ramWidth = sp.parameters.get[Int]('memoryWidth)
         if (vt.flat) {

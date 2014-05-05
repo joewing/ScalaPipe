@@ -96,38 +96,8 @@ private[scalapipe] abstract class HDLResourceGenerator(
     }
 
     private def emitMemorySpec(dir: File) {
-
-        write(s"(memory")
-        enter
-        write("(main (memory (dram)))")
-        for (k <- kernels) {
-            val id = k.index
-            val wordSize = sp.parameters.get[Int]('memoryWidth) / 8
-            val depth = k.kernelType.ramDepth
-            write(s"(subsystem (id $id)(depth $depth)(word_size $wordSize)")
-            enter
-            write(s"(memory (main))")
-            leave
-            write(s")")
-        }
-        for (s <- streams) {
-            val id = s.index
-            val depth = s.parameters.get[Int]('fpgaQueueDepth)
-            val itemSize = s.valueType.bytes
-            val sid = s.sourceKernel.index
-            val did = s.destKernel.index
-            write(s"(fifo (id $id)(depth $depth)(word_size $itemSize)")
-            enter
-            write(s"; $sid -> $did")
-            write(s"(memory (main))")
-            leave
-            write(s")")
-        }
-        leave
-        write(s")")
-
-        val filename = s"mem_${device.label}.mem"
-        writeFile(dir, filename)
+        val gen = new MemorySpecGenerator(sp, device)
+        gen.emit(dir)
     }
 
     private def getDepthBits(stream: Stream): Int = {

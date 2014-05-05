@@ -19,6 +19,8 @@ private[scalapipe] class InternalKernelType(
 
     override def internal = true
 
+    override def pure = expression.pure
+
     protected def getGenerator: KernelGenerator = platform match {
         case Platforms.C        => new CKernelGenerator(this)
         case Platforms.OpenCL   => new OpenCLKernelGenerator(this)

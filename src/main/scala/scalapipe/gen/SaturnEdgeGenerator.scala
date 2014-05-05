@@ -58,6 +58,7 @@ private[scalapipe] class SaturnEdgeGenerator(
         write("exit(-1);")
         leave
         write("}")
+        write("usleep(100);")
         write("return 0;")
         leave
         write("}")
@@ -89,11 +90,7 @@ private[scalapipe] class SaturnEdgeGenerator(
         write("static void usb_read(char *buffer, size_t count)")
         write("{")
         enter
-        write("while(!usb_try_read(buffer, count)) {")
-        enter
-        write("usleep(100);")
-        leave
-        write("}")
+        write("while(!usb_try_read(buffer, count));")
         leave
         write("}")
         write

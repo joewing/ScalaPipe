@@ -11,4 +11,3 @@ private[scalapipe] abstract class ResourceGenerator extends Generator {
     def emit(dir: File): Unit
 
 }
-
