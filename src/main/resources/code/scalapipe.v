@@ -116,7 +116,7 @@ module sp_ram(clk, rst, addr, din, dout, mask, re, we, ready);
 
 endmodule
 
-module sp_fifo(clk, rst, din, dout, re, we, avail, full,
+module sp_fifo(clk, rst, din, dout, re, we, avail, full, empty,
                mem_addr, mem_in, mem_out, mem_re, mem_we, mem_ready);
 
     parameter WIDTH = 8;
@@ -125,11 +125,12 @@ module sp_fifo(clk, rst, din, dout, re, we, avail, full,
     input wire clk;
     input wire rst;
     input wire [WIDTH-1:0] din;
-    output wire [WIDTH-1:0] dout;
+    output reg [WIDTH-1:0] dout;
     input wire re;
     input wire we;
-    output reg avail;
+    output wire avail;
     output wire full;
+    output wire empty;
     output reg [ADDR_WIDTH-1:0] mem_addr;
     input wire [WIDTH-1:0] mem_in;
     output reg [WIDTH-1:0] mem_out;
@@ -142,6 +143,7 @@ module sp_fifo(clk, rst, din, dout, re, we, avail, full,
     reg [ADDR_WIDTH:0] count;
     reg read_pending;
     reg write_pending;
+    reg read_outstanding;
 
     always @(posedge clk) begin
         mem_re <= 0;
@@ -151,49 +153,47 @@ module sp_fifo(clk, rst, din, dout, re, we, avail, full,
             write_ptr <= 0;
             count <= 0;
             read_pending <= 0;
+            read_outstanding <= 0;
             write_pending <= 0;
-            avail <= 0;
-        end else if (mem_ready && !mem_re && !mem_we) begin
-            if (count != 0 && !avail && !read_pending) begin
-                mem_re <= 1;
-                mem_addr <= read_ptr;
-                count <= count - 1;
-                read_pending <= 1;
-                if (we) begin
-                    mem_out <= din;
-                    write_pending <= 1;
+        end else begin
+            if (mem_ready && !mem_re && !mem_we) begin
+                if (read_outstanding) begin
+                    // A memory read just finished.
+                    read_outstanding <= 0;
+                    read_pending <= 1;
+                    dout <= mem_in;
                 end
-            end else if (write_pending) begin
-                mem_we <= 1;
-                write_pending <= 0;
-                mem_addr <= write_ptr;
-                write_ptr <= write_ptr + 1;
-                count <= count + 1;
-            end else if (we) begin
+                if (count != 0 && !read_pending && !read_outstanding) begin
+                    // Start a memory read.
+                    mem_re <= 1;
+                    mem_addr <= read_ptr;
+                    read_ptr <= read_ptr + 1;
+                    count <= count - 1;
+                    read_outstanding <= 1;
+                end else if (!count[ADDR_WIDTH] && write_pending) begin
+                    // Start a memory write.
+                    mem_we <= 1;
+                    mem_addr <= write_ptr;
+                    write_ptr <= write_ptr + 1;
+                    count <= count + 1;
+                    write_pending <= 0;
+                end
+            end
+            if (we && !write_pending) begin
+                // Write a value to the FIFO.
                 mem_out <= din;
-                mem_we <= 1;
-                mem_addr <= write_ptr;
-                write_ptr <= write_ptr + 1;
-                count <= count + 1;
+                write_pending <= 1;
             end
-            if (read_pending) begin
-                if (!re || count == 0) begin
-                    avail <= 1;
-                    read_pending <= 0;
-                end
-                read_ptr <= read_ptr + 1;
+            if (re && read_pending) begin
+                // Read a value from the FIFO.
+                read_pending <= 0;
             end
-        end else if (we) begin
-            mem_out <= din;
-            write_pending <= 1;
-        end
-        if (re) begin
-            avail <= 0;
         end
     end
 
-    assign full = count[ADDR_WIDTH] | write_pending;
-    assign dout = mem_in;
+    assign full = write_pending;
+    assign avail = read_pending;
+    assign empty = count == 0;
 
 endmodule
 

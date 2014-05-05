@@ -239,7 +239,7 @@ module sp_dram(
     output reg rst,
     input wire [24:0] addr,
     input wire [127:0] din,
-    output wire [127:0] dout,
+    output reg [127:0] dout,
     input wire [15:0] mask,
     input wire we,
     input wire re,
@@ -257,10 +257,9 @@ module sp_dram(
     wire cmd_full;
     wire dram_rst;
     wire wr_en = we;
-    wire rd_en;
+    reg rd_en;
     wire rd_empty;
     wire [127:0] rd_data;
-    reg [127:0] read_buffer;
 
     mig_lpddr mem(
 
@@ -315,6 +314,7 @@ module sp_dram(
     );
 
     always @(posedge clk) begin
+        rd_en <= 0;
         if (rst) begin
             waiting <= 0;
         end else begin
@@ -322,7 +322,8 @@ module sp_dram(
                 waiting <= 1;
             end else if (!rd_empty) begin
                 waiting <= 0;
-                read_buffer <= rd_data;
+                dout <= rd_data;
+                rd_en <= 1;
             end
         end
     end
@@ -337,8 +338,6 @@ module sp_dram(
         end
     end
 
-    assign rd_en = !rd_empty;
-    assign dout = read_buffer;
     assign ready = !waiting & !cmd_full & calib_done;
 
 endmodule
