@@ -193,7 +193,7 @@ module sp_fifo(clk, rst, din, dout, re, we, avail, full, empty,
 
     assign full = write_pending;
     assign avail = read_pending;
-    assign empty = count == 0;
+    assign empty = count == 0 && !write_pending && !we;
 
 endmodule
 
