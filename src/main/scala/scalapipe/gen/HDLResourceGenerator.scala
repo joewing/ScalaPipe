@@ -92,6 +92,42 @@ private[scalapipe] abstract class HDLResourceGenerator(
      */
     def emit(dir: File) {
         emitInternal(dir)
+        emitMemorySpec(dir)
+    }
+
+    private def emitMemorySpec(dir: File) {
+
+        write(s"(memory")
+        enter
+        write("(main (memory (dram)))")
+        for (k <- kernels) {
+            val id = k.index
+            val wordSize = sp.parameters.get[Int]('memoryWidth) / 8
+            val depth = k.kernelType.ramDepth
+            write(s"(subsystem (id $id)(depth $depth)(word_size $wordSize)")
+            enter
+            write(s"(memory (main))")
+            leave
+            write(s")")
+        }
+        for (s <- streams) {
+            val id = s.index
+            val depth = s.parameters.get[Int]('fpgaQueueDepth)
+            val itemSize = s.valueType.bytes
+            val sid = s.sourceKernel.index
+            val did = s.destKernel.index
+            write(s"(fifo (id $id)(depth $depth)(word_size $itemSize)")
+            enter
+            write(s"; $sid -> $did")
+            write(s"(memory (main))")
+            leave
+            write(s")")
+        }
+        leave
+        write(s")")
+
+        val filename = s"mem_${device.label}.mem"
+        writeFile(dir, filename)
     }
 
     private def getDepthBits(stream: Stream): Int = {
@@ -198,8 +234,12 @@ private[scalapipe] abstract class HDLResourceGenerator(
         }
 
         // Connect the running signal.
-        val running_signals = kernels.map { k => s"${k.label}_running" }
-        write("assign running = " + running_signals.mkString("|") + ";")
+        val runningSignals = kernels.map { k => s"${k.label}_running" }
+        val notEmptySignals = internalStreams.filter { s =>
+            getDepthBits(s) > 0
+        }.map { s => s"!${s.label}_empty" }
+        val activeSignals = runningSignals ++ notEmptySignals
+        write("assign running = " + activeSignals.mkString("|") + ";")
 
     }
 
@@ -222,6 +262,7 @@ private[scalapipe] abstract class HDLResourceGenerator(
             write(s"wire ${label}_read;")
             write(s"wire ${label}_write;")
             write(s"wire ${label}_full;")
+            write(s"wire ${label}_empty;")
 
             // Hook up the FIFO.
             val fifo = if (addrWidth == 0) "sp_register" else "sp_fifo"
@@ -237,6 +278,7 @@ private[scalapipe] abstract class HDLResourceGenerator(
             write(s".avail(${stream.label}_avail),")
             write(s".full(${stream.label}_full)")
             if (addrWidth > 0) {
+                write(s", .empty(${stream.label}_empty)")
                 write(s", .mem_addr(ram_${stream.label}_addr)")
                 write(s", .mem_in(ram_${stream.label}_out)")
                 write(s", .mem_out(ram_${stream.label}_in)")
