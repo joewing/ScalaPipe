@@ -17,7 +17,7 @@ private[scalapipe] class MemorySpecGenerator(
     }.toSeq.sortBy { s => s.index }
 
     protected val kernels = sp.instances.filter { k =>
-        k.device == device && k.kernelType.pure
+        k.device == device && (k.kernelType.pure || !pureOnly)
     }.toSeq.sortBy { k => k.index }
 
     def emit(dir: File) {
