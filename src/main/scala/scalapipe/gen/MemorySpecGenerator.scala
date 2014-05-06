@@ -5,12 +5,15 @@ import java.io.File
 
 private[scalapipe] class MemorySpecGenerator(
         val sp: ScalaPipe,
-        val device: Device
+        val device: Device,
+        val pureOnly: Boolean
     ) extends Generator {
 
     protected val streams = sp.streams.filter { s =>
-        (s.destKernel.kernelType.pure && s.destKernel.device == device) ||
-        (s.sourceKernel.kernelType.pure && s.sourceKernel.device == device)
+        val destPure = s.destKernel.kernelType.pure || !pureOnly
+        val sourcePure = s.sourceKernel.kernelType.pure || !pureOnly
+        (destPure && s.destKernel.device == device) ||
+        (sourcePure && s.sourceKernel.device == device)
     }.toSeq.sortBy { s => s.index }
 
     protected val kernels = sp.instances.filter { k =>
@@ -29,7 +32,7 @@ private[scalapipe] class MemorySpecGenerator(
         for (k <- kernels) {
             val id = k.index
             val wordSize = sp.parameters.get[Int]('memoryWidth) / 8
-            val depth = k.kernelType.ramDepth
+            val depth = if (k.kernelType.pure) k.kernelType.ramDepth else 0
             write(s"(subsystem (id $id)(depth $depth)(word_size $wordSize)")
             enter
             write(s"(memory (main))")

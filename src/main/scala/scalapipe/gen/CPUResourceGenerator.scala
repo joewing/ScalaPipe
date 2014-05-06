@@ -508,7 +508,7 @@ private[scalapipe] class CPUResourceGenerator(
                 shouldEmit(d)
             }.toSet
             for (device <- devices) {
-                val gen = new MemorySpecGenerator(sp, device)
+                val gen = new MemorySpecGenerator(sp, device, false)
                 gen.emit(dir)
             }
         }

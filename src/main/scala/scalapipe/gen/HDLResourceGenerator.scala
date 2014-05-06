@@ -96,7 +96,7 @@ private[scalapipe] abstract class HDLResourceGenerator(
     }
 
     private def emitMemorySpec(dir: File) {
-        val gen = new MemorySpecGenerator(sp, device)
+        val gen = new MemorySpecGenerator(sp, device, true)
         gen.emit(dir)
     }
 
