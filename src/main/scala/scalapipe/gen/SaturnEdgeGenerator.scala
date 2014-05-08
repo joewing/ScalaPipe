@@ -246,10 +246,16 @@ private[scalapipe] class SaturnEdgeGenerator(
     override def emitInit(streams: Traversable[Stream]) {
 
         // Open the USB interface.
-        val usb_file = "/dev/serial/by-id/usb-FTDI_" +
-                       "Saturn_Spartan_6_FPGA_Module_" +
-                       "FTXLRCAZ-if01-port0"
-        write(s"""usb_fd = open("$usb_file", O_RDWR | O_SYNC | O_NONBLOCK);""")
+        val usb_file1 = "/dev/serial/by-id/usb-FTDI_" +
+                        "Saturn_Spartan_6_FPGA_Module_" +
+                        "FTXLRCAZ-if01-port0"
+        val usb_file2 = "/dev/cu.usbserial-FTXLRCAZB"
+        write(s"""usb_fd = open("$usb_file1", O_RDWR | O_SYNC | O_NONBLOCK);""")
+        write(s"if(usb_fd < 0) {")
+        enter
+        write(s"""usb_fd = open("$usb_file2", O_RDWR | O_SYNC | O_NONBLOCK);""")
+        leave
+        write(s"}")
         write(s"if(usb_fd < 0) {")
         enter
         write(s"""perror("could not open device");""")
