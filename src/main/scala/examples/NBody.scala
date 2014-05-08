@@ -10,7 +10,7 @@ object NBody {
     // For 1000: 18006000 FLOPs per frame.
     def main(args: Array[String]) {
 
-        val maxParticles = 1000
+        val maxParticles = 10000
         val useX = true
         val hw = true
 
@@ -297,6 +297,28 @@ object NBody {
             return result
         }
 
+        val DropFrames = new Kernel("DropFrames") {
+
+            val pin = input(PARTICLE)
+            val pout = output(PARTICLE)
+            val p = local(PARTICLE)
+            val drop = config(UNSIGNED32, 'drop, 5)
+            val dropped = local(UNSIGNED32, 0)
+
+            p = pin
+            if (dropped == 0) {
+                pout = p
+            }
+            if (p.mass < 0) {
+                if (dropped == drop) {
+                    dropped = 0
+                } else {
+                    dropped += 1
+                }
+            }
+
+        }
+
         val PrintText = new Kernel("Print") {
 
             val pin = input(PARTICLE)
@@ -395,8 +417,9 @@ object NBody {
         val app = new Application {
 
             param('fpga, "Saturn")
-            param('fpgaQueueDepth, 128)
+            param('fpgaQueueDepth, 256)
             param('bram, false)
+
 
             val cycle = Cycle()
             val source = Source()
@@ -407,9 +430,9 @@ object NBody {
             val force = Accumulate(Force(oldParticle(0), stream(1)))
             val newParticle = Update(oldParticle(1), force(0))()
             val updated = Dup(newParticle)
-
-            Print(updated(0))
             cycle(updated(1))
+            val filtered = DropFrames(updated(0))
+            Print(filtered)
 
             if (hw) {
                 map(Source -> ANY_KERNEL, CPU2FPGA())
