@@ -145,8 +145,6 @@ private[scalapipe] abstract class HDLResourceGenerator(
         if (sp.parameters.get[Boolean]('bram)) {
             emitRAMSignals(s"ram_${label}", width)
         }
-        write(s"wire [${width - 1}:0] ${label}_input;")
-        write(s"wire [${width - 1}:0] ${label}_output;")
         write(s"wire [${width - 1}:0] ${label}_dout;")
         write(s"wire [${width - 1}:0] ${label}_din;")
         write(s"wire ${label}_avail;")
@@ -219,13 +217,13 @@ private[scalapipe] abstract class HDLResourceGenerator(
             write(s".running(${label}_running)")
             for (i <- kernel.getInputs) {
                 val destPort = i.destKernel.inputName(i.destPort)
-                write(s", .input_$destPort(${i.label}_input)")
+                write(s", .input_$destPort(${i.label}_dout)")
                 write(s", .avail_$destPort(${i.label}_avail)")
                 write(s", .read_$destPort(${i.label}_read)")
             }
             for (o <- kernel.getOutputs) {
                 val srcPort = o.sourceKernel.outputName(o.sourcePort)
-                write(s", .output_$srcPort(${o.label}_output)")
+                write(s", .output_$srcPort(${o.label}_din)")
                 write(s", .write_$srcPort(${o.label}_write)")
                 write(s", .full_$srcPort(${o.label}_full)")
             }
@@ -264,8 +262,6 @@ private[scalapipe] abstract class HDLResourceGenerator(
 
             // Connect the FIFO.
             emitFIFO(label, width, addrWidth)
-            write(s"assign ${label}_din = ${label}_output;")
-            write(s"assign ${label}_input = ${label}_dout;")
             write
 
             // Add edge instrumentation.
@@ -319,7 +315,6 @@ private[scalapipe] abstract class HDLResourceGenerator(
             // Connect the FIFO.
             emitFIFO(label, width, addrWidth)
             write(s"assign ${label}_din = input${srcIndex}_data;")
-            write(s"assign ${label}_input = ${label}_dout;")
             write(s"assign ${label}_write = input${srcIndex}_write;")
             write(s"assign input${srcIndex}_full = ${label}_full;")
             write
@@ -332,8 +327,8 @@ private[scalapipe] abstract class HDLResourceGenerator(
                 if (m.useQueueMonitor) {
                     write(s"assign qRst[$qmIndex] = rst;")
                     write(s"assign qWr[$qmIndex] = input${srcIndex}_write;")
-                    write(s"assign qRd[$qmIndex] = ${stream.label}_read" +
-                          s" && ${stream.label}_avail;")
+                    write(s"assign qRd[$qmIndex] = ${label}_read" +
+                          s" && ${label}_avail;")
                     qmIndex += 1
                 }
                 if (m.useInputActivity) {
@@ -342,7 +337,7 @@ private[scalapipe] abstract class HDLResourceGenerator(
                 }
                 if (m.useOutputActivity) {
                     write(s"assign amTap[$amIndex] = " +
-                          s"{stream.label}_read && ${stream.label}_avail;")
+                          s"{label}_read && ${label}_avail;")
                     amIndex += 1
                 }
                 if (m.useFullActivity) {
@@ -355,9 +350,9 @@ private[scalapipe] abstract class HDLResourceGenerator(
                     imIndex += 1
                 }
                 if (m.useInterPop) {
-                    write(s"assign imAvail[$imIndex] = ${stream.label}_avail;")
+                    write(s"assign imAvail[$imIndex] = ${label}_avail;")
                     write(s"assign imRead[$imIndex] = " +
-                          s"${stream.label}_read && ${stream.label}_avail;")
+                          s"${label}_read && ${label}_avail;")
                     imIndex += 1
                 }
             }
@@ -375,7 +370,6 @@ private[scalapipe] abstract class HDLResourceGenerator(
 
             // Hook up the FIFO.
             emitFIFO(label, width, addrWidth)
-            write(s"assign ${label}_din = ${label}_output;")
             write(s"assign output${destIndex}_data = ${label}_dout;")
             write(s"assign output${destIndex}_avail = ${label}_avail;")
             write(s"assign ${label}_read = output${destIndex}_read;")
