@@ -116,8 +116,8 @@ module sp_ram(clk, rst, addr, din, dout, mask, re, we, ready);
 
 endmodule
 
-module sp_fifo(clk, rst, din, dout, re, we, avail, full, empty,
-               mem_addr, mem_in, mem_out, mem_re, mem_we, mem_ready);
+module sp_fifo_impl(clk, rst, din, dout, re, we, avail, full, empty,
+                    mem_addr, mem_in, mem_out, mem_re, mem_we, mem_ready);
 
     parameter WIDTH = 8;
     parameter ADDR_WIDTH = 1;
@@ -194,6 +194,68 @@ module sp_fifo(clk, rst, din, dout, re, we, avail, full, empty,
     assign full = write_pending;
     assign avail = read_pending;
     assign empty = count == 0 && !write_pending;
+
+endmodule
+
+module sp_fifo(clk, rst, din, dout, re, we, avail, full, empty,
+               mem_addr, mem_in, mem_out, mem_re, mem_we, mem_ready);
+
+    parameter WIDTH = 8;
+    parameter ADDR_WIDTH = 1;
+
+    input wire clk;
+    input wire rst;
+    input wire [WIDTH-1:0] din;
+    output wire [WIDTH-1:0] dout;
+    input wire re;
+    input wire we;
+    output wire avail;
+    output wire full;
+    output wire empty;
+    output wire [ADDR_WIDTH-1:0] mem_addr;
+    input wire [WIDTH-1:0] mem_in;
+    output wire [WIDTH-1:0] mem_out;
+    output wire mem_re;
+    output wire mem_we;
+    input wire mem_ready;
+
+    generate
+        if (ADDR_WIDTH == 0) begin
+            sp_register #(.WIDTH(WIDTH)) r(
+                .clk(clk),
+                .rst(rst),
+                .din(din),
+                .dout(dout),
+                .re(re),
+                .we(we),
+                .avail(avail),
+                .full(full)
+            );
+            assign empty = !avail;
+            assign mem_re = 0;
+            assign mem_we = 0;
+            assign mem_addr = 1'bx;
+            assign mem_out = 1'bx;
+        end else begin
+            sp_fifo #(.WIDTH(WIDTH), .ADDR_WIDTH(ADDR_WIDTH)) f(
+                .clk(clk),
+                .rst(rst),
+                .din(din),
+                .dout(dout),
+                .re(re),
+                .we(we),
+                .avail(avail),
+                .full(full),
+                .empty(empty),
+                .mem_addr(mem_addr),
+                .mem_in(mem_in),
+                .mem_out(mem_out),
+                .mem_re(mem_re),
+                .mem_we(mem_we),
+                .mem_ready(mem_ready)
+            );
+        end
+    endgenerate
 
 endmodule
 
