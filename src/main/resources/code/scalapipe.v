@@ -885,6 +885,17 @@ module sp_itof32(clk, start, a_in, b_out, ready_out);
         itof(clk, start, a_in, b_out, ready_out);
 endmodule
 
+module sp_ftoi32(clk, start, a_in, b_out, ready_out);
+    parameter WIDTH = 32;
+    input wire clk;
+    input wire start;
+    input wire [WIDTH-1:0] a_in;
+    output wire [WIDTH-1:0] b_out;
+    output wire ready_out;
+    sp_ftoi #(.WIDTH(WIDTH), .EXPONENT(8), .FRACTION(23))
+        ftoi(clk, start, a_in, b_out, ready_out);
+endmodule
+
 module sp_addF32(clk, start, a_in, b_in, c_out, ready_out);
     parameter WIDTH = 32;
     input wire clk;
@@ -964,6 +975,17 @@ module sp_itof64(clk, start, a_in, b_out, ready_out);
     output wire ready_out;
     sp_itof #(.WIDTH(WIDTH), .EXPONENT(11), .FRACTION(52))
         itof(clk, start, a_in, b_out, ready_out);
+endmodule
+
+module sp_ftoi64(clk, start, a_in, b_out, ready_out);
+    parameter WIDTH = 64;
+    input wire clk;
+    input wire start;
+    input wire [WIDTH-1:0] a_in;
+    output wire [WIDTH-1:0] b_out;
+    output wire ready_out;
+    sp_ftoi #(.WIDTH(WIDTH), .EXPONENT(11), .FRACTION(52))
+        ftoi(clk, start, a_in, b_out, ready_out);
 endmodule
 
 module sp_addF64(clk, start, a_in, b_in, c_out, ready_out);
