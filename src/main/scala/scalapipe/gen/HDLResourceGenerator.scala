@@ -142,9 +142,6 @@ private[scalapipe] abstract class HDLResourceGenerator(
 
     private def emitFIFO(label: String, width: Int, addrWidth: Int) {
 
-        if (sp.parameters.get[Boolean]('bram)) {
-            emitRAMSignals(s"ram_${label}", width)
-        }
         write(s"wire [${width - 1}:0] ${label}_dout;")
         write(s"wire [${width - 1}:0] ${label}_din;")
         write(s"wire ${label}_avail;")
@@ -153,7 +150,8 @@ private[scalapipe] abstract class HDLResourceGenerator(
         write(s"wire ${label}_full;")
 
         if (sp.parameters.get[Boolean]('bram)) {
-            write(s"sp_fifo #(.WIDTH($width), .ADDR_WIDTH($addrWidth))")
+            val depth = 1 << addrWidth
+            write(s"sp_fifo #(.WIDTH($width), .DEPTH($depth))")
             enter
             write(s"fifo_${label}(")
             enter
@@ -165,20 +163,9 @@ private[scalapipe] abstract class HDLResourceGenerator(
             write(s".we(${label}_write),")
             write(s".avail(${label}_avail),")
             write(s".full(${label}_full)")
-            write(s", .mem_addr(ram_${label}_addr)")
-            write(s", .mem_in(ram_${label}_out)")
-            write(s", .mem_out(ram_${label}_in)")
-            write(s", .mem_re(ram_${label}_re)")
-            write(s", .mem_we(ram_${label}_we)")
-            write(s", .mem_ready(ram_${label}_ready)")
             leave
             write(s");")
             leave
-
-            if (addrWidth > 0) {
-                emitBRAM(s"ram_${label}", width, 1 << addrWidth);
-            }
-
         }
 
     }
