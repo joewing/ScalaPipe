@@ -9,22 +9,35 @@ object Paper {
 
     def main(args: Array[String]) {
 
-        val levels = 0
+        val levels = 1
         val width = 100
         val height = 100
         val iterations = 256 / (1 << levels)
         val randSeed = 15
 
+        val Seed = new Kernel {
+            val out = output(UNSIGNED32)
+            out = 1
+            stop
+        }
+
         val LFSR = new Kernel {
 
+            val seed = input(UNSIGNED32)
             val out = output(UNSIGNED32)
-            val state = local(UNSIGNED32, 1)
+            val state = local(UNSIGNED32)
 
-            // Taps at 32, 31, 29, 1.
-            state = (state >> 1) ^ (-(state & 1) & 0xD0000001);
+            state = seed
 
-            // Output the result.
-            out = state
+            while (true) {
+
+                // Taps at 32, 31, 29, 1.
+                state = (state >> 1) ^ (-(state & 1) & 0xD0000001);
+
+                // Output the result.
+                out = state
+
+            }
 
         }
 
@@ -224,12 +237,19 @@ object Paper {
 
         val laplace = new Application with SplitJoin {
 
-            val random = Random()
+            param('queueDepth, 2)
+            param('fpga, "Saturn")
+            param('bram, false)
+
+            val seed = Seed()
+            val random = Random(seed)
             val result = splitJoin(random, levels, SplitU32, AverageU32) {
                 Walk(_)
             }
             Print(result)
 
+//            param('trace, true)
+            map(Seed -> ANY_KERNEL, CPU2FPGA())
             map(ANY_KERNEL -> Print, FPGA2CPU())
 
         }

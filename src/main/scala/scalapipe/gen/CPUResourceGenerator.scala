@@ -20,14 +20,16 @@ private[scalapipe] class CPUResourceGenerator(
     private lazy val openCLEdgeGenerator = new OpenCLEdgeGenerator(sp)
     private lazy val smartFusionEdgeGenerator = new SmartFusionEdgeGenerator(sp)
     private lazy val simulationEdgeGenerator = new SimulationEdgeGenerator(sp)
+    private lazy val saturnEdgeGenerator = new SaturnEdgeGenerator(sp)
     private lazy val sockEdgeGenerator = new SockEdgeGenerator(sp, host)
     private lazy val cEdgeGenerator = new CEdgeGenerator
 
     private def getHDLEdgeGenerator: EdgeGenerator = {
         val fpga = sp.parameters.get[String]('fpga)
         fpga match {
-            case "SmartFusion"    => smartFusionEdgeGenerator
-            case "Simulation"     => simulationEdgeGenerator
+            case "SmartFusion"      => smartFusionEdgeGenerator
+            case "Simulation"       => simulationEdgeGenerator
+            case "Saturn"           => saturnEdgeGenerator
             case _ =>
                 Error.raise(s"unknown FPGA type: $fpga")
                 simulationEdgeGenerator
@@ -500,6 +502,18 @@ private[scalapipe] class CPUResourceGenerator(
 
     override def getRules: String = ""
 
+    private def emitMemorySpec(dir: File) {
+        if (sp.parameters.get[Boolean]('trace)) {
+            val devices = sp.instances.map(_.device).filter { d =>
+                shouldEmit(d)
+            }.toSet
+            for (device <- devices) {
+                val gen = new MemorySpecGenerator(sp, device, false)
+                gen.emit(dir)
+            }
+        }
+    }
+
     override def emit(dir: File) {
 
         // Get devices on this host.
@@ -617,7 +631,6 @@ private[scalapipe] class CPUResourceGenerator(
 
         // Startup TimeTrial.
         if (needTimeTrial) {
-
             val ttOutput = sp.parameters.get[String]('timeTrialOutput)
             val ttFile = if (ttOutput == null) {
                     "NULL"
@@ -650,49 +663,6 @@ private[scalapipe] class CPUResourceGenerator(
 
         write("atexit(showStats);")
 
-        // Write trace info.
-        if (sp.parameters.get[Boolean]('trace)) {
-            write("{")
-            enter
-            write("""FILE *fd = fopen("trace.benchmark", "w");""")
-
-            // Memories.
-            write(s"""fprintf(fd, "(memory\\n");""")
-            write(s"""fprintf(fd, "  (main (memory (dram)))\\n");""")
-            for (k <- cpuInstances) {
-                val id = k.index
-                val wordSize = sp.parameters.get[Int]('memoryWidth) / 8
-                write(s"""fprintf(fd, "  (subsystem (id $id)""" +
-                      s"""(word_size $wordSize)""" +
-                      s"""(memory (main)))\\n");""")
-            }
-            for (s <- localStreams) {
-                val id = s.index
-                val size = s.parameters.get[Int]('queueDepth)
-                val itemSize = s.valueType.bytes
-                val sid = s.sourceKernel.index
-                val did = s.destKernel.index
-                write(s"""fprintf(fd, "  (fifo (id $id)(depth $size)""" +
-                      s"""(word_size $itemSize)(memory (main)))""" +
-                      s""" ; $sid -> $did\\n");""")
-            }
-            write(s"""fprintf(fd, ")\\n");""")
-
-            // Kernels.
-            write(s"""fprintf(fd, "(benchmarks\\n");""")
-            for (k <- cpuInstances) {
-                val id = k.index
-                val name = s"${k.name}${k.index}"
-                write(s"""fprintf(fd, "  (trace (id $id)(name $name))\\n");""")
-            }
-            write(s"""fprintf(fd, ")\\n");""")
-
-
-            write(s"""fclose(fd);""")
-            leave
-            write("}")
-        }
-
         // Start the threads.
         for (t <- threadIds.values) {
             write(s"pthread_create(&thread$t, NULL, run_thread$t, NULL);")
@@ -714,6 +684,7 @@ private[scalapipe] class CPUResourceGenerator(
         write("}")
 
         writeFile(dir, s"proc_$host.cpp")
+        emitMemorySpec(dir)
 
     }
 

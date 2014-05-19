@@ -143,7 +143,8 @@ private[scalapipe] class SymbolTable(kernel: Kernel) {
     }
 
     def getBaseOffset(name: String): Int = {
-        val preceding = states.takeWhile(_ != name).map(_.valueType)
+        val values = states ++ temps
+        val preceding = values.takeWhile(_ != name).map(_.valueType)
         preceding.filter(!_.flat).map(_.bytes).sum
     }
 

@@ -10,7 +10,7 @@ object NBody {
     // For 1000: 18006000 FLOPs per frame.
     def main(args: Array[String]) {
 
-        val maxParticles = 1000
+        val maxParticles = 10000
         val useX = true
         val hw = true
 
@@ -111,16 +111,18 @@ object NBody {
         // 6n FLOPs
         val Update = new Kernel("Update") {
 
-            val pin  = input(PARTICLE)  // The particle to update.
-            val fin  = input(POINT)     // The combined force on the particle.
-            val pout = output(PARTICLE) // The updated particle.
+            val pin   = input(PARTICLE)  // The particle to update.
+            val fin   = input(POINT)     // The combined force on the particle.
+            val pout1 = output(PARTICLE) // The updated particle.
+            val pout2 = output(PARTICLE) // Another copy.
 
             val p = local(PARTICLE)
             val f = local(POINT)
 
             p = pin
             if (p.mass < 0) {
-                pout = p
+                pout1 = p
+                pout2 = p
             } else {
 
                 f = fin
@@ -135,7 +137,8 @@ object NBody {
                 p.vy += f.y
                 p.vz += f.z
 
-                pout = p
+                pout1 = p
+                pout2 = p
 
             }
 
@@ -239,7 +242,8 @@ object NBody {
         val Streamer = new Kernel("Streamer") {
 
             val pin  = input(PARTICLE)
-            val pout = output(PARTICLE)
+            val pout1 = output(PARTICLE)
+            val pout2 = output(PARTICLE)
             val oout = output(POINT)
 
             val particles   = local(Vector(PARTICLE, maxParticles))
@@ -262,7 +266,9 @@ object NBody {
                 if (i == 0) {
                     other.mass = -1
                     oout = other
-                    pout = particles(j)
+                    temp = particles(j)
+                    pout1 = temp
+                    pout2 = temp
                     j += 1;
                 }
                 temp = particles(i)
@@ -278,7 +284,8 @@ object NBody {
                         other.mass = -1
                         oout = other
                         temp.mass = -1
-                        pout = temp
+                        pout1 = temp
+                        pout2 = temp
                         j = 0
                         load = true
                         count = 0
@@ -390,22 +397,21 @@ object NBody {
         }
 
         val Print = if (useX) PrintX else PrintText
-        val Dup = new Duplicate(PARTICLE, 2)
 
         val app = new Application {
+
+            param('fpga, "Saturn")
+            param('fpgaQueueDepth, 256)
+            param('bram, false)
 
             val cycle = Cycle()
             val source = Source()
             val buffer = Buffer(source(0), cycle)
             val stream = Streamer(buffer(0))
-
-            val oldParticle = Dup(stream(0))
-            val force = Accumulate(Force(oldParticle(0), stream(1)))
-            val newParticle = Update(oldParticle(1), force(0))()
-            val updated = Dup(newParticle)
-
-            Print(updated(0))
-            cycle(updated(1))
+            val force = Accumulate(Force(stream(0), stream(2)))
+            val updated = Update(stream(1), force(0))
+            cycle(updated(0))
+            Print(updated(1))
 
             if (hw) {
                 map(Source -> ANY_KERNEL, CPU2FPGA())

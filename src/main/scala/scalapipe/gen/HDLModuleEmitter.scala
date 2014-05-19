@@ -93,7 +93,7 @@ private[gen] class HDLModuleEmitter(
     def getRAMOffset(symbol: BaseSymbol): Int = {
         ramOffsetMap.getOrElseUpdate(symbol, {
             val offset = ramOffset
-            ramOffset += ramDepth(symbol.valueType)
+            ramOffset += kt.ramDepth(symbol.valueType)
             offset
         })
     }
@@ -116,7 +116,7 @@ private[gen] class HDLModuleEmitter(
     def addWriteState(state: Int, port: String, value: String) {
         val a = writeStates.getOrElseUpdate(port, { new Assignment(port) })
         a.states += new AssignState(state, value)
-        addGuard(state, "!afull_" + port)
+        addGuard(state, "!full_" + port)
     }
 
     def addAssignment(str: String) {
@@ -173,6 +173,9 @@ private[gen] class HDLModuleEmitter(
         enter
 
         write(s"${instanceName}_start <= 0;")
+        for (i <- 0 until component.argCount) {
+            write(s"${instanceName}_$i <= 1'bx;")
+        }
         sortedParts.foreach { p =>
             val state = p.state
             write(s"if (state == $state) begin")

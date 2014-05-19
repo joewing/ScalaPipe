@@ -59,13 +59,6 @@ private[scalapipe] class SimulationResourceGenerator(
 
     private def emitWrapFile(dir: File) {
 
-        val inputStreams = sp.streams.filter { s =>
-            s.destKernel.device == device && s.sourceKernel.device != device
-        }
-        val outputStreams = sp.streams.filter { s =>
-            s.sourceKernel.device == device && s.destKernel.device != device
-        }
-
         // Wrapper around the ScalaPipe kernels.
         write(s"module wrap$id(")
         enter
@@ -75,16 +68,16 @@ private[scalapipe] class SimulationResourceGenerator(
         for (i <- inputStreams) {
             val index = i.index
             val width = i.valueType.bits
-            write(s",input wire [${width - 1}:0] din$index")
-            write(s",input wire write$index")
-            write(s",output wire full$index")
+            write(s", input wire [${width - 1}:0] din$index")
+            write(s", input wire write$index")
+            write(s", output wire full$index")
         }
         for (o <- outputStreams) {
             val index = o.index
             val width = o.valueType.bits
-            write(s",output wire [${width - 1}:0] dout$index")
-            write(s",input wire read$index")
-            write(s",output wire avail$index")
+            write(s", output wire [${width - 1}:0] dout$index")
+            write(s", input wire read$index")
+            write(s", output wire avail$index")
         }
         leave
         write(s");")
@@ -121,20 +114,59 @@ private[scalapipe] class SimulationResourceGenerator(
         }
         write
 
+        // Instantiate a fake main memory.
+        val mainDataWidth = sp.parameters.get[Int]('dramDataWidth)
+        val mainAddrWidth = sp.parameters.get[Int]('dramAddrWidth)
+        val mainMaskBits = mainDataWidth / 8
+        val mainDepth = ramDepth
+        write(s"wire [${mainAddrWidth - 1}:0] ram_addr;")
+        write(s"wire [${mainDataWidth - 1}:0] ram_data_to_main;")
+        write(s"wire [${mainDataWidth - 1}:0] ram_data_from_main;")
+        write(s"wire [${mainMaskBits - 1}:0] ram_mask;")
+        write(s"wire ram_re;")
+        write(s"wire ram_we;")
+        write(s"wire ram_ready;")
+        write(s"sp_ram #(")
+        enter
+        write(s".WIDTH($mainDataWidth),")
+        write(s".DEPTH($mainDepth),")
+        write(s".ADDR_WIDTH($mainAddrWidth)")
+        leave
+        write(") ram (")
+        enter
+        write(".clk(clk),")
+        write(".rst(rst),")
+        write(".addr(ram_addr),")
+        write(".din(ram_data_to_main),")
+        write(".dout(ram_data_from_main),")
+        write(".mask(ram_mask),")
+        write(".re(ram_re),")
+        write(".we(ram_we),")
+        write(".ready(ram_ready)")
+        leave
+        write(");")
+
         // Instantiate the ScalaPipe kernels.
         write(s"fpga$id sp(.clk(clk), .rst(rst), .running(running)")
         enter
+        write(s", .ram_addr(ram_addr)")
+        write(s", .ram_data_from_main(ram_data_from_main)")
+        write(s", .ram_data_to_main(ram_data_to_main)")
+        write(s", .ram_mask(ram_mask)")
+        write(s", .ram_re(ram_re)")
+        write(s", .ram_we(ram_we)")
+        write(s", .ram_ready(ram_ready)")
         for (i <- inputStreams) {
             val index = i.index
-            write(s", .I${index}input(data$index), " +
-                  s".I${index}write(do_write$index), " +
-                  s".I${index}afull(full$index)")
+            write(s", .input${index}_data(data$index)")
+            write(s", .input${index}_write(do_write$index)")
+            write(s", .input${index}_full(full$index)")
         }
         for (o <- outputStreams) {
             val index = o.index
-            write(s", .O${index}output(data$index), " +
-                  s".O${index}avail(avail$index), " +
-                  s".O${index}read(do_read$index)")
+            write(s", .output${index}_data(data$index)")
+            write(s", .output${index}_avail(avail$index)")
+            write(s", .output${index}_read(do_read$index)")
         }
         leave
         write(s");")
@@ -155,6 +187,64 @@ private[scalapipe] class SimulationResourceGenerator(
         val outputStreams = sp.streams.filter { s =>
             s.sourceKernel.device == device && s.destKernel.device != device
         }
+
+        write(s"module sim_fifo(")
+        enter
+        write(s"clk, rst, din, dout, re, we, avail, full);")
+
+        write(s"parameter WIDTH = 8;")
+        write(s"parameter ADDR_WIDTH = 8;")
+        write(s"input wire clk;")
+        write(s"input wire rst;")
+        write(s"input wire [WIDTH-1:0] din;")
+        write(s"output wire [WIDTH-1:0] dout;")
+        write(s"input wire re;")
+        write(s"input wire we;")
+        write(s"output wire avail;")
+        write(s"output wire full;")
+        write(s"reg [WIDTH-1:0] mem [0:(1 << ADDR_WIDTH) - 1];")
+        write(s"reg [ADDR_WIDTH-1:0] read_ptr;")
+        write(s"reg [ADDR_WIDTH-1:0] write_ptr;")
+        write(s"reg [ADDR_WIDTH:0] count;")
+        write(s"assign full = count[ADDR_WIDTH];")
+        write(s"assign avail = count != 0;")
+        write(s"wire do_read = re & avail;")
+        write(s"wire do_write = we & !full;")
+        write(s"always @(posedge clk) begin")
+        enter
+        write(s"if (rst) begin")
+        enter
+        write(s"read_ptr <= 0;")
+        write(s"write_ptr <= 0;")
+        write(s"count <= 0;")
+        leave
+        write(s"end else begin")
+        enter
+        write(s"if (do_write) begin")
+        enter
+        write(s"mem[write_ptr] <= din;")
+        write(s"write_ptr <= write_ptr + 1;")
+        leave
+        write(s"end")
+        write(s"if (do_read) begin")
+        enter
+        write(s"read_ptr <= read_ptr + 1;")
+        leave
+        write(s"end")
+        write(s"case ({do_read, do_write})")
+        enter
+        write(s"2'b10: count <= count - 1;")
+        write(s"2'b01: count <= count + 1;")
+        write(s"default: count <= count;")
+        leave
+        write(s"endcase")
+        leave
+        write(s"end")
+        leave
+        write(s"end")
+        write(s"assign dout = mem[read_ptr];")
+        leave
+        write(s"endmodule")
 
         write(s"module sim_${device.label};")
         enter
@@ -294,7 +384,7 @@ private[scalapipe] class SimulationResourceGenerator(
             write(s"wire fifo_avail$index;")
             write(s"wire fifo_full$index;")
             write(s"reg fifo_we$index;")
-            write(s"sp_fifo #(.WIDTH($width), .ADDR_WIDTH(16))")
+            write(s"sp_fifo #(.WIDTH($width), .DEPTH(65536))")
             enter
             write(s"input${index}_fifo(")
             enter

@@ -365,7 +365,7 @@ private[scalapipe] class SimulationEdgeGenerator(
         write(s"} else {")
         enter
         write(s"sp_decrement(&$destLabel.active_inputs);")
-        write(s"active${label}= 0;")
+        write(s"active${label} = 0;")
         leave
         write(s"}")
         write(s"if(spq_start_read($queue, &ptr) > 0) {")

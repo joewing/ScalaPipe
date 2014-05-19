@@ -81,6 +81,8 @@ object Averaging {
         // software implementation.
         val app = new Application {
 
+            param('fpga, "Saturn")
+
             val iterations = 1000
             val random0 = Random('iterations -> iterations)
             val random1 = Random('iterations -> iterations)

@@ -195,13 +195,15 @@ object Maze {
 
         val Maze = new Application {
 
+            param('fpga, "Saturn")
+
             val random = MT19937(MT19937State('seed -> seed))
             val runs = GenRun(random)
             val maze = CarveMaze(runs(0), runs(1))
             Print(maze)
 
             if (use_hw) {
-                map(MT19937State -> MT19937, CPU2FPGA())
+                map(MT19937State -> ANY_KERNEL, CPU2FPGA())
                 map(ANY_KERNEL -> Print, FPGA2CPU())
             }
 

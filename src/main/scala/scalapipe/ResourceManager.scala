@@ -5,6 +5,7 @@ import scalapipe.gen.ResourceGenerator
 import scalapipe.gen.CPUResourceGenerator
 import scalapipe.gen.SmartFusionResourceGenerator
 import scalapipe.gen.SimulationResourceGenerator
+import scalapipe.gen.SaturnResourceGenerator
 import scalapipe.gen.OpenCLResourceGenerator
 
 private[scalapipe] class ResourceManager(val sp: ScalaPipe) {
@@ -31,6 +32,8 @@ private[scalapipe] class ResourceManager(val sp: ScalaPipe) {
                 new SmartFusionResourceGenerator(sp, device)
             case "Simulation"     =>
                 new SimulationResourceGenerator(sp, device)
+            case "Saturn" =>
+                new SaturnResourceGenerator(sp, device)
             case _ => sys.error("unknown FPGA device: " + fpga)
         }
     }

@@ -11,6 +11,8 @@ private[scalapipe] class ExternalKernelType(
 
     override def internal = false
 
+    override def pure = true
+
     override def emit(dir: File) {
     }
 

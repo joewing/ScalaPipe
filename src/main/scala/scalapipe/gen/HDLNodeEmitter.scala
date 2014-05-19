@@ -90,6 +90,18 @@ private[gen] abstract class HDLNodeEmitter(
         }
     }
 
+    private def emitConstMult(srca: ImmediateSymbol,
+                              srcb: String): String = {
+        val value = math.abs(srca.value.long)
+        val bcount = srca.valueType.bits
+        val bits = for (i <- 0 until bcount if (((value >> i) & 1) != 0))
+            yield i
+        val op = if (srca.value.long < 0) "-" else "+"
+        bits.foldLeft("0") { (acc, bit) =>
+            s"$acc $op ($srcb << $bit)"
+        }
+    }
+
     private def emitIntOp(block: StateBlock,
                           vt: IntegerValueType,
                           node: IRInstruction) {
@@ -116,7 +128,7 @@ private[gen] abstract class HDLNodeEmitter(
             case NodeType.sub   =>
                 moduleEmitter.createSimple("sp_subI", width, Seq(srca, srcb))
             case NodeType.mul if node.srca.isInstanceOf[ImmediateSymbol] =>
-                s"$srca * $srcb"
+                emitConstMult(node.srca.asInstanceOf[ImmediateSymbol], srcb)
             case NodeType.mul if !node.srca.isInstanceOf[ImmediateSymbol] =>
                 moduleEmitter.create("sp_mulI", width, state, Seq(srca, srcb))
             case NodeType.div if vt.signed =>
@@ -380,7 +392,7 @@ private[gen] abstract class HDLNodeEmitter(
                     val width = math.min(ramWidth, bits - bottom)
                     val top = bottom + width - 1
                     updateBuilder.write(s"$word: $dest[$top:$bottom] <= " +
-                                        s"ram_out[${width - 1}:0];")
+                                        s"ram_in[${width - 1}:0];")
                 }
                 updateBuilder.leave
                 updateBuilder.write(s"endcase")
@@ -389,7 +401,7 @@ private[gen] abstract class HDLNodeEmitter(
                 updateBuilder.write(s"ram_re <= 1;")
             } else if (bits == ramWidth) {
                 // Single-word load.
-                updateBuilder.write(s"$dest <= ram_out;")
+                updateBuilder.write(s"$dest <= ram_in;")
             } else {
                 // Single-word load, but read less than a word.
                 val maxOffset = wordBytes - node.dest.valueType.bytes
@@ -398,7 +410,7 @@ private[gen] abstract class HDLNodeEmitter(
                 for (i <- 0 to maxOffset) {
                     val bottom = i * 8
                     val top = bottom + bits - 1
-                    updateBuilder.write(s"$i: $dest <= ram_out[$top:$bottom];")
+                    updateBuilder.write(s"$i: $dest <= ram_in[$top:$bottom];")
                 }
                 updateBuilder.write(s"default: $dest <= 0;")
                 updateBuilder.leave
@@ -477,14 +489,14 @@ private[gen] abstract class HDLNodeEmitter(
                 // Note that this store will be aligned.
                 val top = ramWidth - 1
                 if(node.src.isInstanceOf[ImmediateSymbol]) {
-                    initBuilder.write(s"ram_in <= $src;")
+                    initBuilder.write(s"ram_out <= $src;")
                 } else {
-                    initBuilder.write(s"ram_in <= $src[$top:0];")
+                    initBuilder.write(s"ram_out <= $src[$top:0];")
                 }
                 initBuilder.write(s"ram_mask <= {$wordBytes{1'b1}};")
             } else if (bits == ramWidth) {
                 // Single-word store.
-                initBuilder.write(s"ram_in <= $src;")
+                initBuilder.write(s"ram_out <= $src;")
                 initBuilder.write(s"ram_mask <= {$wordBytes{1'b1}};")
             } else {
                 // Single-word store, but store less than a word.
@@ -497,9 +509,9 @@ private[gen] abstract class HDLNodeEmitter(
                     initBuilder.write(s"$i: begin")
                     initBuilder.enter
                     if (node.src.isInstanceOf[ImmediateSymbol]) {
-                        initBuilder.write(s"ram_in[$top:$bottom] <= $src;")
+                        initBuilder.write(s"ram_out[$top:$bottom] <= $src;")
                     } else {
-                        initBuilder.write(s"ram_in[$top:$bottom] " +
+                        initBuilder.write(s"ram_out[$top:$bottom] " +
                                           s"<= $src[${bits - 1}:0];")
                     }
                     val mask = ((1 << (bits / 8)) - 1) << i
@@ -533,10 +545,10 @@ private[gen] abstract class HDLNodeEmitter(
                     updateBuilder.write(s"$word: begin")
                     updateBuilder.enter
                     if (node.src.isInstanceOf[ImmediateSymbol]) {
-                        updateBuilder.write(s"ram_in[${width - 1}:0] <= " +
+                        updateBuilder.write(s"ram_out[${width - 1}:0] <= " +
                                             s"$src >> $top;")
                     } else {
-                        updateBuilder.write(s"ram_in[${width - 1}:0] <= " +
+                        updateBuilder.write(s"ram_out[${width - 1}:0] <= " +
                                             s"$src[$top:$bottom];")
                     }
                     val mask = (1 << (width / 8)) - 1

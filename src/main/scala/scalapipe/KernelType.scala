@@ -37,6 +37,26 @@ private[scalapipe] abstract class KernelType(
         dependencies.add(kernel.dependencies)
     }
 
+    def pure: Boolean
+
+    private[scalapipe] def ramDepth(vt: ValueType): Int = {
+        val ramWidth = sp.parameters.get[Int]('memoryWidth)
+        if (vt.flat) {
+            return 0
+        } else {
+            return (vt.bits + ramWidth - 1) / ramWidth
+        }
+    }
+
+    private[scalapipe] def ramDepth: Int = {
+        val values = states ++ temps
+        val valueDepth = values.map(v => ramDepth(v.valueType)).sum
+        val funcDepth = functions.map { f =>
+            sp.kernelType(f.name, platform).ramDepth
+        }.sum
+        valueDepth + funcDepth
+    }
+
     private[scalapipe] def getType(node: ASTSymbolNode): ValueType = {
         val name = node.symbol
         val vtype = symbols.getType(name)
@@ -60,7 +80,7 @@ private[scalapipe] abstract class KernelType(
         f.isInternal(platform)
     }
 
-    private[scalapipe] def functions: Seq[Func] = Seq()
+    private[scalapipe] def functions: Set[Func] = Set()
 
     private[scalapipe] def createTemp(vt: ValueType): TempSymbol =
         symbols.createTemp(vt)
@@ -74,6 +94,15 @@ private[scalapipe] abstract class KernelType(
 
     private[scalapipe] def getBaseOffset(name: String): Int =
         symbols.getBaseOffset(name)
+
+    private[scalapipe] def getFuncOffset(name: String): Int = {
+        val values = states ++ temps
+        val valueDepth = values.map(v => ramDepth(v.valueType)).sum
+        val preceding = functions.takeWhile(_.name != name).map { f =>
+            sp.kernelType(f.name, platform).ramDepth
+        }.sum
+        valueDepth + preceding
+    }
 
     def getLiteral(lit: Literal): String = lit match {
         case sl: SymbolLiteral =>
