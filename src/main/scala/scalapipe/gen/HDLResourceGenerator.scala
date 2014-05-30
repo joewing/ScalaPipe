@@ -405,6 +405,11 @@ private[scalapipe] abstract class HDLResourceGenerator(
     private def emitMemory {
 
         if (sp.parameters.get[Boolean]('bram)) {
+            write(s"assign ram_addr = 1'bx;")
+            write(s"assign ram_din = 1'bx;")
+            write(s"assign ram_re = 1'b0;")
+            write(s"assign ram_we = 1'b0;")
+            write(s"assign ram_mask = 1'bx;")
             return
         }
 

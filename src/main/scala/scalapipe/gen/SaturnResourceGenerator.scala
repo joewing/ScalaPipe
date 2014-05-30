@@ -159,6 +159,23 @@ private[scalapipe] class SaturnResourceGenerator(
         write(s"reg got_stop;")
         write(s"reg sp_rst;")
 
+        // Delay between running being deasserted and shutdown to
+        // account for delays between internal FIFOs.
+        write(s"reg [2:0] stop_counter;")
+        write(s"wire stopped = stop_counter[2] & got_stop;")
+        write(s"always @(posedge clk) begin")
+        enter
+        write(s"if (rst | running) begin")
+        enter
+        write(s"stop_counter <= 0;")
+        leave
+        write(s"end else begin")
+        enter
+        write(s"stop_counter <= stop_counter + 1;")
+        leave
+        write(s"end")
+        write(s"end")
+
         // State machine for USB communication.
         val acceptStateOffset = 1
         val sendStateOffset = acceptStateOffset + inputStreams.size
@@ -268,7 +285,7 @@ private[scalapipe] class SaturnResourceGenerator(
         write(s"if (!usb_full) begin")
         enter
         write(s"usb_write <= 1;")
-        write(s"if (running | !got_stop) begin")
+        write(s"if (!stopped) begin")
         enter
         write(s"usb_output <= 0;")
         write(s"state <= ${readState};")
