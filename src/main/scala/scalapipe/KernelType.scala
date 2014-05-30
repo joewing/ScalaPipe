@@ -12,7 +12,7 @@ private[scalapipe] abstract class KernelType(
     private[scalapipe] val configs = symbols.configs
     private[scalapipe] val states = symbols.states
     private[scalapipe] val temps = symbols.temps
-    private[scalapipe] val parameters = sp.parameters
+    private[scalapipe] val parameters = new KernelParameters(sp.parameters)
     private[scalapipe] val dependencies = new DependencySet
     private[scalapipe] val label = LabelMaker.getTypeLabel
     private[scalapipe] val inputs = symbols.inputs
@@ -38,6 +38,10 @@ private[scalapipe] abstract class KernelType(
     }
 
     def pure: Boolean
+
+    private[scalapipe] def addParameter(param: Symbol, value: Any) {
+        parameters.set(param, value)
+    }
 
     private[scalapipe] def ramDepth(vt: ValueType): Int = {
         val ramWidth = sp.parameters.get[Int]('memoryWidth)

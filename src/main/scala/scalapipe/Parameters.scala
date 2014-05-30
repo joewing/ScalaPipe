@@ -1,6 +1,6 @@
 package scalapipe
 
-private[scalapipe] abstract class Parameters {
+private[scalapipe] object Parameters {
 
     private class Param[T](val name: Symbol, var value: T)
                           (implicit val m: Manifest[T]) {
@@ -13,12 +13,24 @@ private[scalapipe] abstract class Parameters {
             value = v.asInstanceOf[T]
         }
 
+        def copy = new Param[T](name, value)
+
     }
 
-    private var params = Map[Symbol, Param[_]]()
+}
+
+private[scalapipe] abstract class Parameters {
+
+    private var params = Map[Symbol, Parameters.Param[_]]()
+
+    protected def add(defaults: Parameters) {
+        for (p <- defaults.params.values) {
+            params += (p.name -> p.copy)
+        }
+    }
 
     protected def add[T : Manifest](name: Symbol, value: T) {
-        params += (name -> new Param[T](name, value))
+        params += (name -> new Parameters.Param[T](name, value))
     }
 
     def set(name: Symbol, value: Any) {

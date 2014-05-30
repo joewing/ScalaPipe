@@ -352,13 +352,18 @@ private[scalapipe] class CPUResourceGenerator(
         val kernelType = kernel.kernelType
         val inPortCount = kernel.getInputs.size
         val outPortCount = kernel.getOutputs.size
-        val affinity = kernel.device.index
 
         write(s"static void *run_thread$id(void *arg)")
         write(s"{")
         enter
 
         // Thread affinity.
+        val affinity =
+            if (kernel.device.index < 0) {
+                kernelType.parameters.get[Int]('affinity)
+            } else {
+                kernel.device.index
+            }
         write(s"sp_set_affinity($affinity);")
 
         // Open the trace file and set up the stream mapping.
