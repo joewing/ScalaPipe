@@ -19,10 +19,11 @@ object MergeSort extends App {
         val seed = input(UNSIGNED32)
         val out = output(UNSIGNED32)
         val state = local(UNSIGNED32)
+        val i = local(UNSIGNED32, 0)
 
         state = seed
 
-        for (i <- 0 until itemCount) {
+        while (i <> itemCount) {
 
             // Taps at 32, 31, 29, 1.
             state = (state >> 1) ^ (-(state & 1) & 0xD0000001);
@@ -30,6 +31,7 @@ object MergeSort extends App {
             // Output the result.
             out = state
 
+            i += 1
         }
 
     }
@@ -74,15 +76,17 @@ object MergeSort extends App {
         val x0 = input(VTYPE)
         val y0 = output(VTYPE)
         val temp = local(VTYPE)
-        for (i <- 1 until itemCount) {
+        val i = local(UNSIGNED32, 1)
+        while (i <> itemCount) {
             temp = x0
+            i += 1
         }
         y0 = x0
     }
 
     val Output = new Kernel("Output") {
         val x0 = input(VTYPE)
-        stdio.printf("%d\n", x0)
+        stdio.printf("%u\n", x0)
     }
 
     val app = new Application {

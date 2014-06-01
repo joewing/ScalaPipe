@@ -6,7 +6,7 @@ module sp_register(clk, rst, din, dout, re, we, avail, full);
     input wire clk;
     input wire rst;
     input wire [WIDTH-1:0] din;
-    output wire [WIDTH-1:0] dout;
+    output reg [WIDTH-1:0] dout;
     input wire re;
     input wire we;
     output wire avail;
@@ -27,7 +27,7 @@ module sp_register(clk, rst, din, dout, re, we, avail, full);
             has_data <= 0;
         end else begin
             if (do_write) begin
-                mem <= din;
+                dout <= din;
                 has_data <= 1;
             end
             if (do_read) begin
@@ -35,8 +35,6 @@ module sp_register(clk, rst, din, dout, re, we, avail, full);
             end
         end
     end
-
-    assign dout = mem;
 
 endmodule
 
