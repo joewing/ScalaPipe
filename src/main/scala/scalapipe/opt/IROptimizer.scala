@@ -29,7 +29,6 @@ private[scalapipe] case class IROptimizer(
             CopyPropagation,
             StateCompression,
             ContinuousAssignment,
-            CombineVariables,
             CSE,
             RemoveVariables,
             ReassignStates
