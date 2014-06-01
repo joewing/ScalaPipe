@@ -56,7 +56,7 @@ object NBody {
 
             // If the mass of the other particle is less than zero, we
             // start processing a new particle.
-            if (other.mass < 0) {
+            if (other.mass == -1) {
                 p = pin
                 out = other
                 forces.mass = 0
@@ -87,22 +87,22 @@ object NBody {
 
             val f       = local(POINT)
             val sum     = local(POINT)
-            val count   = local(UNSIGNED32, 0)
+            val first   = local(BOOL, 1)
 
             f = fin
-            if (f.mass < 0) {
-                if (count > 0) {
+            if (f.mass == -1) {
+                if (first == 0) {
                     fout = sum
                 }
                 sum.x = 0
                 sum.y = 0
                 sum.z = 0
-                count = 0
+                first = 1
             } else {
                 sum.x += f.x
                 sum.y += f.y
                 sum.z += f.z
-                count += 1
+                first = 0
             }
 
         }
@@ -120,7 +120,7 @@ object NBody {
             val f = local(POINT)
 
             p = pin
-            if (p.mass < 0) {
+            if (p.mass == -1) {
                 pout1 = p
                 pout2 = p
             } else {
@@ -206,14 +206,14 @@ object NBody {
 
             if (!loaded) {
                 temp = fin
-                if (temp.mass < 0) {
+                if (temp.mass == -1) {
                     loaded = true
                 } else {
                     particles(count) = temp
                     count += 1
                 }
             } else {
-                if (sentIndex < count) {
+                if (sentIndex <> count) {
                     pout = particles(sentIndex)
                     sentIndex += 1
                     if (sentIndex == count) {
@@ -221,10 +221,10 @@ object NBody {
                         pout = temp
                     }
                 }
-                if (updateIndex < sentIndex) {
+                if (updateIndex <> sentIndex) {
                     if (avail(lin)) {
                         temp = lin
-                        if (temp.mass >= 0) {
+                        if (temp.mass <> -1) {
                             particles(updateIndex) = temp
                             updateIndex += 1
                         }
@@ -256,7 +256,7 @@ object NBody {
 
             if (load) {
                 temp = pin
-                if (temp.mass < 0) {
+                if (temp.mass == -1) {
                     load = false
                 } else {
                     particles(count) = temp
@@ -401,7 +401,6 @@ object NBody {
         val app = new Application {
 
             param('fpga, "Saturn")
-            param('fpgaQueueDepth, 256)
             param('bram, false)
 
             val cycle = Cycle()
