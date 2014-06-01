@@ -95,6 +95,7 @@ private[scalapipe] class SaturnEdgeGenerator(
         write("}")
         write
 
+        write("static uint64_t saturn_cycles = 0;")
         write("static void process_usb()")
         write("{")
         enter
@@ -125,7 +126,8 @@ private[scalapipe] class SaturnEdgeGenerator(
         write(s"}")
 
         // Read the status.
-        // The first bytes are "full" indicators for each
+        // The first 8 bytes is the cycle counter.
+        // The next bytes are "full" indicators for each
         // host->device stream.  The most significant bit is set if
         // the stream can not accept data.
         // The last byte indicates a stream ID for a device->host
@@ -134,17 +136,19 @@ private[scalapipe] class SaturnEdgeGenerator(
         // Finally, a byte indicating a stream ID for a device->host
         // transfer.  This byte is 0 to indicate no stream.
         val senderCount = senderStreams.size
-        write(s"unsigned char status[$senderCount + 1];")
-        write(s"if(!usb_try_read((char*)status, sizeof(status))) {")
+        write(s"uint64_t buffer[${(senderCount + 1 + 7) / 8} + 1];")
+        write(s"unsigned char *status = (unsigned char*)buffer;");
+        write(s"if(!usb_try_read((char*)status, ${senderCount + 9})) {")
         enter
         write(s"pthread_mutex_unlock(&usb_mutex);")
         write(s"return;")
         leave
         write(s"}")
+        write(s"saturn_cycles = buffer[0];")
 
         // Read data from the device from the indicated device->host stream.
         write(s"char *ptr = NULL;")
-        write(s"switch(status[$senderCount]) {")
+        write(s"switch(status[$senderCount + 8]) {")
         write(s"case 0: // No stream")
         enter
         write(s"break;")
@@ -179,7 +183,7 @@ private[scalapipe] class SaturnEdgeGenerator(
         write(s"default:")
         enter
         write(s"""fprintf(stderr, "Invalid device->host stream: %u\\n", """ +
-              s"""status[$senderCount]);""")
+              s"""status[$senderCount + 8]);""")
         write(s"""exit(-1);""")
         leave
         write(s"}")
@@ -195,7 +199,8 @@ private[scalapipe] class SaturnEdgeGenerator(
             val index = s.index
             val queue = "q_" + label
             write(s"count = spq_start_read($queue, &ptr);")
-            write(s"if(count > 0 && memchr(status, $index, $senderCount)) {")
+            write(s"if(count > 0 && memchr(status + 8, " +
+                  s"$index, $senderCount)) {")
             enter
             write(s"ch = $index;")
             write(s"usb_write((char*)&ch, 1);")
@@ -373,6 +378,7 @@ private[scalapipe] class SaturnEdgeGenerator(
         }
         write(s"tcflush(usb_fd, TCIOFLUSH);")
         write(s"close(usb_fd);")
+        write("""printf("FPGA cycles: %lu\n", saturn_cycles);""")
     }
 
 }

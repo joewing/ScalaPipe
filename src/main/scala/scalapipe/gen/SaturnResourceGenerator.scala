@@ -89,15 +89,18 @@ private[scalapipe] class SaturnResourceGenerator(
 
         write(s"assign usb_siwu = 0; // Not used")
 
-        write(s"wire clk;           // 100 MHz")
+        write(s"wire clk; // 100 MHz")
         write(s"wire rst;")
+        write(s"wire running;")
+        write(s"reg got_stop;")
+        write(s"reg sp_rst;")
 
-        // Blink the LED when running.
-        write(s"reg [24:0] blink;")
+        // Cycle counter.
+        write(s"reg [63:0] cycle_counter;")
         write(s"always @(posedge clk) begin")
         enter
-        write(s"if (rst) blink <= 0;")
-        write(s"else blink <= blink + 1;")
+        write(s"if (sp_rst) cycle_counter <= 0;")
+        write(s"else cycle_counter <= cycle_counter + 1;")
         leave
         write(s"end")
 
@@ -155,9 +158,6 @@ private[scalapipe] class SaturnResourceGenerator(
             write(s"reg read$index;")
             write(s"wire avail$index;")
         }
-        write(s"wire running;")
-        write(s"reg got_stop;")
-        write(s"reg sp_rst;")
 
         // Delay between running being deasserted and shutdown to
         // account for delays between internal FIFOs.
@@ -177,7 +177,8 @@ private[scalapipe] class SaturnResourceGenerator(
         write(s"end")
 
         // State machine for USB communication.
-        val acceptStateOffset = 1
+        val cycleStateOffset = 1
+        val acceptStateOffset = cycleStateOffset + 8
         val sendStateOffset = acceptStateOffset + inputStreams.size
         val sentinelState = sendStateOffset + outputStreams.size
         val readState = sentinelState + 1
@@ -221,6 +222,24 @@ private[scalapipe] class SaturnResourceGenerator(
         write(s"end")
         leave
 
+        // Send the cycle counter to the host.
+        for (i <- 0 to 7) {
+            val state = cycleStateOffset + i
+            val bottom = i * 8
+            val top = bottom + 7
+            write(s"${state}: // Send cycle counter byte $i")
+            enter
+            write(s"if (!usb_full) begin")
+            enter
+            write(s"usb_write <= 1;")
+            write(s"usb_output <= cycle_counter[$top:$bottom];")
+            write(s"offset <= ~0;")
+            write(s"state <= ${state + 1};")
+            leave
+            write(s"end")
+            leave
+        }
+
         // Inform the host which ports are accepting input.
         for ((i, offset) <- inputStreams.zipWithIndex) {
             val state = acceptStateOffset + offset
@@ -232,7 +251,6 @@ private[scalapipe] class SaturnResourceGenerator(
             write(s"usb_write <= 1;")
             write(s"usb_output[7] <= full$index;")
             write(s"usb_output[6:0] <= ${index};")
-            write(s"offset <= ~0;")
             write(s"state <= ${state + 1};")
             leave
             write(s"end")
@@ -367,12 +385,13 @@ private[scalapipe] class SaturnResourceGenerator(
         leave
         write(s"end")   // always
 
+        // Blink LED when running.
         write(s"always @(*) begin")
         enter
         write(s"case (state)")
         enter
         write(s"0: led <= 0;")
-        write(s"default: led <= blink[24];")
+        write(s"default: led <= cycle_counter[24];")
         leave
         write(s"endcase")
         leave
