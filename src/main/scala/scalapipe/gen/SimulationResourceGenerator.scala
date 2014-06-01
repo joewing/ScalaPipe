@@ -196,7 +196,6 @@ private[scalapipe] class SimulationResourceGenerator(
         write(s"reg clk;")
         write(s"reg rst;")
         write(s"wire running;")
-        write(s"reg stopped = 0;")
         write(s"integer cycles = 0;")
         write(s"integer rc;")
         write
@@ -290,9 +289,25 @@ private[scalapipe] class SimulationResourceGenerator(
         }.toSeq :+ "running"
         val activeCheck = activeValues.mkString(" | ")
 
+        write(s"reg [2:0] stop_counter;")
+        write(s"wire stopped = stop_counter[2];")
+        write(s"always @(posedge clk) begin")
+        enter
+        write(s"if (rst | $activeCheck) begin")
+        enter
+        write(s"stop_counter <= 0;")
+        leave
+        write(s"end else begin")
+        enter
+        write(s"stop_counter <= stop_counter + 1;")
+        leave
+        write(s"end")
+        leave
+        write(s"end")
+
         write("always @(posedge clk) begin")
         enter
-        write(s"if (running) begin")
+        write(s"if (rst | !stopped) begin")
         enter
         write("cycles <= cycles + 1;")
         write("if ((cycles % 1000) == 0) begin")
@@ -301,7 +316,7 @@ private[scalapipe] class SimulationResourceGenerator(
         leave
         write("end")
         leave
-        write(s"end else if (!($activeCheck) & !stopped) begin")
+        write(s"end else begin")
         enter
         write("""$display("Cycles: %d", cycles);""")
         for (s <- outputStreams) {
@@ -309,7 +324,6 @@ private[scalapipe] class SimulationResourceGenerator(
             write(s"rc <= $$fputc(0, $fd);")
             write(s"$$fflush($fd);")
         }
-        write("stopped <= 1;")
         leave
         write("end")
         leave

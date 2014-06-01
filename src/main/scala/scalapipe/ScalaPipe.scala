@@ -19,6 +19,7 @@ private[scalapipe] class ScalaPipe {
     private var edges = Set[EdgeMapping]()
     private var measures = Set[EdgeMeasurement]()
     private var edgeParameters = Set[EdgeParameter]()
+    private var kernelParameters = Set[KernelParameter]()
     private val deviceManager = new DeviceManager(parameters)
     private val resourceManager = new ResourceManager(this)
 
@@ -67,6 +68,11 @@ private[scalapipe] class ScalaPipe {
     // Set a parameter at the specified edge(s).
     private[scalapipe] def addParameter(param: EdgeParameter) {
         edgeParameters += param
+    }
+
+    // Set a paramter for the specified kernel.
+    private[scalapipe] def addParameter(param: KernelParameter) {
+        kernelParameters += param
     }
 
     // Set a parameter.
@@ -160,6 +166,11 @@ private[scalapipe] class ScalaPipe {
                 if (toName == dest || toName == anyName) {
                     s.addParameter(p.param, p.value)
                 }
+            }
+        }
+        for (instance <- instances; p <- kernelParameters) {
+            if (instance.name == p.kernel.name || p.kernel.name == anyName) {
+                instance.kernelType.addParameter(p.param, p.value)
             }
         }
     }

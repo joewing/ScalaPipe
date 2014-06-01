@@ -109,6 +109,14 @@ class Application {
         param(edge, name, true)
     }
 
+    def param(kernel: Kernel, name: Symbol, value: Any) {
+        sp.addParameter(new KernelParameter(kernel, name, value))
+    }
+
+    def param(kernel: Kernel, name: Symbol) {
+        param(kernel, name, true)
+    }
+
     def param(edge: Stream, name: Symbol, value: Any) {
         edge.addParameter(name, value)
     }

@@ -15,6 +15,8 @@ private[scalapipe] class IRBuilder extends KernelType(
 
     private var labelCounter = 0
 
+    def pure = true
+
     private def getLabel: Int = {
         val result = labelCounter
         labelCounter += 1
