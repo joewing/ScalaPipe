@@ -1,7 +1,6 @@
 package examples
 
-import scalapipe.kernels.ANY_KERNEL
-import scalapipe.kernels.stdio
+import scalapipe.kernels._
 import scalapipe._
 import scalapipe.dsl._
 
@@ -43,12 +42,14 @@ object Paper {
 
         val MT19937 = new Kernel {
 
+            val seed = input(UNSIGNED32)
             val out = output(UNSIGNED32)
 
             val mt = local(Vector(UNSIGNED32, 624))
             val index = local(UNSIGNED32, 0)
             val configured = local(BOOL, false)
-            val i = local(UNSIGNED32, randSeed)
+            val got_seed = local(BOOL, false)
+            val i = local(UNSIGNED32)
             val j = local(UNSIGNED32)
             val y = local(UNSIGNED32)
 
@@ -81,17 +82,20 @@ object Paper {
                 y ^= (y >> 18)
                 index += 1
                 out = y
-            } else {
+            } else if (got_seed) {
                 mt(index) = i
                 i = 0x6c078965 * (i ^ (i >> 30))
                 i += index
                 index += 1
                 configured = index == 624;
+            } else {
+                i = seed
+                got_seed = 1
             }
 
         }
 
-        val Random = LFSR
+        val Random = MT19937
 
         class Split(t: Type) extends Kernel {
 

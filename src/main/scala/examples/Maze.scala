@@ -12,7 +12,7 @@ object Maze {
         println("  -w <int>      Width (must be a multiple of 2)")
         println("  -h <int>      Height (must be a multiple of 2)")
         println("  -s <int>      Random number seed")
-        println("  -hw             Use hardware")
+        println("  -hw           Use hardware")
         sys.exit(-1)
     }
 
@@ -36,7 +36,7 @@ object Maze {
         val defaults = Map('width -> 25)    ++
                        Map('height -> 25)   ++
                        Map('seed -> 0)      ++
-                       Map('hw -> 1)
+                       Map('hw -> 0)
 
         // Parse arguments.
         val options = parse(args.toList, defaults)
@@ -194,8 +194,6 @@ object Maze {
         }
 
         val Maze = new Application {
-
-            param('fpga, "Saturn")
 
             val random = MT19937(MT19937State('seed -> seed))
             val runs = GenRun(random)
