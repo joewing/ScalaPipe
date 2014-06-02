@@ -81,7 +81,12 @@ class IntLiteral(
 
     override def double: Double = value.toDouble
 
-    override def toString = value.toString
+    override def toString = valueType.bits match {
+        case 8  => "0x" + value.toByte.toHexString
+        case 16 => "0x" + value.toShort.toHexString
+        case 32 => "0x" + value.toInt.toHexString
+        case _  => value.toString + "L"
+    }
 
     override def set(index: Literal, value: Literal): Literal =
         IntLiteral(valueType, value.long, kernel)
