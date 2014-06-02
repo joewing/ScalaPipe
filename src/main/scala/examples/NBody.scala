@@ -11,7 +11,7 @@ object NBody {
     def main(args: Array[String]) {
 
         val maxParticles = 10000
-        val useX = true
+        val useX = false
         val hw = true
 
         val VTYPE = FLOAT32
@@ -326,6 +326,9 @@ object NBody {
                 lastTime = currentTime
                 i = 0
                 j += 1
+                if (j == 10) {
+                    stdio.exit(0)
+                }
             } else {
                 i += 1
             }

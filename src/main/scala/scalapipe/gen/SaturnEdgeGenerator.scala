@@ -58,7 +58,6 @@ private[scalapipe] class SaturnEdgeGenerator(
         write("exit(-1);")
         leave
         write("}")
-        write("usleep(100);")
         write("return 0;")
         leave
         write("}")
@@ -100,6 +99,7 @@ private[scalapipe] class SaturnEdgeGenerator(
         write("{")
         enter
         write(s"static char first = 1;")
+        write(s"usleep(10);")
         write(s"pthread_mutex_lock(&usb_mutex);")
         write(s"if(usb_stopped) {")
         enter
@@ -220,6 +220,14 @@ private[scalapipe] class SaturnEdgeGenerator(
         write("pthread_mutex_unlock(&usb_mutex);")
         leave
         write("}")
+
+        write("void usb_shutdown()")
+        write("{")
+        enter
+        write("""printf("FPGA cycles: %lu\n", saturn_cycles);""")
+        leave
+        write("}")
+
     }
 
     override def emitGlobals(streams: Traversable[Stream]) {
@@ -267,6 +275,7 @@ private[scalapipe] class SaturnEdgeGenerator(
         write(s"exit(-1);")
         leave
         write(s"}")
+        write(s"atexit(usb_shutdown);")
 
         // Create the FIFOs.
         for (s <- streams) {
@@ -335,7 +344,6 @@ private[scalapipe] class SaturnEdgeGenerator(
         val label = stream.label
         val queue = s"q_$label"
 
-
         // "get_available."
         write(s"static int ${label}_get_available()")
         write(s"{")
@@ -378,7 +386,6 @@ private[scalapipe] class SaturnEdgeGenerator(
         }
         write(s"tcflush(usb_fd, TCIOFLUSH);")
         write(s"close(usb_fd);")
-        write("""printf("FPGA cycles: %lu\n", saturn_cycles);""")
     }
 
 }
