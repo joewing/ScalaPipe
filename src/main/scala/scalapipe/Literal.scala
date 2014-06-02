@@ -82,9 +82,9 @@ class IntLiteral(
     override def double: Double = value.toDouble
 
     override def toString = valueType.bits match {
-        case 8  => "0x" + value.toByte.toHexString
-        case 16 => "0x" + value.toShort.toHexString
-        case 32 => "0x" + value.toInt.toHexString
+        case 8  => (value & 0xFFL).toString
+        case 16 => (value & 0xFFFFL).toString
+        case 32 => (value & 0xFFFFFFFFL).toString
         case _  => value.toString + "L"
     }
 

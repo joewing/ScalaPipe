@@ -158,7 +158,11 @@ object Median extends App {
     }
     
     val app = new Application {
+        param('fpga, "Saturn")
+        param('bram, false)
         Print(Median(Dedup(LFSR(Seed()))))
+        map(Seed -> ANY_KERNEL, CPU2FPGA())
+        map(ANY_KERNEL -> Print, FPGA2CPU())
     }
     app.emit("median")
 
