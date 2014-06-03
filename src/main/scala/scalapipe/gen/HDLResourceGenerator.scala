@@ -235,7 +235,7 @@ private[scalapipe] abstract class HDLResourceGenerator(
 
         // Connect the running signal.
         val runningSignals = kernels.map { k => s"${k.label}_running" }
-        val activeSignals = runningSignals :+ "!ram_ready"
+        val activeSignals = runningSignals :+ "ram_full"
         write("assign running = " + activeSignals.mkString("|") + ";")
 
     }
@@ -423,7 +423,8 @@ private[scalapipe] abstract class HDLResourceGenerator(
         write(s".port0_re(ram_re),")
         write(s".port0_we(ram_we),")
         write(s".port0_mask(ram_mask),")
-        write(s".port0_ready(ram_ready)")
+        write(s".port0_full(ram_full),")
+        write(s".port0_avail(ram_avail)")
         for (s <- streams) {
             val port = s"fifo${s.index}"
             val label = s.label
@@ -481,7 +482,8 @@ private[scalapipe] abstract class HDLResourceGenerator(
         write(s"output wire [${mainMaskBits - 1}:0] ram_mask,")
         write(s"output wire ram_re,")
         write(s"output wire ram_we,")
-        write(s"input wire ram_ready,")
+        write(s"input wire ram_full,")
+        write(s"input wire ram_avail,")
         for (i <- inputStreams) {
             val index = i.index
             val width = i.valueType.bits

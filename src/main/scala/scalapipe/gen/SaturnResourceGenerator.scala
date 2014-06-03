@@ -404,7 +404,8 @@ private[scalapipe] class SaturnResourceGenerator(
         write(s"wire [15:0] ram_mask;")
         write(s"wire ram_we;")
         write(s"wire ram_re;")
-        write(s"wire ram_ready;")
+        write(s"wire ram_full;")
+        write(s"wire ram_avail;")
         write(s"sp_dram dram(")
         enter
         write(s".dram_dq(dram_dq),")
@@ -425,12 +426,13 @@ private[scalapipe] class SaturnResourceGenerator(
         write(s".clk(clk),")
         write(s".rst(rst),")
         write(s".addr(ram_addr),")
-        write(s".din(ram_data_to_main),")
-        write(s".dout(ram_data_from_main),")
+        write(s".wdata(ram_data_to_main),")
+        write(s".rdata(ram_data_from_main),")
         write(s".mask(ram_mask),")
         write(s".we(ram_we),")
         write(s".re(ram_re),")
-        write(s".ready(ram_ready)")
+        write(s".full(ram_full),")
+        write(s".ravail(ram_avail)")
         leave
         write(s");")
 
@@ -446,7 +448,8 @@ private[scalapipe] class SaturnResourceGenerator(
         write(s".ram_mask(ram_mask),")
         write(s".ram_re(ram_re),")
         write(s".ram_we(ram_we),")
-        write(s".ram_ready(ram_ready)")
+        write(s".ram_full(ram_full),")
+        write(s".ram_avail(ram_avail)")
         for (i <- inputStreams) {
             val index = i.index
             write(s", .input${index}_data(data$index)")

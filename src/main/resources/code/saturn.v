@@ -237,29 +237,28 @@ module sp_dram(
 
     output wire clk,
     output reg rst,
+
     input wire [24:0] addr,
-    input wire [127:0] din,
-    output reg [127:0] dout,
+    input wire [127:0] wdata,
     input wire [15:0] mask,
     input wire we,
     input wire re,
-    output wire ready
+    output wire full,
+    output wire [127:0] rdata,
+    output wire ravail
 
 );
-
-    reg waiting;
 
     wire calib_done;
     wire cmd_en = we | re;
     wire [2:0] cmd_instr = re ? 3'b001 : 3'b000;
     wire [5:0] cmd_bl = 0;
     wire [29:0] cmd_byte_addr = {addr, 4'b0000};
-    wire cmd_full;
     wire dram_rst;
-    wire wr_en = we;
-    reg rd_en;
+    wire wr_full;
+    wire cmd_full;
     wire rd_empty;
-    wire [127:0] rd_data;
+    wire rd_en = ravail;
 
     mig_lpddr mem(
 
@@ -293,10 +292,10 @@ module sp_dram(
         .c3_p0_cmd_full(cmd_full),
 
         .c3_p0_wr_clk(clk),
-        .c3_p0_wr_en(wr_en),
+        .c3_p0_wr_en(we),
         .c3_p0_wr_mask(~mask),
-        .c3_p0_wr_data(din),
-        .c3_p0_wr_full(),
+        .c3_p0_wr_data(wdata),
+        .c3_p0_wr_full(wr_full),
         .c3_p0_wr_empty(),
         .c3_p0_wr_count(),
         .c3_p0_wr_underrun(),
@@ -304,7 +303,7 @@ module sp_dram(
 
         .c3_p0_rd_clk(clk),
         .c3_p0_rd_en(rd_en),
-        .c3_p0_rd_data(rd_data),
+        .c3_p0_rd_data(rdata),
         .c3_p0_rd_full(),
         .c3_p0_rd_empty(rd_empty),
         .c3_p0_rd_count(),
@@ -312,21 +311,6 @@ module sp_dram(
         .c3_p0_rd_error()
 
     );
-
-    always @(posedge clk) begin
-        rd_en <= 0;
-        if (rst) begin
-            waiting <= 0;
-        end else begin
-            if (re) begin
-                waiting <= 1;
-            end else if (!rd_empty) begin
-                waiting <= 0;
-                dout <= rd_data;
-                rd_en <= 1;
-            end
-        end
-    end
 
     reg [4:0] reset_counter = 0;
     always @(posedge clk) begin
@@ -338,6 +322,7 @@ module sp_dram(
         end
     end
 
-    assign ready = !waiting & !cmd_full & calib_done;
+    assign full = cmd_full | wr_full;
+    assign ravail = ~rd_empty;
 
 endmodule
