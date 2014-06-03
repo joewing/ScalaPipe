@@ -85,7 +85,7 @@ class IntLiteral(
         case 8  => (value & 0xFFL).toString
         case 16 => (value & 0xFFFFL).toString
         case 32 => (value & 0xFFFFFFFFL).toString
-        case _  => value.toString + "L"
+        case _  => value.toString
     }
 
     override def set(index: Literal, value: Literal): Literal =
