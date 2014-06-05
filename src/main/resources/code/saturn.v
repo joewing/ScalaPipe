@@ -322,7 +322,7 @@ module sp_dram(
         end
     end
 
-    assign full = cmd_full | wr_full | ~calib_done;
+    assign full = re | we | cmd_full | wr_full | ~calib_done;
     assign ravail = ~rd_empty;
 
 endmodule
