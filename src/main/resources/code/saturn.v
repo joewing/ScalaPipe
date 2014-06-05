@@ -258,7 +258,7 @@ module sp_dram(
     wire wr_full;
     wire cmd_full;
     wire rd_empty;
-    wire rd_en = ravail;
+    wire rd_en = 1'b1;
 
     mig_lpddr mem(
 
@@ -322,7 +322,7 @@ module sp_dram(
         end
     end
 
-    assign full = cmd_full | wr_full;
+    assign full = cmd_full | wr_full | ~calib_done;
     assign ravail = ~rd_empty;
 
 endmodule
