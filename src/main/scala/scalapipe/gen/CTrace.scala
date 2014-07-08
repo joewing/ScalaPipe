@@ -28,8 +28,20 @@ trait CTrace extends CNodeEmitter with ASTUtils {
 
         if (kt.parameters.get[Boolean]('trace)) {
 
+            val sources = localSources(node).filter { s =>
+                !kt.getType(s).flat
+            }
+            val dests = localDests(node).filter { d =>
+                !kt.getType(d).flat
+            }
+            val hasInput = !localInputs(node).isEmpty
+            val hasOutput = !localOutputs(node).isEmpty
+            val hasRead = !sources.isEmpty
+            val hasWrite = !dests.isEmpty
+            val updateTrace = hasInput || hasOutput || hasRead || hasWrite
+
             // Idle cycles.
-            if (cycles > 0) {
+            if (cycles > 0 && updateTrace) {
                 write(s"""fprintf(kernel->trace_fd, "I$cycles:0\\n");""")
                 cycles = 0
             }
@@ -44,7 +56,7 @@ trait CTrace extends CNodeEmitter with ASTUtils {
             }
 
             // Trace reads.
-            for (src <- localSources(node) if !kt.getType(src).flat) {
+            for (src <- sources) {
                 val offsetStr = getOffset(src)
                 val size = src.valueType.bytes.toHexString
                 write("fprintf(kernel->trace_fd, \"R%x:" + size +
@@ -52,7 +64,7 @@ trait CTrace extends CNodeEmitter with ASTUtils {
             }
 
             // Trace writes.
-            for (dest <- localDests(node) if !kt.getType(dest).flat) {
+            for (dest <- dests) {
                 val offsetStr = getOffset(dest)
                 val size = dest.valueType.bytes.toHexString
                 write("fprintf(kernel->trace_fd, \"W%x:" + size +
