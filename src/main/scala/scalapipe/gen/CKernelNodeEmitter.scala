@@ -106,6 +106,7 @@ private[scalapipe] class CKernelNodeEmitter(
     override def updateClocks(count: Int) {
         if (count > 0) {
             write(s"kernel->sp_clocks += $count;")
+            updateTraceClocks(count)
         }
     }
 
