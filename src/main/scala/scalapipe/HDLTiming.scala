@@ -21,45 +21,66 @@ private[scalapipe] object HDLTiming {
         if (state.continuous) {
             0
         } else {
-            state.nodes.foldLeft(0) { (a, n) =>
-                math.max(a, getNodeTime(n))
-            }
+            state.nodes.map(getNodeTime(_)).max
         }
     }
 
-    private def getInstructionTime(node: IRInstruction): Int = node.op match {
-        case NodeType.add | NodeType.sub    =>
-            if (node.dest.valueType.isInstanceOf[FloatValueType]) {
+    private def getIntInstrTime(node: IRInstruction): Int = node.op match {
+        case NodeType.convert =>
+            if (node.srca.valueType.isInstanceOf[FloatValueType]) {
                 3
             } else {
                 1
             }
-        case NodeType.mul     =>
-            if (node.dest.valueType.isInstanceOf[FloatValueType] &&
-                !node.srca.isInstanceOf[ImmediateSymbol]) {
-                2 + (node.srca.valueType.bits + multSize - 1) / multSize
-            } else {
-                1
-            }
-        case NodeType.div     => node.srca.valueType.bits
-        case NodeType.mod     => node.srca.valueType.bits
-        case NodeType.sqrt    => node.srca.valueType.bits
-        case _                    => 1
+        case NodeType.mul   =>
+            1 + (node.srca.valueType.bits + multSize - 1) / multSize
+        case NodeType.div   => 1 + node.srca.valueType.bits
+        case NodeType.mod   => 1 + node.srca.valueType.bits
+        case NodeType.sqrt  => 1 + node.srca.valueType.bits
+        case _              => 1
     }
+
+    private def getFloatInstrTime(node: IRInstruction): Int = node.op match {
+        case NodeType.convert => 3
+        case NodeType.add | NodeType.sub => 3
+        case NodeType.mul =>
+            1 + (node.srca.valueType.bits + multSize - 1) / multSize
+        case NodeType.div   => 1 + node.srca.valueType.bits
+        case NodeType.mod   => 1 + node.srca.valueType.bits
+        case NodeType.sqrt  => 1 + node.srca.valueType.bits
+        case _              => 1
+    }
+
+    private def getInstrTime(node: IRInstruction): Int = {
+        node.dest.valueType match {
+            case ft: FloatValueType => getFloatInstrTime(node)
+            case _                  => getIntInstrTime(node)
+        }
+    }
+
+    private def getLoadTime(node: IRLoad): Int = {
+        if (node.src.valueType.flat) {
+            1
+        } else {
+            2
+        }
+    }
+
+    private def getStoreTime(node: IRStore): Int = 1
 
     private def getNodeTime(node: IRNode): Int = node match {
         case start: IRStart         => 0  // We initialize to 1.
         case noop:  IRNoOp          => 1
-        case instr: IRInstruction   => getInstructionTime(instr)
-        case st:    IRStore         => 1    // TODO
-        case ld:    IRLoad          => 2    // TODO
+        case instr: IRInstruction   => getInstrTime(instr)
+        case st:    IRStore         => getStoreTime(st)
+        case ld:    IRLoad          => getLoadTime(ld)
         case goto:  IRGoto          => 1
         case stop:  IRStop          => 1
         case ret:   IRReturn        => 1
         case cond:  IRConditional   => 1
         case sw:    IRSwitch        => 2
         case phi:   IRPhi           => 1
-        case call:  IRCall          => 0  // TODO
+        case call:  IRCall          => 1  // TODO
     }
 
 }
