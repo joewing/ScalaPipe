@@ -62,11 +62,17 @@ private[scalapipe] object HDLTiming {
         if (node.src.valueType.flat) {
             1
         } else {
-            2
+            0   // Depends on memory subsystem.
         }
     }
 
-    private def getStoreTime(node: IRStore): Int = 1
+    private def getStoreTime(node: IRStore): Int = {
+        if (node.dest.valueType.flat) {
+            1
+        } else {
+            0   // Depends on memory subsystem.
+        }
+    }
 
     private def getNodeTime(node: IRNode): Int = node match {
         case start: IRStart         => 0  // We initialize to 1.

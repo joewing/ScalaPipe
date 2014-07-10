@@ -52,6 +52,9 @@ private[scalapipe] class CKernelGenerator(
         if (kt.parameters.get[Boolean]('trace)) {
             val streamCount = kt.inputs.size + kt.outputs.size
             write(s"FILE *trace_fd;")
+            if (kt.parameters.get[Boolean]('profile)) {
+                write(s"unsigned int trace_cycles;")
+            }
             write(s"int trace_streams[$streamCount];")
         }
         leave

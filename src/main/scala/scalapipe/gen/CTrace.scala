@@ -5,8 +5,6 @@ import scalapipe._
 /** Trait for outputing address traces. */
 trait CTrace extends CNodeEmitter with ASTUtils {
 
-    private var cycles = 0
-
     def emitSymbol(node: ASTSymbolNode): String
 
     def emitSymbolBase(node: ASTSymbolNode): String
@@ -14,7 +12,9 @@ trait CTrace extends CNodeEmitter with ASTUtils {
     def write(code: String): Unit
 
     def updateTraceClocks(count: Int) {
-        cycles += count
+        if (count > 0) {
+            write(s"""kernel->trace_cycles += $count;""")
+        }
     }
 
     private def getOffset(node: ASTSymbolNode): String = {
@@ -40,10 +40,14 @@ trait CTrace extends CNodeEmitter with ASTUtils {
             val hasWrite = !dests.isEmpty
             val updateTrace = hasInput || hasOutput || hasRead || hasWrite
 
-            // Idle cycles.
-            if (cycles > 0 && updateTrace) {
-                write(s"""fprintf(kernel->trace_fd, "I$cycles:0\\n");""")
-                cycles = 0
+            if (updateTrace) {
+                write(s"""if(kernel->trace_cycles > 0) {""")
+                enter
+                write(s"""fprintf(kernel->trace_fd, "I%x:0\\n", """ +
+                      """kernel->trace_cycles);""")
+                write(s"""kernel->trace_cycles = 0;""")
+                leave
+                write(s"""}""")
             }
 
             // Trace inputs.

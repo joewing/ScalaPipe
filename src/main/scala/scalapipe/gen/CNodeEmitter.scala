@@ -205,7 +205,6 @@ private[scalapipe] abstract class CNodeEmitter(
     }
 
     private def emitIf(node: ASTIfNode) {
-        val clocks = getTiming(node)
         updateClocks(getTiming(node))
         writeIf(emitExpr(node.cond))
         emit(node.iTrue)
