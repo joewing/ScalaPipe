@@ -415,14 +415,18 @@ private[scalapipe] class ScalaPipe {
     }
 
     private def createKernelTypes {
+
+        def createFunctions(kt: KernelType) {
+            kt.functions.foreach { f =>
+                val ft = addKernelType(f, kt.platform)
+                createFunctions(ft)
+            }
+        }
+
         val kts = instances.map { instance =>
             addKernelType(instance.kernel, instance.device.platform)
         }.distinct
-        kts.foreach { kt =>
-            kt.functions.foreach { f =>
-                addKernelType(f, kt.platform)
-            }
-        }
+        kts.foreach(createFunctions)
     }
 
     private def checkStreams {
