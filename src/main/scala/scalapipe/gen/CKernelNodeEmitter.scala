@@ -82,14 +82,12 @@ private[scalapipe] class CKernelNodeEmitter(
         val dest = emitExpr(node.dest)
         val src = emitExpr(node.src)
         write(s"$dest = $src;")
-        updateClocks(getTiming(node))
         for (oindex <- outputs.map(kt.outputIndex)) {
             write(s"sp_send(kernel, $oindex);")
         }
     }
 
     override def emitStop(node: ASTStopNode) {
-        updateClocks(getTiming(node))
         write(s"return;")
     }
 
@@ -99,11 +97,11 @@ private[scalapipe] class CKernelNodeEmitter(
         val src = emitExpr(node.a)
         write(s"$name = ($vtype*)sp_allocate(kernel, 0);")
         write(s"*$name = $src;")
-        updateClocks(getTiming(node))
         write(s"sp_send(kernel, 0);")
     }
 
-    override def updateClocks(count: Int) {
+    override def updateClocks(node: ASTNode) {
+        val count = getTiming(node)
         if (count > 0) {
             write(s"kernel->sp_clocks += $count;")
             updateTraceClocks(count)

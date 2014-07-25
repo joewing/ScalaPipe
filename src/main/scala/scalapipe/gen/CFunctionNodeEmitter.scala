@@ -52,12 +52,10 @@ private[scalapipe] class CFunctionNodeEmitter(
     override def emitAssign(node: ASTAssignNode) {
         val src = emitExpr(node.src)
         if (kt.isOutput(node.dest)) {
-            updateClocks(getTiming(node))
             writeReturn(src)
         } else {
             val dest = emitExpr(node.dest)
             write(s"$dest = $src;")
-            updateClocks(getTiming(node))
         }
     }
 
@@ -66,11 +64,11 @@ private[scalapipe] class CFunctionNodeEmitter(
     }
 
     override def emitReturn(node: ASTReturnNode) {
-        updateClocks(getTiming(node))
         writeReturn(emitExpr(node.a))
     }
 
-    override def updateClocks(count: Int) {
+    override def updateClocks(node: ASTNode) {
+        val count = getTiming(node)
         if (count > 0) {
             write(s"*clocks += $count;")
         }

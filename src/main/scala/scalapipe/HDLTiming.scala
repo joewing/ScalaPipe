@@ -32,7 +32,9 @@ private[scalapipe] object HDLTiming {
             } else {
                 1
             }
-        case NodeType.mul   =>
+        case NodeType.mul if node.srca.isInstanceOf[ImmediateSymbol] =>
+            1
+        case NodeType.mul if !node.srca.isInstanceOf[ImmediateSymbol] =>
             1 + (node.srca.valueType.bits + multSize - 1) / multSize
         case NodeType.div   => 1 + node.srca.valueType.bits
         case NodeType.mod   => 1 + node.srca.valueType.bits
@@ -84,7 +86,7 @@ private[scalapipe] object HDLTiming {
         case stop:  IRStop          => 1
         case ret:   IRReturn        => 1
         case cond:  IRConditional   => 1
-        case sw:    IRSwitch        => 2
+        case sw:    IRSwitch        => 1
         case phi:   IRPhi           => 1
         case call:  IRCall          => 1  // TODO
     }
