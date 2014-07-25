@@ -143,7 +143,7 @@ private[scalapipe] class OpenCLKernelNodeEmitter(
 
         write(emitExpr(node.dest) + " = " + emitExpr(node.src) + ";")
 
-        updateClocks(node)
+        updateClocks(getTiming(node))
 
         for (o <- outputs) {
             val oindex = kt.outputIndex(o)
@@ -153,7 +153,7 @@ private[scalapipe] class OpenCLKernelNodeEmitter(
     }
 
     override def emitStop(node: ASTStopNode) {
-        updateClocks(node)
+        updateClocks(getTiming(node))
         write(setState(-1))
         write(ret(1))
     }
@@ -172,12 +172,11 @@ private[scalapipe] class OpenCLKernelNodeEmitter(
         }
         write(allocate(valueType, output, 0))
         write("*output = " + emitExpr(node.a) + ";")
-        updateClocks(node)
+        updateClocks(getTiming(node))
         write(send(output, 0))
     }
 
-    override def updateClocks(node: ASTNode) {
-        val count = getTiming(node)
+    override def updateClocks(count: Int) {
         if (count > 0) {
             write("block->ap_clocks += " + count + ";")
         }

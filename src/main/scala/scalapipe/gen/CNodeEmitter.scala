@@ -16,7 +16,7 @@ private[scalapipe] abstract class CNodeEmitter(
     def emitAssign(node: ASTAssignNode): Unit
     def emitStop(node: ASTStopNode)
     def emitReturn(node: ASTReturnNode)
-    def updateClocks(node: ASTNode)
+    def updateClocks(cycles: Int)
 
     private def emitBinaryOp(op: String, node: ASTOpNode): String =
         "(" + emitExpr(node.a) + ") " + op + " (" + emitExpr(node.b) + ")"
@@ -205,6 +205,7 @@ private[scalapipe] abstract class CNodeEmitter(
     }
 
     private def emitIf(node: ASTIfNode) {
+        updateClocks(getTiming(node))
         writeIf(emitExpr(node.cond))
         emit(node.iTrue)
         if (node.iFalse != null) {
@@ -215,6 +216,7 @@ private[scalapipe] abstract class CNodeEmitter(
     }
 
     private def emitSwitch(node: ASTSwitchNode) {
+        updateClocks(getTiming(node))
         val test = emitExpr(node.cond)
         var first = true
         node.cases.foreach { c =>
@@ -247,22 +249,27 @@ private[scalapipe] abstract class CNodeEmitter(
     }
 
     private def emitWhile(node: ASTWhileNode) {
+        val cycles = getTiming(node)
+        updateClocks(cycles)
         writeWhile(emitExpr(node.cond))
         emit(node.body)
+        updateClocks(cycles)
         writeEnd
     }
 
     private def emitCallProc(node: ASTCallNode) {
+        updateClocks(getTiming(node))
         write(emitCall(node) + ";")
     }
 
     private def emitBlock(node: ASTBlockNode) {
+        updateClocks(getTiming(node))
         for (n <- node.children) {
             emit(n)
         }
     }
 
-    protected def getTiming(node: ASTNode): Int = {
+    private def localTiming(node: ASTNode): Int = {
         if (timing != null && node != null && !usedTimings.contains(node)) {
             usedTimings += node
             return timing.getOrElse(node, 0)
@@ -271,8 +278,20 @@ private[scalapipe] abstract class CNodeEmitter(
         }
     }
 
+    protected def getTiming(node: ASTNode): Int = node match {
+        case in: ASTIfNode =>
+            localTiming(in) + getTiming(in.cond)
+        case sw: ASTSwitchNode =>
+            localTiming(sw) + getTiming(sw.cond)
+        case wn: ASTWhileNode =>
+            localTiming(wn) + getTiming(wn.cond)
+        case bn: ASTBlockNode =>
+            localTiming(bn)
+        case _ =>
+            localTiming(node) + node.children.map(getTiming).sum
+    }
+
     def emit(node: ASTNode) {
-        updateClocks(node)
         node match {
             case anode: ASTAssignNode   => emitAssign(anode)
             case cond:  ASTIfNode       => emitIf(cond)

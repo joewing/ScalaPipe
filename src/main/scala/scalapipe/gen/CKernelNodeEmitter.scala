@@ -73,6 +73,7 @@ private[scalapipe] class CKernelNodeEmitter(
     }
 
     override def emitAssign(node: ASTAssignNode) {
+        updateClocks(getTiming(node))
         val outputs = localOutputs(node)
         for (o <- outputs) {
             val oindex = kt.outputIndex(o)
@@ -88,6 +89,7 @@ private[scalapipe] class CKernelNodeEmitter(
     }
 
     override def emitStop(node: ASTStopNode) {
+        updateClocks(getTiming(node))
         write(s"return;")
     }
 
@@ -95,16 +97,16 @@ private[scalapipe] class CKernelNodeEmitter(
         val name = kt.outputs(0).name
         val vtype = kt.outputs(0).valueType.name
         val src = emitExpr(node.a)
+        updateClocks(getTiming(node))
         write(s"$name = ($vtype*)sp_allocate(kernel, 0);")
         write(s"*$name = $src;")
         write(s"sp_send(kernel, 0);")
     }
 
-    override def updateClocks(node: ASTNode) {
-        val count = getTiming(node)
-        if (count > 0) {
-            write(s"kernel->sp_clocks += $count;")
-            updateTraceClocks(count)
+    override def updateClocks(cycles: Int) {
+        if (cycles > 0) {
+            write(s"kernel->sp_clocks += $cycles;")
+            updateTraceClocks(cycles)
         }
     }
 
