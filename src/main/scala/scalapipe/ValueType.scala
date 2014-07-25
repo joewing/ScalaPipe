@@ -73,6 +73,10 @@ private[scalapipe] class ValueType(
 
     def bytes: Int = (bits + 7) / 8
 
+    def mantissaBits: Int = bits
+
+    def exponentBits: Int = 0
+
     def flat = true
 
     override def toString: String = name
@@ -99,6 +103,18 @@ private[scalapipe] class IntegerValueType(
 
 private[scalapipe] class FloatValueType(_name: String, _bits: Int)
     extends ValueType(_name, _bits, true) {
+
+    override def mantissaBits = bits match {
+        case 32     => 23
+        case 64     => 53
+        case _      => Error.raise(s"invalid float size: ${bits}"); 0
+    }
+
+    override def exponentBits = bits match {
+        case 32     => 8
+        case 64     => 11
+        case _      => Error.raise(s"invalid float size: ${bits}"); 0
+    }
 
 }
 

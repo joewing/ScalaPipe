@@ -46,10 +46,10 @@ private[scalapipe] object HDLTiming {
         case NodeType.convert => 3
         case NodeType.add | NodeType.sub => 3
         case NodeType.mul =>
-            1 + (node.srca.valueType.bits + multSize - 1) / multSize
-        case NodeType.div   => 1 + node.srca.valueType.bits
-        case NodeType.mod   => 1 + node.srca.valueType.bits
-        case NodeType.sqrt  => 1 + node.srca.valueType.bits
+            1 + (node.srca.valueType.mantissaBits + multSize - 1) / multSize
+        case NodeType.div   => 1 + node.srca.valueType.mantissaBits
+        case NodeType.mod   => 1 + node.srca.valueType.mantissaBits
+        case NodeType.sqrt  => 1 + node.srca.valueType.mantissaBits
         case _              => 1
     }
 
