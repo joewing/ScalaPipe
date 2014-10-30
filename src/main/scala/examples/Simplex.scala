@@ -5,10 +5,11 @@ import scalapipe.kernels._
 
 object Simplex extends App {
 
-    val maxVariables    = 4
-    val maxConstraints = 3
+    val maxVariables   = 3
+    val maxConstraints = 2
     val rowCount = maxConstraints + 1
     val columnCount = maxConstraints + maxVariables + 2
+    val read_file = false  // Read from a file or use pre-defined data.
 
     val VALUE_TYPE = FLOAT32
     val ROW_TYPE    = Vector(VALUE_TYPE, columnCount)
@@ -17,27 +18,44 @@ object Simplex extends App {
     val Parser = new Kernel("Parser") {
 
         val out         = output(VALUE_TYPE)
-        val filename    = config(STRING, 'filename, "input.txt")
-        val fd          = local(stdio.FILEPTR, 0)
-        val value       = local(VALUE_TYPE)
-        val rc          = local(SIGNED32)
 
-        // Open the file.
-        if (fd == 0) {
-            fd = stdio.fopen(filename, "r")
+        if(read_file) {
+            val filename    = config(STRING, 'filename, "input.txt")
+            val fd          = local(stdio.FILEPTR, 0)
+            val value       = local(VALUE_TYPE)
+            val rc          = local(SIGNED32)
+
+            // Open the file.
             if (fd == 0) {
-                stdio.printf("ERROR: could not open %s\n", filename)
-                stdio.exit(-1)
+                fd = stdio.fopen(filename, "r")
+                if (fd == 0) {
+                    stdio.printf("ERROR: could not open %s\n", filename)
+                    stdio.exit(-1)
+                }
             }
-        }
 
-        // Read a value from the file.
-        rc = stdio.fscanf(fd, " %g", addr(value))
-        if (rc == 1) {
-            out = value
+            // Read a value from the file.
+            rc = stdio.fscanf(fd, " %g", addr(value))
+            if (rc == 1) {
+                out = value
+            } else {
+                stdio.fclose(fd)
+                stop
+            }
+
         } else {
-            stdio.fclose(fd)
+
+            // Example from Wikipedia.
+            val data = Array(
+                1.0, -2.0, -3.0, -4.0, 0.0, 0.0, 0.0,
+                0.0, 3.0, 2.0, 1.0, 1.0, 0.0, 10.0,
+                0.0, 2.0, 5.0, 3.0, 0.0, 1.0, 15.0
+            )
+            for (i <- data) {
+                out = i
+            }
             stop
+
         }
 
     }
@@ -150,10 +168,8 @@ object Simplex extends App {
                 if (pivot < 0 || value < best) {
                     pivot = y
                     best = value
-                    x = 0
-                    while (x < columnCount) {
-                        prow(x) = row(x)
-                        x += 1
+                    for(i <- 0 until columnCount) {
+                        prow(i) = row(i)
                     }
                 }
             }
@@ -168,10 +184,8 @@ object Simplex extends App {
                 pivot_out = prow(column)
                 pindex_out = pivot
                 column_out = column
-                x = 0
-                while (x < columnCount) {
-                    prow_out = prow(x)
-                    x += 1
+                for (i <- 0 until columnCount) {
+                    prow_out = prow(i)
                 }
 
                 // Reset for next iteration.
@@ -217,7 +231,7 @@ object Simplex extends App {
 
         // Update the row.
         if (pindex == index) {
-            k = 1 / pivot
+            k = 1.0 / pivot
             x = 0
             while (x < columnCount) {
                 row_out = k * prow_in
@@ -238,10 +252,10 @@ object Simplex extends App {
     val RowBuffer = new Kernel("RowBuffer") {
 
         val array_in    = input(VALUE_TYPE)
-        val array_out  = output(VALUE_TYPE)
+        val array_out   = output(VALUE_TYPE)
 
-        val row          = local(ROW_TYPE)
-        val x             = local(SIGNED32, 0)
+        val row         = local(ROW_TYPE)
+        val x           = local(SIGNED32, 0)
 
         row(x) = array_in
         x += 1
@@ -301,7 +315,7 @@ object Simplex extends App {
             is_min = false
         }
 
-        o = t
+        o = FLOAT32(t)
         stdio.printf("%g ", o)
         x += 1
         if (x == columnCount) {
@@ -325,8 +339,11 @@ object Simplex extends App {
 
     val app = new Application {
 
-        map(Parser -> ANY_KERNEL, CPU2FPGA())
-        map(ANY_KERNEL -> Output, FPGA2CPU())
+        if (false) {
+            // Run in hardware.
+            map(Parser -> ANY_KERNEL, CPU2FPGA())
+            map(ANY_KERNEL -> Output, FPGA2CPU())
+        }
 
         val cycle = Cycle()
         val stream = Streamer(Parser(), cycle)
