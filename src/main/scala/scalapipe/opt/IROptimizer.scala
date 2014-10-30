@@ -28,7 +28,7 @@ private[scalapipe] case class IROptimizer(
             StrengthReduction,
             CopyPropagation,
             StateCompression,
-            ContinuousAssignment,
+            ContinuousAssignment, // StateCompression must come first!
             CSE,
             RemoveVariables,
             ReassignStates

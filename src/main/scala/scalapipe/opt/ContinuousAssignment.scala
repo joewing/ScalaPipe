@@ -164,8 +164,11 @@ private[opt] object ContinuousAssignment extends Pass {
                 case ft: FloatValueType => continuousFloat(in)
                 case _                  => continuousInt(in)
             }
-        case ld: IRLoad     => ld.src.valueType.flat
-        case st: IRStore    => st.dest.valueType.flat
+
+        // FIXME: (see examples.Simplex)
+        case ld: IRLoad     => false && ld.src.valueType.flat
+        case st: IRStore    => false && st.dest.valueType.flat
+
         case gt: IRGoto     => true
         case _              => false
     }
