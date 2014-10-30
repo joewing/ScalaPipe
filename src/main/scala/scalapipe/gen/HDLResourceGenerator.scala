@@ -484,6 +484,7 @@ private[scalapipe] abstract class HDLResourceGenerator(
         write(s"output wire ram_we,")
         write(s"input wire ram_full,")
         write(s"input wire ram_avail,")
+        write(s"input wire ram_ready,")
         for (i <- inputStreams) {
             val index = i.index
             val width = i.valueType.bits
