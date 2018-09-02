@@ -1,4 +1,4 @@
-scalaVersion := "2.10.1"
+scalaVersion := "2.10.2"
 
 scalaOrganization := "org.scala-lang.virtualized"
 
@@ -12,6 +12,6 @@ artifactName := { (sv: ScalaVersion, module: ModuleID, artifact: Artifact) =>
    "scalapipe." + artifact.extension
 }
 
-libraryDependencies += "org.scalamock" %% "scalamock-scalatest-support" % "3.0.1" % "test"
+libraryDependencies += "org.scalamock" %% "scalamock-scalatest-support" % "3.2.1" % "test"
 
 libraryDependencies += "org.scala-lang" % "scala-reflect" % "2.10.1"
